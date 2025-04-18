@@ -1,10 +1,10 @@
-# Benutze ein leichtes Python-Image
-FROM python:3.8-slim
+# Verwende Python 3.8
+FROM python:3.8
 
-# Setzt das Arbeitsverzeichnis im Container
+# Setze das Arbeitsverzeichnis auf /app
 WORKDIR /app
 
-# Kopiere alle Dateien aus deinem lokalen Verzeichnis ins Container-Arbeitsverzeichnis
+# Kopiere alle Dateien aus deinem lokalen Verzeichnis in das Container-Verzeichnis
 COPY . /app
 
 # Installiere die Python-Abhängigkeiten
