@@ -1,23 +1,47 @@
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
+from bot.config.settings import get_settings
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user.first_name or "Trader"
-    lang = update.effective_user.language_code or "en"
+settings = get_settings()
 
-    if lang.startswith("de"):
+def detect_language(text: str) -> str:
+    if any(word in text.lower() for word in ["hello", "hi", "/start"]):
+        return "en"
+    elif any(word in text.lower() for word in ["hallo", "hey", "/start"]):
+        return "de"
+    return "en"
+
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    lang = detect_language(update.message.text)
+
+    if user_id != settings["DANIEL_TELEGRAM_ID"]:
+        await update.message.reply_text("Access denied.")
+        return
+
+    if lang == "de":
         text = (
-            f"Hey {user}, willkommen bei **A.R.K.** – deinem Trading-Mentor!\n\n"
-            "Ich helfe dir, Märkte zu verstehen, Chancen zu erkennen und Fehler zu vermeiden.\n"
-            "Gib /signal ein, wenn du bereit bist – ich analysiere live mit dir."
+            "*Willkommen bei A.R.K.*, deinem Trading-Mentor.\n\n"
+            "Bereit zum Durchstarten? Hier sind deine Befehle:\n"
+            "• `/ping` – Verbindung testen\n"
+            "• `/status` – Systemstatus\n"
+            "• `/signal` – Marktsignal erhalten\n"
+            "• `/analyse` – Marktanalyse starten\n"
+            "• `/shutdown` – Bot stoppen\n\n"
+            "_Lass uns gemeinsam klüger traden. Los geht’s!_ 🚀"
         )
     else:
         text = (
-            f"Hey {user}, welcome to **A.R.K.** – your personal trading mentor!\n\n"
-            "I’ll help you understand the markets, spot opportunities and avoid rookie mistakes.\n"
-            "Type /signal to begin – let’s dive in together."
+            "*Welcome to A.R.K.*, your personal trading mentor.\n\n"
+            "Ready to launch? Use these commands:\n"
+            "• `/ping` – Test connection\n"
+            "• `/status` – Check system status\n"
+            "• `/signal` – Get market signal\n"
+            "• `/analyse` – Start market analysis\n"
+            "• `/shutdown` – Stop the bot\n\n"
+            "_Let’s trade smarter, together. Let’s go!_ 🚀"
         )
 
-    await update.message.reply_markdown(text)
+    await update.message.reply_text(text, parse_mode="Markdown")
 
-start_handler = CommandHandler("start", start)
+start_handler = CommandHandler("start", start_command)
