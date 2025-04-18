@@ -1,13 +1,14 @@
-FROM python:3.8-slim  # Hier setzen wir Python 3.8, aber es kann auch 3.9 oder 3.7 sein, je nach Bedarf
+# Benutze ein leichtes Python-Image
+FROM python:3.8-slim
 
-# Setzt das Arbeitsverzeichnis auf /app
+# Setzt das Arbeitsverzeichnis im Container
 WORKDIR /app
 
-# Kopiere alle Dateien ins Arbeitsverzeichnis
+# Kopiere alle Dateien aus deinem lokalen Verzeichnis ins Container-Arbeitsverzeichnis
 COPY . /app
 
-# Installiere alle Abhängigkeiten aus requirements.txt
-RUN pip install -r requirements.txt
+# Installiere die Python-Abhängigkeiten
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Starte das Projekt (Beispiel: run.py)
-CMD ["python", "run.py"]
+# Definiere den Befehl zum Starten der App
+CMD ["python", "bot.py"]
