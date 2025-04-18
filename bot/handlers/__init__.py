@@ -1,2 +1,1 @@
-# A.R.K. Telegram Command Handlers
-# Jeder Befehl ist ein eigener Mentor-Moment.
+# Technische Analyse-Funktionen für RSI, EMA, Candle-Muster
