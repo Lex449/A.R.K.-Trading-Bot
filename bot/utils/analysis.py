@@ -9,9 +9,7 @@ def generate_signal(market, api_key):
         close_prices = [float(c['close']) for c in candles]
         rsi = calculate_rsi(close_prices)
         ema = calculate_ema(close_prices)
-
-        last_candle = candles[0]
-        pattern = detect_candlestick(last_candle)
+        pattern = detect_candlestick(candles[0])
 
         signal = "Long" if rsi < 30 else "Short" if rsi > 70 else "Neutral"
         rating = rate_signal(signal, rsi, pattern)
@@ -28,9 +26,9 @@ def generate_signal(market, api_key):
 
 def calculate_rsi(prices, period=14):
     deltas = [prices[i] - prices[i+1] for i in range(len(prices)-1)]
-    gains = sum([d for d in deltas[:period] if d > 0])
-    losses = abs(sum([d for d in deltas[:period] if d < 0]))
-    rs = gains / losses if losses != 0 else 1
+    gains = sum(d for d in deltas[:period] if d > 0)
+    losses = abs(sum(d for d in deltas[:period] if d < 0))
+    rs = gains / losses if losses else 1
     return 100 - (100 / (1 + rs))
 
 def calculate_ema(prices, period=14):
