@@ -1,30 +1,30 @@
-# main.py
-
-import asyncio
 from telegram.ext import ApplicationBuilder
+from bot.handlers.start import start_handler
+from bot.handlers.ping import ping_handler
+from bot.handlers.status import status_handler
+from bot.handlers.shutdown import shutdown_handler
+from bot.handlers.signal import signal_handler
+from bot.handlers.analyse import analyse_handler
 from bot.config.settings import get_settings
-from bot.handlers.start import start
-from bot.handlers.ping import ping
-from bot.handlers.signal import signal
-from bot.handlers.status import status
-from bot.handlers.shutdown import shutdown
 from bot.utils.error_handler import handle_error
 
-async def main():
-    settings = get_settings()
+# Holen der Einstellungen
+settings = get_settings()
 
-    application = ApplicationBuilder().token(settings["TOKEN"]).build()
+# Erstellen der Anwendung
+app = ApplicationBuilder().token(settings["BOT_TOKEN"]).build()
 
-    application.add_handler(start)
-    application.add_handler(ping)
-    application.add_handler(signal)
-    application.add_handler(status)
-    application.add_handler(shutdown)
+# Hinzufügen der Handler
+app.add_handler(start_handler)
+app.add_handler(ping_handler)
+app.add_handler(status_handler)
+app.add_handler(shutdown_handler)
+app.add_handler(signal_handler)
+app.add_handler(analyse_handler)
 
-    application.add_error_handler(handle_error)
+# Fehlerbehandlung
+app.add_error_handler(handle_error)
 
-    print("A.R.K. gestartet und bereit.")
-    await application.run_polling()
-
+# Startet den Bot mit Polling
 if __name__ == "__main__":
-    asyncio.run(main())
+    app.run_polling()  # Diese Zeile startet den Bot und verwaltet den Event-Loop intern
