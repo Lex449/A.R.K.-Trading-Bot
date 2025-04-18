@@ -1,9 +1,6 @@
-# bot/config/settings.py
-
 import os
 from dotenv import load_dotenv
-
-load_dotenv()  # Lokal .env laden, auf Railway ignoriert es das einfach
+load_dotenv()
 
 def get_settings():
     return {
