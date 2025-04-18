@@ -1,19 +1,17 @@
-from telegram import Update
-from telegram.ext import ContextTypes
-from datetime import datetime
-import pytz
+# bot/handlers/status.py
 
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    bali_time = datetime.now(pytz.timezone("Asia/Makassar")).strftime('%H:%M:%S')
-    message = (
-        "📊 *A.R.K. Status Check*\n"
-        "------------------------------\n"
-        "🧠 *Modus:* Live | Mentor aktiviert\n"
-        f"⏰ *Bali-Zeit:* {bali_time}\n"
-        "⚙️ *Version:* 1.0.0\n"
-        "⭐ *Stabilität:* Hoch\n"
-        "📩 *Ping:* ✅\n"
-        "------------------------------\n"
-        "_Ich bin bereit, Daniel._"
-    )
-    await update.message.reply_markdown(message)
+from telegram import Update
+from telegram.ext import ContextTypes, CommandHandler
+from bot.utils.language import get_language
+
+async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    lang = get_language(update)
+
+    messages = {
+        "de": "📊 *Status:* A.R.K. ist bereit.\nWarte auf neue Marktbewegungen...",
+        "en": "📊 *Status:* A.R.K. is active.\nWaiting for new market movements..."
+    }
+
+    await update.message.reply_text(messages[lang], parse_mode="Markdown")
+
+status = CommandHandler("status", status)
