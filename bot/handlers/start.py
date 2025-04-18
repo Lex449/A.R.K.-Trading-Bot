@@ -1,10 +1,8 @@
-# bot/handlers/start.py
-
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.language import get_language
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     lang = get_language(update)
 
     messages = {
@@ -14,4 +12,4 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.reply_text(messages[lang], parse_mode="Markdown")
 
-start = CommandHandler("start", start)
+start_handler = CommandHandler("start", start_command)
