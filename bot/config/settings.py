@@ -1,16 +1,13 @@
+# bot/config/settings.py
+
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # Lokal nutzbar – auf Railway hat keine Wirkung, aber safe fallback
+load_dotenv()  # Lokal .env laden, auf Railway ignoriert es das einfach
 
 def get_settings():
-    required_keys = ["BOT_TOKEN", "DANIEL_TELEGRAM_ID", "TWELVEDATA_API_KEY"]
-    settings = {}
-
-    for key in required_keys:
-        value = os.getenv(key)
-        if not value:
-            raise EnvironmentError(f"{key}")
-        settings[key] = value
-
-    return settings
+    return {
+        "BOT_TOKEN": os.getenv("BOT_TOKEN"),
+        "DANIEL_TELEGRAM_ID": os.getenv("DANIEL_TELEGRAM_ID"),
+        "TWELVEDATA_API_KEY": os.getenv("TWELVEDATA_API_KEY")
+    }
