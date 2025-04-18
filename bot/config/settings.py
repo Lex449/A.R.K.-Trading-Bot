@@ -1,6 +1,14 @@
+import os
+
 def get_settings():
     return {
-        "TELEGRAM_TOKEN": "7655719634:AAE01VP0eZP3gQGXgiL_hHOgBD3pG5yzId4",
-        "TELEGRAM_USER_ID": "7699862580",
-        "TWELVE_DATA_API_KEY": "0dd4ddf44b144ea48df01c9fdfc80921"
-    }
+        "telegram": {
+            "token": os.getenv("BOT_TOKEN") or "7655719634:AAE01VP0gQGXgiL_hHOgBD3pG5yzId4",
+            "admin_id": 7699862580,
+        },
+        "twelvedata": {
+            "api_key": os.getenv("TWELVEDATA_API_KEY") or "0dd4ddf44b144ea48df01c9fdfc80921"
+        },
+        "markets": ["NDX", "DJI", "DAX"],
+        "language": "auto"
+    }}
