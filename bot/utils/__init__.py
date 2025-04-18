@@ -1,1 +1,0 @@
-# Technische Analyse-Funktionen für RSI, EMA, Candle-Muster
