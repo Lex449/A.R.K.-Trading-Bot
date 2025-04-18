@@ -1,13 +1,13 @@
+# bot/utils/error_handler.py
+
 from telegram import Update
-from telegram.ext import ContextTypes
-import logging
+from telegram.ext import CallbackContext
 
-logger = logging.getLogger(__name__)
-
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.error("❌ Fehler aufgetreten:", exc_info=context.error)
-
-    if isinstance(update, Update) and update.effective_message:
-        await update.effective_message.reply_text(
-            "⚠️ Uuups... da ist was schiefgelaufen. Versuch es bitte später nochmal."
-        )
+async def handle_error(update: Update, context: CallbackContext) -> None:
+    """Fehlerbehandlung für den Bot."""
+    try:
+        raise context.error
+    except Exception as e:
+        print(f"[ERROR]: {e}")
+        if update:
+            await update.message.reply_text("Es gab einen Fehler beim Ausführen des Befehls.")
