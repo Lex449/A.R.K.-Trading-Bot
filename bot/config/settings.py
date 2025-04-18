@@ -1,15 +1,12 @@
-# settings.py
-# Diese Datei lädt Umgebungsvariablen sicher aus .env (lokal) oder aus Railway-Variablen
-
 import os
 from dotenv import load_dotenv
 
-# Lädt .env-Datei beim lokalen Start (nicht notwendig bei Railway)
+# .env-Datei laden, um Umgebungsvariablen verfügbar zu machen
 load_dotenv()
 
 def get_settings():
     return {
         "BOT_TOKEN": os.getenv("BOT_TOKEN"),
         "DANIEL_TELEGRAM_ID": os.getenv("DANIEL_TELEGRAM_ID"),
-        "TWELVEDATA_API_KEY": os.getenv("TWELVEDATA_API_KEY")
+        "TWELVEDATA_API_KEY": os.getenv("TWELVEDATA_API_KEY"),
     }
