@@ -1,27 +1,29 @@
+# bot/handlers/signal.py
+
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.utils.analysis import analyse_market
 
-async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    result = await analyse_market()
+async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    try:
+        market_data = analyse_market()
 
-    if result is None:
-        await update.message.reply_text("⚠️ Kein klares Signal gefunden. Warte auf eine stärkere Bewegung...")
-        return
+        trend = market_data.get("trend", "unknown")
+        confidence = market_data.get("confidence", 0)
+        pattern = market_data.get("pattern", "N/A")
+        timestamp = market_data.get("timestamp", "")
 
-    direction = result["direction"]
-    confidence = result["confidence"]
-    pattern = result.get("pattern", "Kein Muster")
-    stars = "⭐" * confidence + "✩" * (5 - confidence)
+        message = (
+            f"📈 *Marktsignal erkannt!*\n\n"
+            f"• Trend: *{trend}*\n"
+            f"• Muster: *{pattern}*\n"
+            f"• Vertrauen: {'⭐️' * confidence}\n"
+            f"• Zeit: `{timestamp}`\n\n"
+            f"_Automatische Analyse abgeschlossen._"
+        )
 
-    msg = (
-        f"📈 *Neues Signal entdeckt!*\n"
-        f"------------------------------\n"
-        f"📊 *Richtung:* `{direction.upper()}`\n"
-        f"🕵️ *Muster:* `{pattern}`\n"
-        f"⭐ *Qualität:* {stars}\n"
-        f"------------------------------\n"
-        f"_Mentor-Tipp:_ Nur einsteigen, wenn du bereit bist. Keine Aktion ist auch eine Entscheidung."
-    )
+        await update.message.reply_text(message, parse_mode="Markdown")
 
-    await update.message.reply_markdown(msg)
+    except Exception as e:
+        await update.message.reply_text("Fehler beim Generieren des Signals.")
+        print(f"[Fehler in /signal]: {e}")
