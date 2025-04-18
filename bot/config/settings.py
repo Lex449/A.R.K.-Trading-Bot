@@ -1,10 +1,11 @@
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
 def get_settings():
     return {
-        "BOT_TOKEN": os.getenv("BOT_TOKEN"),
-        "OWNER_ID": os.getenv("OWNER_ID"),
-        "API_KEY": os.getenv("API_KEY")
+        "TELEGRAM_BOT_TOKEN": os.getenv("BOT_TOKEN"),
+        "DANIEL_TELEGRAM_ID": os.getenv("DANIEL_TELEGRAM_ID"),
+        "TWELVEDATA_API_KEY": os.getenv("TWELVEDATA_API_KEY")
     }
