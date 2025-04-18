@@ -1,4 +1,4 @@
-FROM python:3.8-slim  # Ändere hier auf die gewünschte Version, z.B. python:3.8-slim
+FROM python:3.8-slim  # Hier setzen wir Python 3.8, aber es kann auch 3.9 oder 3.7 sein, je nach Bedarf
 
 # Setzt das Arbeitsverzeichnis auf /app
 WORKDIR /app
