@@ -1,3 +1,5 @@
+# Trigger redeploy
+
 from telegram.ext import ApplicationBuilder
 from bot.handlers.start import start_handler
 from bot.handlers.ping import ping_handler
