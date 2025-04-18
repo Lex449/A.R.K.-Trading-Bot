@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+from dotenv import import load_dotenv
 
 load_dotenv()
 
@@ -9,3 +9,5 @@ def get_settings():
         "DANIEL_TELEGRAM_ID": os.getenv("DANIEL_TELEGRAM_ID"),
         "TWELVEDATA_API_KEY": os.getenv("TWELVEDATA_API_KEY")
     }
+
+# updated settings.py for deployment
