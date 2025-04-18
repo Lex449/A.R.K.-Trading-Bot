@@ -1,27 +1,42 @@
-# Trigger redeploy
-
-from telegram.ext import ApplicationBuilder
-from bot.handlers.start import start_handler
-from bot.handlers.ping import ping_handler
-from bot.handlers.status import status_handler
-from bot.handlers.shutdown import shutdown_handler
-from bot.handlers.signal import signal_handler
-from bot.handlers.analyse import analyse_handler
+import logging
+from telegram import Update
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+)
 from bot.config.settings import get_settings
-from bot.utils.error_handler import handle_error
+from bot.handlers.start import start
+from bot.handlers.ping import ping
+from bot.handlers.status import status
+from bot.handlers.shutdown import shutdown
+from bot.handlers.signal import signal
+from bot.handlers.analyse import analyse
+from bot.handlers.error_handler import error_handler
 
+# Logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+
+# Lade Einstellungen
 settings = get_settings()
 
-app = ApplicationBuilder().token(settings["BOT_TOKEN"]).build()
+# Baue Application
+application = ApplicationBuilder().token(settings["TELEGRAM_BOT_TOKEN"]).build()
 
-app.add_handler(start_handler)
-app.add_handler(ping_handler)
-app.add_handler(status_handler)
-app.add_handler(shutdown_handler)
-app.add_handler(signal_handler)
-app.add_handler(analyse_handler)
+# Handler registrieren
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("ping", ping))
+application.add_handler(CommandHandler("status", status))
+application.add_handler(CommandHandler("shutdown", shutdown))
+application.add_handler(CommandHandler("signal", signal))
+application.add_handler(CommandHandler("analyse", analyse))
 
-app.add_error_handler(handle_error)
+# Error-Handler
+application.add_error_handler(error_handler)
 
+# Starte den Bot
 if __name__ == "__main__":
-    app.run_polling()
+    application.run_polling()
