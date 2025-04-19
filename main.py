@@ -50,9 +50,7 @@ async def run_all():
 # Einstiegspunkt
 if __name__ == "__main__":
     try:
-        loop = asyncio.get_event_loop()
-        loop.create_task(run_all())
-        loop.run_forever()
+        asyncio.run(run_all())  # Verwende asyncio.run anstelle von loop.create_task
     except RuntimeError as e:
         if str(e).startswith("This event loop is already running"):
             print("⚠️ Fehler: Event-Loop läuft bereits. Railway kann das verursachen.")
