@@ -27,6 +27,9 @@ print("Bot Token:", bot_token)
 # Telegram Bot Anwendung erstellen
 app = ApplicationBuilder().token(bot_token).build()
 
+# Initialisiere die Anwendung
+app.initialize()
+
 # Handler hinzufügen
 app.add_handler(start_handler)
 app.add_handler(ping_handler)
@@ -42,15 +45,16 @@ app.add_error_handler(handle_error)
 # DNS-Monitor und Bot gemeinsam starten
 async def run_all():
     await asyncio.gather(
-        app.initialize(),            # Initialisierung des Bots
-        app.start(),                 # Bot starten
+        app.start(),  # Bot starten
         app.updater.start_polling()  # Polling starten
     )
 
 # Einstiegspunkt
 if __name__ == "__main__":
     try:
-        asyncio.run(run_all())  # Verwende asyncio.run() ohne get_event_loop()
+        loop = asyncio.get_event_loop()
+        loop.create_task(run_all())
+        loop.run_forever()
     except RuntimeError as e:
         if str(e).startswith("This event loop is already running"):
             print("⚠️ Fehler: Event-Loop läuft bereits. Railway kann das verursachen.")
