@@ -1,6 +1,5 @@
 import asyncio
 from telegram.ext import ApplicationBuilder
-from bot.config.settings import get_settings
 from bot.handlers.start import start_handler
 from bot.handlers.ping import ping_handler
 from bot.handlers.status import status_handler
@@ -8,16 +7,14 @@ from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.signal import signal_handler
 from bot.handlers.analyse import analyse_handler
 from bot.handlers.testping import testping_handler
+from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
 from bot.utils.dns_monitor import check_dns_and_notify
 
-# Einstellungen laden
 settings = get_settings()
-
-# Telegram-Bot Anwendung aufbauen
 app = ApplicationBuilder().token(settings["TOKEN"]).build()
 
-# Handler hinzufügen
+# Handler registrieren
 app.add_handler(start_handler)
 app.add_handler(ping_handler)
 app.add_handler(status_handler)
@@ -29,13 +26,20 @@ app.add_handler(testping_handler)
 # Fehlerbehandlung aktivieren
 app.add_error_handler(handle_error)
 
-# Starte DNS-Monitoring parallel mit Bot
-async def run():
+# DNS-Monitor und Bot gemeinsam starten
+async def run_all():
     await asyncio.gather(
-        app.run_polling(),
-        check_dns_and_notify()
+        app.initialize(),            # Initialisierung des Bots
+        check_dns_and_notify(),      # DNS-Monitoring
+        app.start(),                 # Bot starten
+        app.updater.start_polling() # Polling starten
     )
 
-# Einstiegspunkt
 if __name__ == "__main__":
-    asyncio.run(run())
+    try:
+        asyncio.run(run_all())
+    except RuntimeError as e:
+        if str(e).startswith("This event loop is already running"):
+            print("⚠️ Fehler: Event-Loop läuft bereits. Railway kann das verursachen.")
+        else:
+            raise
