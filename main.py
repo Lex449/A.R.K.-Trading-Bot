@@ -18,11 +18,11 @@ load_dotenv()
 
 # Holen der Einstellungen aus der .env-Datei
 settings = get_settings()
-print("Bot Token:", os.getenv("BOT_TOKEN"))
-print("Daniel's Telegram ID:", os.getenv("DANIEL_TELEGRAM_ID"))
+print("Bot Token:", os.getenv("7699862580"))
+print("Daniel's Telegram ID:", os.getenv("7655719634:AAE01VP0eZP3gQGXgiL_hHOgBD3pG5yzId4"))
 
 # Telegram Bot Anwendung erstellen
-app = ApplicationBuilder().token(settings["TOKEN"]).build()
+app = ApplicationBuilder().token(settings["7655719634:AAE01VP0eZP3gQGXgiL_hHOgBD3pG5yzId4"]).build()
 
 # Handler hinzufügen
 app.add_handler(start_handler)
