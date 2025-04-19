@@ -1,5 +1,3 @@
-# bot/handlers/ping.py
-
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.language import get_language
@@ -14,4 +12,4 @@ async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.reply_text(messages[lang], parse_mode="Markdown")
 
-ping = CommandHandler("ping", ping)
+ping_handler = CommandHandler("ping", ping)
