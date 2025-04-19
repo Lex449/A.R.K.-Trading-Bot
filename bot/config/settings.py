@@ -1,14 +1,13 @@
-# bot/config/settings.py
-
 import os
 from dotenv import load_dotenv
 
-# Lädt die .env-Datei automatisch beim Start
+# .env-Datei laden
 load_dotenv()
 
 def get_settings():
+    """Lädt alle sensiblen Einstellungen aus der .env-Datei"""
     return {
-        "TOKEN": os.getenv("BOT_TOKEN"),  # Telegram Bot Token
-        "DANIEL_ID": os.getenv("DANIEL_TELEGRAM_ID"),  # Deine Telegram-ID
-        "TWELVEDATA_KEY": os.getenv("TWELVEDATA_API_KEY")  # API-Key für Marktanalyse
+        "TOKEN": os.getenv("BOT_TOKEN"),
+        "DANIEL_ID": os.getenv("DANIEL_TELEGRAM_ID"),
+        "TWELVEDATA_KEY": os.getenv("TWELVEDATA_API_KEY"),
     }
