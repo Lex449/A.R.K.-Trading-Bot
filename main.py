@@ -41,8 +41,8 @@ app.add_error_handler(handle_error)
 
 # DNS-Monitor und Bot gemeinsam starten
 async def run_all():
+    await app.initialize()            # Initialisiere den Bot
     await asyncio.gather(
-        app.initialize(),            # Initialisierung des Bots
         app.start(),                 # Bot starten
         app.updater.start_polling()  # Polling starten
     )
