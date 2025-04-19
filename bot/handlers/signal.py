@@ -1,5 +1,3 @@
-# bot/handlers/signal.py
-
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.analysis import analyse_market
@@ -45,4 +43,4 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(fallback[lang])
         print(f"[ERROR in /signal]: {e}")
 
-signal = CommandHandler("signal", signal)
+signal_handler = CommandHandler("signal", signal)
