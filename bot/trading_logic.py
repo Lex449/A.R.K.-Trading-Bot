@@ -1,19 +1,16 @@
-from bot.candles import detect_candlestick_patterns
-from bot.utils.data_fetcher import fetch_market_data
+from bot.candles import candle_analysis
 
-def execute_trade(signal: str):
-    print(f"Trade signal: {signal}")
-    # Füge hier deine Handelslogik hinzu, z.B. API-Aufrufe zum Platzieren von Trades
-
-def analyze_trades(symbol: str, interval: str, start_date: str, end_date: str):
-    df = fetch_market_data(symbol, interval, start_date, end_date)
-
-    patterns = detect_candlestick_patterns(df)
-
-    # Überprüfe, ob ein Bullish oder Bearish Engulfing Muster erkannt wurde
-    if patterns['Bullish Engulfing'][-1] > 0:
-        execute_trade('LONG')
-    elif patterns['Bearish Engulfing'][-1] < 0:
-        execute_trade('SHORT')
+def analyze_trades(symbol, interval, start_date, end_date):
+    # Abrufen der Marktdaten für das Symbol (AAPL Beispiel)
+    data = fetch_data(symbol, interval, start_date, end_date)  # Funktion zum Abrufen von Marktdaten
+    rsi, sma, engulfing = candle_analysis(data)
+    
+    # Entscheidung: Kauf/Verkauf basierend auf der Analyse
+    if rsi[-1] < 30 and engulfing[-1] != 0:
+        # Kaufsignal
+        print(f"Buy Signal für {symbol}")
+    elif rsi[-1] > 70 and engulfing[-1] != 0:
+        # Verkaufssignal
+        print(f"Sell Signal für {symbol}")
     else:
-        print("Kein Handelssignal")
+        print(f"Kein Signal für {symbol}")
