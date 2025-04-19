@@ -11,6 +11,8 @@ from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
 from dotenv import load_dotenv
 import os
+import time
+from bot.utils.analysis import analyse_market  # Importiere die Marktanalyse-Funktion
 
 # Lade die .env-Datei
 load_dotenv()
@@ -39,12 +41,33 @@ app.add_handler(testping_handler)
 # Fehlerbehandlung aktivieren
 app.add_error_handler(handle_error)
 
+# Funktion zur Echtzeit-Analyse
+async def realtime_analysis():
+    while True:
+        # Führe die Marktanalyse aus
+        result = analyse_market()
+
+        if result:
+            # Hier kannst du das Ergebnis an den Telegram-Bot senden
+            trend = result["trend"]
+            confidence = result["confidence"]
+            pattern = result["pattern"]
+            stars = "⭐️" * confidence + "✩" * (5 - confidence)
+
+            # Sende das Signal an die Nutzer
+            message = f"📊 *Marktanalyse*\nTrend: {trend}\nMuster: {pattern}\nSignalqualität: {stars}\n"
+            await app.bot.send_message(chat_id="DEIN_CHAT_ID", text=message)  # Ersetze DEIN_CHAT_ID mit deinem ID
+
+        # Warte 60 Sekunden, bevor die Analyse erneut ausgeführt wird
+        await asyncio.sleep(60)  # Zeit in Sekunden
+
 # DNS-Monitor und Bot gemeinsam starten
 async def run_all():
-    await app.initialize()            # Initialisiere den Bot
+    await app.initialize()  # Initialisiere den Bot
     await asyncio.gather(
-        app.start(),                 # Bot starten
-        app.updater.start_polling()  # Polling starten
+        app.start(),  # Bot starten
+        app.updater.start_polling(),  # Polling starten
+        realtime_analysis()  # Echtzeit-Analyse in den Loop integrieren
     )
 
 # Einstiegspunkt
