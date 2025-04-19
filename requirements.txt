@@ -1,6 +1,7 @@
 python-telegram-bot==20.3
-python-dotenv
+aiohttp
+pandas
+numpy
+matplotlib
+ta
 requests
-pytz
-
-# Änderung erzwungen für Commit
