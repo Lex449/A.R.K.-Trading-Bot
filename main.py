@@ -8,6 +8,8 @@ from bot.handlers.analyse import analyse_handler
 from bot.handlers.testping import testping_handler  # NEU
 from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
+from bot.utils.dns_monitor import check_dns_and_notify  # NEU
+import asyncio  # NEU
 
 settings = get_settings()
 app = ApplicationBuilder().token(settings["TOKEN"]).build()
@@ -22,5 +24,12 @@ app.add_handler(testping_handler)  # NEU
 
 app.add_error_handler(handle_error)
 
+# NEU: DNS-Monitoring beim Start aktivieren
+async def run():
+    await asyncio.gather(
+        app.run_polling(),
+        check_dns_and_notify()
+    )
+
 if __name__ == "__main__":
-    app.run_polling()
+    asyncio.run(run())
