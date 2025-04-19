@@ -1,5 +1,3 @@
-# bot/handlers/status.py
-
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.language import get_language
@@ -14,4 +12,4 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.reply_text(messages[lang], parse_mode="Markdown")
 
-status = CommandHandler("status", status)
+status_handler = CommandHandler("status", status)
