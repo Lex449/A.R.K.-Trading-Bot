@@ -27,9 +27,6 @@ print("Bot Token:", bot_token)
 # Telegram Bot Anwendung erstellen
 app = ApplicationBuilder().token(bot_token).build()
 
-# Initialisiere die Anwendung
-app.initialize()
-
 # Handler hinzufügen
 app.add_handler(start_handler)
 app.add_handler(ping_handler)
@@ -44,8 +41,9 @@ app.add_error_handler(handle_error)
 
 # DNS-Monitor und Bot gemeinsam starten
 async def run_all():
+    await app.initialize()            # Initialisiere den Bot
     await asyncio.gather(
-        app.start(),  # Bot starten
+        app.start(),                 # Bot starten
         app.updater.start_polling()  # Polling starten
     )
 
