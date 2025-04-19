@@ -1,5 +1,3 @@
-# bot/handlers/shutdown.py
-
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.config.settings import get_settings
@@ -22,7 +20,6 @@ async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "en": "🛑 Shutting down the bot now..."
     }
     await update.message.reply_text(messages[lang])
-
     await context.application.stop()
 
-shutdown = CommandHandler("shutdown", shutdown)
+shutdown_handler = CommandHandler("shutdown", shutdown)
