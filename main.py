@@ -41,17 +41,16 @@ app.add_error_handler(handle_error)
 
 # DNS-Monitor und Bot gemeinsam starten
 async def run_all():
-    try:
-        await app.initialize()  # Initialisiere den Bot
-        await app.start()       # Starte den Bot
-        await app.updater.start_polling()  # Polling starten
-    finally:
-        await app.stop()  # Stelle sicher, dass der Bot gestoppt wird
+    await asyncio.gather(
+        app.initialize(),            # Initialisierung des Bots
+        app.start(),                 # Bot starten
+        app.updater.start_polling()  # Polling starten
+    )
 
 # Einstiegspunkt
 if __name__ == "__main__":
     try:
-        asyncio.run(run_all())  # Verwende asyncio.run anstelle von loop.create_task
+        asyncio.run(run_all())  # Verwende asyncio.run() ohne get_event_loop()
     except RuntimeError as e:
         if str(e).startswith("This event loop is already running"):
             print("⚠️ Fehler: Event-Loop läuft bereits. Railway kann das verursachen.")
