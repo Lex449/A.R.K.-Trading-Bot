@@ -9,7 +9,6 @@ from bot.handlers.analyse import analyse_handler
 from bot.handlers.testping import testping_handler
 from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
-from bot.utils.dns_monitor import check_dns_and_notify
 from dotenv import load_dotenv
 import os
 
@@ -19,12 +18,11 @@ load_dotenv()
 # Holen der Einstellungen aus der .env-Datei
 settings = get_settings()
 
-# Überprüfe, ob der Bot-Token korrekt geladen wird
-print("Bot Token:", os.getenv("BOT_TOKEN"))  # Dieser Token sollte nicht 'None' sein
-print("Daniel's Telegram ID:", os.getenv("DANIEL_TELEGRAM_ID"))
+# Überprüfe, ob der Token korrekt geladen wird
+print("Bot Token:", os.getenv("BOT_TOKEN"))
 
 # Telegram Bot Anwendung erstellen
-app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()  # Verwendung des Tokens aus der .env-Datei
+app = ApplicationBuilder().token(settings["BOT_TOKEN"]).build()
 
 # Handler hinzufügen
 app.add_handler(start_handler)
@@ -42,7 +40,6 @@ app.add_error_handler(handle_error)
 async def run_all():
     await asyncio.gather(
         app.initialize(),            # Initialisierung des Bots
-        check_dns_and_notify(),      # DNS-Monitoring
         app.start(),                 # Bot starten
         app.updater.start_polling()  # Polling starten
     )
