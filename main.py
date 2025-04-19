@@ -5,6 +5,7 @@ from bot.handlers.status import status_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.signal import signal_handler
 from bot.handlers.analyse import analyse_handler
+from bot.handlers.testping import testping_handler  # NEU
 from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
 
@@ -17,6 +18,7 @@ app.add_handler(status_handler)
 app.add_handler(shutdown_handler)
 app.add_handler(signal_handler)
 app.add_handler(analyse_handler)
+app.add_handler(testping_handler)  # NEU
 
 app.add_error_handler(handle_error)
 
