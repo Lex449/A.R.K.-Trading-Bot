@@ -1,11 +1,8 @@
-# bot/utils/analysis.py
-
 import datetime
-import pytz
 
 def analyse_market():
     # Beispiel für eine einfache Marktanalyse
-    now = datetime.datetime.now(pytz.timezone("UTC"))
+    now = datetime.datetime.utcnow()  # UTC ohne pytz
     
     # Simulierte Marktanalyse
     market_signal = {
