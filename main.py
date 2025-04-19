@@ -8,13 +8,13 @@ from bot.handlers.analyse import analyse_handler
 from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
 
-# Holen der Einstellungen
+# Einstellungen laden
 settings = get_settings()
 
-# Erstellen der Anwendung
+# Anwendung initialisieren
 app = ApplicationBuilder().token(settings["BOT_TOKEN"]).build()
 
-# Hinzufügen der Handler
+# CommandHandler hinzufügen
 app.add_handler(start_handler)
 app.add_handler(ping_handler)
 app.add_handler(status_handler)
@@ -22,9 +22,9 @@ app.add_handler(shutdown_handler)
 app.add_handler(signal_handler)
 app.add_handler(analyse_handler)
 
-# Fehlerbehandlung
+# Fehlerbehandlung registrieren
 app.add_error_handler(handle_error)
 
-# Startet den Bot mit Polling
+# Bot starten
 if __name__ == "__main__":
-    app.run_polling()  # Diese Zeile startet den Bot und verwaltet den Event-Loop intern
+    app.run_polling()
