@@ -1,17 +1,17 @@
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.analysis import analyse_market
 
 async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("⏳ Ich analysiere den Markt in Echtzeit... bitte einen Moment Geduld.")
 
-    result = await analyse_market()
+    result = analyse_market()
 
     if result is None:
         await update.message.reply_text("⚠️ Kein klares Setup gefunden. Geduld ist auch eine Position.")
         return
 
-    direction = result["direction"]
+    direction = result["trend"]
     confidence = result["confidence"]
     pattern = result.get("pattern", "Unbekannt")
     stars = "⭐" * confidence + "✩" * (5 - confidence)
@@ -27,3 +27,5 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     await update.message.reply_markdown(msg)
+
+analyse_handler = CommandHandler("analyse", analyse)
