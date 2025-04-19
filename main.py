@@ -1,5 +1,6 @@
 import asyncio
 from telegram.ext import ApplicationBuilder
+from bot.config.settings import get_settings
 from bot.handlers.start import start_handler
 from bot.handlers.ping import ping_handler
 from bot.handlers.status import status_handler
@@ -7,7 +8,6 @@ from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.signal import signal_handler
 from bot.handlers.analyse import analyse_handler
 from bot.handlers.testping import testping_handler
-from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
 from bot.utils.dns_monitor import check_dns_and_notify
 from dotenv import load_dotenv
@@ -19,9 +19,9 @@ load_dotenv()
 # Holen der Einstellungen aus der .env-Datei
 settings = get_settings()
 
-# Debug-Ausgabe
-print("Bot Token:", settings["TOKEN"])
-print("Daniel's Telegram ID:", settings["DANIEL_ID"])
+# Bestätigen, dass die Token-Werte korrekt geladen wurden
+print("Bot Token:", os.getenv("BOT_TOKEN"))
+print("Daniel's Telegram ID:", os.getenv("DANIEL_TELEGRAM_ID"))
 
 # Telegram Bot Anwendung erstellen
 app = ApplicationBuilder().token(settings["TOKEN"]).build()
