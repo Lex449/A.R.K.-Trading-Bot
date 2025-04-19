@@ -1,32 +1,24 @@
-# main.py
-
 from telegram.ext import ApplicationBuilder
-from bot.handlers.start import start
-from bot.handlers.ping import ping
-from bot.handlers.status import status
-from bot.handlers.shutdown import shutdown
-from bot.handlers.signal import signal
-from bot.handlers.analyse import analyse
+from bot.handlers.start import start_handler
+from bot.handlers.ping import ping_handler
+from bot.handlers.status import status_handler
+from bot.handlers.shutdown import shutdown_handler
+from bot.handlers.signal import signal_handler
+from bot.handlers.analyse import analyse_handler
 from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
 
-# Einstellungen laden
 settings = get_settings()
-
-# Bot-Anwendung erstellen
 app = ApplicationBuilder().token(settings["TOKEN"]).build()
 
-# Handler hinzufügen
-app.add_handler(start)
-app.add_handler(ping)
-app.add_handler(status)
-app.add_handler(shutdown)
-app.add_handler(signal)
-app.add_handler(analyse)
+app.add_handler(start_handler)
+app.add_handler(ping_handler)
+app.add_handler(status_handler)
+app.add_handler(shutdown_handler)
+app.add_handler(signal_handler)
+app.add_handler(analyse_handler)
 
-# Fehlerbehandlung
 app.add_error_handler(handle_error)
 
-# Bot starten
 if __name__ == "__main__":
     app.run_polling()
