@@ -15,14 +15,17 @@ import os
 # Lade die .env-Datei
 load_dotenv()
 
-# Holen der Einstellungen aus der .env-Datei
-settings = get_settings()
+# Hole den Bot-Token aus der .env-Datei
+bot_token = os.getenv("BOT_TOKEN")
 
-# Überprüfe, ob der Token korrekt geladen wird
-print("Bot Token:", os.getenv("BOT_TOKEN"))
+# Überprüfe, ob der Token geladen wurde
+if not bot_token:
+    raise ValueError("BOT_TOKEN konnte nicht aus der .env-Datei geladen werden!")
+
+print("Bot Token:", bot_token)
 
 # Telegram Bot Anwendung erstellen
-app = ApplicationBuilder().token(settings["BOT_TOKEN"]).build()
+app = ApplicationBuilder().token(bot_token).build()
 
 # Handler hinzufügen
 app.add_handler(start_handler)
