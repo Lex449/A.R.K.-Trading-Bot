@@ -5,14 +5,14 @@ import pandas as pd
 def analyse_market(symbol='BTC/USDT', timeframe='5m'):
     # Binance API verwenden (oder eine andere, die unterstützt wird)
     exchange = ccxt.binance()
-    
+
     # Holen von OHLCV-Daten (Open, High, Low, Close, Volume)
     ohlcv = exchange.fetch_ohlcv(symbol, timeframe)
-    
+
     # Wandeln in ein DataFrame
     df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-    
+
     # Berechnung des RSI (Relative Strength Index)
     df['rsi'] = talib.RSI(df['close'], timeperiod=14)
 
