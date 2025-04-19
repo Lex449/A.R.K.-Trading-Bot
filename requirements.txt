@@ -1,7 +1,4 @@
 python-telegram-bot==20.3
-aiohttp
-pandas
-numpy
-matplotlib
-ta
-requests
+python-dotenv==1.0.1
+aiohttp==3.9.3
+requests==2.31.0
