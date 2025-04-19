@@ -56,7 +56,7 @@ async def realtime_analysis():
 
             # Sende das Signal an die Nutzer
             message = f"📊 *Marktanalyse*\nTrend: {trend}\nMuster: {pattern}\nSignalqualität: {stars}\n"
-            await app.bot.send_message(chat_id="DEIN_CHAT_ID", text=message)  # Ersetze DEIN_CHAT_ID mit deinem ID
+            await app.bot.send_message(chat_id="7699862580", text=message)  # Ersetze DEIN_CHAT_ID mit deinem ID
 
         # Warte 60 Sekunden, bevor die Analyse erneut ausgeführt wird
         await asyncio.sleep(60)  # Zeit in Sekunden
