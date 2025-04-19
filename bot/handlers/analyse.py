@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.analysis import analyse_market
 from bot.utils.language import get_language
 
+# Analyse-Funktion
 async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_language(update)
 
