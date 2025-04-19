@@ -11,17 +11,15 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         trend = data["trend"]
         confidence = data["confidence"]
-        pattern = data.get("pattern", "Unbekannt")
+        pattern = data["pattern"]
         timestamp = data["timestamp"]
-
-        stars = "⭐️" * confidence + "✩" * (5 - confidence)
 
         messages = {
             "de": (
                 f"📈 *Marktsignal erkannt!*\n\n"
                 f"• Trend: *{trend}*\n"
                 f"• Muster: *{pattern}*\n"
-                f"• Vertrauen: {stars}\n"
+                f"• Vertrauen: {'⭐️' * confidence}\n"
                 f"• Zeit: `{timestamp}`\n\n"
                 f"_Automatische Analyse abgeschlossen._"
             ),
@@ -29,7 +27,7 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 f"📈 *Market signal detected!*\n\n"
                 f"• Trend: *{trend}*\n"
                 f"• Pattern: *{pattern}*\n"
-                f"• Confidence: {stars}\n"
+                f"• Confidence: {'⭐️' * confidence}\n"
                 f"• Time: `{timestamp}`\n\n"
                 f"_Automatic analysis complete._"
             )
