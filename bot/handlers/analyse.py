@@ -1,66 +1,72 @@
+import requests
 from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler
-from bot.utils.analysis import analyse_market
-from bot.utils.language import get_language
+from telegram.ext import ContextTypes
+import os
 
-# Analyse-Funktion
+# Deinen TwelveData-API-Key hier fest eintragen oder aus ENV lesen
+API_KEY = "0dd4ddf44b144ea48df01c9fdfc80921"
+SYMBOLS = {
+    "US100": "NDX",
+    "Dow Jones": "DJI",
+    "DAX": "DE30",
+    "Bitcoin": "BTC/USD"
+}
+
 async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = get_language(update)
+    lang = update.effective_user.language_code
+    messages = []
 
-    # Lade-Text während der Analyse
-    loading_text = {
-        "de": "⏳ Ich analysiere den Markt in Echtzeit... bitte einen Moment Geduld.",
-        "en": "⏳ Analyzing the market in real time... please wait a moment."
-    }
+    for name, symbol in SYMBOLS.items():
+        url = f"https://api.twelvedata.com/technical_indicator?symbol={symbol}&interval=15min&type=rsi&apikey={API_KEY}"
+        ema_url = f"https://api.twelvedata.com/ema?symbol={symbol}&interval=15min&time_period=20&apikey={API_KEY}"
+        price_url = f"https://api.twelvedata.com/price?symbol={symbol}&apikey={API_KEY}"
 
-    await update.message.reply_text(loading_text[lang])
+        try:
+            rsi = float(requests.get(url).json()["values"][0]["rsi"])
+            ema = float(requests.get(ema_url).json()["values"][0]["ema"])
+            price = float(requests.get(price_url).json()["price"])
+        except Exception:
+            continue  # Fehlerhafter Markt wird übersprungen
 
-    # Durchführung der Marktanalyse
-    result = analyse_market()
+        signal = "Neutral"
+        stars = 3
 
-    if result is None:
-        fallback = {
-            "de": "⚠️ Kein klares Setup gefunden. Geduld ist auch eine Position.",
-            "en": "⚠️ No clear setup found. Patience is a position too."
-        }
-        await update.message.reply_text(fallback[lang])
-        return
+        if rsi < 30 and price > ema:
+            signal = "Long"
+            stars = 4 if rsi < 25 else 3
+        elif rsi > 70 and price < ema:
+            signal = "Short"
+            stars = 4 if rsi > 75 else 3
+        elif rsi < 20:
+            signal = "Strong Long"
+            stars = 5
+        elif rsi > 80:
+            signal = "Strong Short"
+            stars = 5
 
-    # Signal-Details aus dem Analyse-Ergebnis
-    direction = result["trend"]
-    confidence = result["confidence"]
-    pattern = result.get("pattern", "Unbekannt")
-    stars = "⭐️" * confidence + "✩" * (5 - confidence)
+        emoji = "📈" if "Long" in signal else "📉" if "Short" in signal else "⚖️"
+        star_str = "★" * stars + "☆" * (5 - stars)
 
-    # Zusätzliche Details der Analyse, z.B. RSI, MACD oder andere Indikatoren
-    extra_info = result.get("extra_info", "Keine zusätzlichen Informationen verfügbar.")
-    
-    # Detaillierte Nachrichten für den Nutzer (Deutsch/Englisch)
-    messages = {
-        "de": (
-            f"📊 *Analyse abgeschlossen!*\n"
-            f"------------------------------\n"
-            f"📈 *Trendrichtung:* `{direction.upper()}`\n"
-            f"🕵️ *Erkanntes Muster:* `{pattern}`\n"
-            f"⭐ *Signalqualität:* {stars}\n"
-            f"📉 *Zusätzliche Analyse:* {extra_info}\n"
-            f"------------------------------\n"
-            f"_Bleib fokussiert, Daniel. Timing schlägt alles._"
-        ),
-        "en": (
-            f"📊 *Analysis complete!*\n"
-            f"------------------------------\n"
-            f"📈 *Trend direction:* `{direction.upper()}`\n"
-            f"🕵️ *Recognized pattern:* `{pattern}`\n"
-            f"⭐ *Signal quality:* {stars}\n"
-            f"📉 *Additional Analysis:* {extra_info}\n"
-            f"------------------------------\n"
-            f"_Stay sharp, Daniel. Timing beats everything._"
-        )
-    }
+        if lang == "de":
+            messages.append(
+                f"*{name} Analyse {emoji}*\n"
+                f"• Signal: *{signal}*\n"
+                f"• RSI: `{rsi}`\n"
+                f"• EMA: `{ema}`\n"
+                f"• Preis: `{price}`\n"
+                f"• Stärke: {star_str}\n"
+            )
+        else:
+            messages.append(
+                f"*{name} Analysis {emoji}*\n"
+                f"• Signal: *{signal}*\n"
+                f"• RSI: `{rsi}`\n"
+                f"• EMA: `{ema}`\n"
+                f"• Price: `{price}`\n"
+                f"• Strength: {star_str}\n"
+            )
 
-    # Sende die Antwort zurück an den Nutzer
-    await update.message.reply_markdown(messages[lang])
-
-# Erstelle den Handler für den /analyse-Befehl
-analyse_handler = CommandHandler("analyse", analyse)
+    if not messages:
+        await update.message.reply_text("❌ No data available. Please try again later.")
+    else:
+        await update.message.reply_markdown("\n".join(messages), disable_web_page_preview=True)
