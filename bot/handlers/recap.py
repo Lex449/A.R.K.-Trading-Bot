@@ -3,13 +3,13 @@ from telegram.ext import ContextTypes, CommandHandler
 
 async def recap(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message = (
-        "🧾 *Tageszusammenfassung (Beta)*\n"
-        "-----------------------------------\n"
-        "✅ Anzahl geprüfter Märkte: 4\n"
-        "📡 Ausgelöste Signale: 3\n"
-        "📈 Beste Performance: US100\n"
-        "⚠️ Verlustvermeidung durch Analyse: 1 Fall\n"
-        "\n_A.R.K. bleibt fokussiert – dein Wachstum ist das Ziel._"
+        "🧾 *Tägliches Recap (Beta)*\n"
+        "-----------------------------\n"
+        "✅ Überwachte Märkte: US100, US30, NAS100, SPX500\n"
+        "⭐️ Signale heute: 3 erkannt\n"
+        "📈 Beste Bewertung: US100 (Long-Signal)\n"
+        "📉 Warnsignal: NAS100 (Short-Muster erkannt)\n"
+        "\n_A.R.K. analysiert, du entscheidest._"
     )
     await update.message.reply_markdown(message)
 
