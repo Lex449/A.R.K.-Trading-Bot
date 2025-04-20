@@ -1,24 +1,25 @@
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, CommandHandler
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = update.effective_user.language_code
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_first_name = update.effective_user.first_name
+    language_code = update.effective_user.language_code or 'en'
 
-    if lang == "de":
-        message = (
-            "Willkommen bei A.R.K. – deinem persönlichen KI-Trading-Mentor.\n\n"
-            "Ich helfe dir dabei, die Märkte zu verstehen, Fehler zu vermeiden und sicher zu wachsen.\n\n"
-            "Du bist nicht allein:\n"
-            "→ Tritt jetzt der A.R.K. Community bei für Support & Austausch:\n"
-            "https://t.me/arktradingcommunity"
+    if language_code.startswith('de'):
+        welcome_message = (
+            f"Willkommen bei A.R.K., {user_first_name}!\n\n"
+            "Ich bin dein persönlicher KI-Trading-Mentor.\n"
+            "Gemeinsam analysieren wir die Märkte, vermeiden Fehler und wachsen nachhaltig.\n\n"
+            "→ Tritt der Community bei: https://t.me/arktradingcommunity"
         )
     else:
-        message = (
-            "Welcome to A.R.K. – your personal AI trading mentor.\n\n"
-            "I’m here to help you understand the markets, avoid costly mistakes, and grow with confidence.\n\n"
-            "You’re not alone:\n"
-            "→ Join the A.R.K. Community for support & exchange:\n"
-            "https://t.me/arktradingcommunity"
+        welcome_message = (
+            f"Welcome to A.R.K., {user_first_name}!\n\n"
+            "I'm your personal AI trading mentor.\n"
+            "Together, we’ll analyze markets, avoid mistakes, and grow with confidence.\n\n"
+            "→ Join the community: https://t.me/arktradingcommunity"
         )
 
-    await update.message.reply_text(message)
+    await update.message.reply_text(welcome_message)
+
+start_handler = CommandHandler("start", start)
