@@ -1,45 +1,32 @@
-import ccxt
-import pandas as pd
-from ta.trend import EMAIndicator
-from ta.momentum import RSIIndicator
+from telegram import Update
+from telegram.ext import ContextTypes, CommandHandler
+from bot.utils.analysis import analyse_market
 
-def fetch_ohlcv(symbol: str, timeframe='5m', limit=100):
-    exchange = ccxt.binance()
-    try:
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
-        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        return df
-    except Exception as e:
-        print(f"Fehler beim Abrufen der Daten: {e}")
-        return None
+async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("🔍 Analyse läuft...")
 
-def analyse_market(symbol: str):
-    df = fetch_ohlcv(symbol)
-    if df is None or df.empty:
-        return None
+    symbol = "US100/USDT"
+    result = analyse_market(symbol)
 
-    # Berechne EMA20 und RSI14
-    df['ema'] = EMAIndicator(close=df['close'], window=20).ema_indicator()
-    df['rsi'] = RSIIndicator(close=df['close'], window=14).rsi()
+    if result:
+        trend = result["trend"]
+        confidence = result["confidence"]
+        pattern = result["pattern"]
+        stars = "⭐️" * confidence + "✩" * (5 - confidence)
 
-    # Aktuelle Werte
-    last_close = df['close'].iloc[-1]
-    last_ema = df['ema'].iloc[-1]
-    last_rsi = df['rsi'].iloc[-1]
-
-    # Signal-Logik
-    if last_rsi < 30 and last_close > last_ema:
-        trend = "Long-Signal erkannt"
-        stars = 5
-    elif last_rsi > 70 and last_close < last_ema:
-        trend = "Short-Signal erkannt"
-        stars = 5
+        message = (
+            f"📈 *Analyse für {symbol}*\n"
+            f"Trend: *{trend}*\n"
+            f"Daten: *{pattern}*\n"
+            f"Bewertung: {stars}\n\n"
+            f"_Diese Analyse ist informativ – kein Einstiegssignal._"
+        )
     else:
-        trend = "Kein klares Signal"
-        stars = 2
+        message = (
+            f"ℹ️ Analyse konnte nicht durchgeführt werden.\n"
+            f"_Bitte später erneut versuchen._"
+        )
 
-    return {
-        "trend": trend,
-        "pattern": f"RSI: {round(last_rsi, 1)} | EMA: {round(last_ema, 2)} | Close: {round(last_close, 2)}",
-        "confidence": stars
-    }
+    await update.message.reply_markdown(message)
+
+analyse_handler = CommandHandler("analyse", analyse)
