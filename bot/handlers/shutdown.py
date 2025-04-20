@@ -1,25 +1,23 @@
 from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler
-from bot.config.settings import get_settings
-from bot.utils.language import get_language
+from telegram.ext import ContextTypes
 
-async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    settings = get_settings()
-    lang = get_language(update)
+# Lege dein persönliches Admin-Passwort hier fest
+ADMIN_PASS = "arkshutdown123"
 
-    if str(update.effective_user.id) != str(settings["DANIEL_ID"]):
-        messages = {
-            "de": "⛔️ Nur autorisierte Benutzer dürfen den Bot stoppen.",
-            "en": "⛔️ Only authorized users may shut down the bot."
-        }
-        await update.message.reply_text(messages[lang])
+async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = update.effective_user.language_code
+    user_input = " ".join(context.args) if context.args else ""
+
+    if user_input != ADMIN_PASS:
+        if lang == "de":
+            await update.message.reply_text("❌ Zugriff verweigert. Falsches Passwort.")
+        else:
+            await update.message.reply_text("❌ Access denied. Incorrect password.")
         return
 
-    messages = {
-        "de": "🛑 Bot wird jetzt beendet...",
-        "en": "🛑 Shutting down the bot now..."
-    }
-    await update.message.reply_text(messages[lang])
-    await context.application.stop()
+    if lang == "de":
+        await update.message.reply_text("🛑 Bot wird jetzt gestoppt.")
+    else:
+        await update.message.reply_text("🛑 Shutting down now.")
 
-shutdown_handler = CommandHandler("shutdown", shutdown)
+    await context.bot.shutdown()
