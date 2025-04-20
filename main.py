@@ -1,7 +1,7 @@
 import asyncio
 import os
-from telegram.ext import ApplicationBuilder
 from dotenv import load_dotenv
+from telegram.ext import ApplicationBuilder
 
 # === Handler-Imports ===
 from bot.handlers.start import start_handler
