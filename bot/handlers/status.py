@@ -1,26 +1,15 @@
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import CommandHandler, ContextTypes
 
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = update.effective_user.language_code
-
-    if lang == "de":
-        message = (
-            "📡 *Systemstatus*\n\n"
-            "✅ A.R.K. ist *online* und bereit für deine Anfragen.\n"
-            "🧠 Analysemodul: *aktiviert*\n"
-            "🔒 Sicherheitsfeatures: *eingeschaltet*\n"
-            "🕒 Letzte Systemprüfung: *gerade eben*\n\n"
-            "Brauche ich Hilfe? Nutze `/help` oder frag in der Community."
-        )
-    else:
-        message = (
-            "📡 *System Status*\n\n"
-            "✅ A.R.K. is *online* and ready to assist.\n"
-            "🧠 Analysis module: *active*\n"
-            "🔒 Security checks: *enabled*\n"
-            "🕒 Last system check: *just now*\n\n"
-            "Need help? Type `/help` or ask in the community."
-        )
-
+async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = (
+        "✅ *A.R.K. Statusbericht*\n"
+        "- Bot online\n"
+        "- Signale aktiv\n"
+        "- Marktüberwachung läuft\n"
+        "- Break-even-Logik vorbereitet\n"
+        "- Alle Systeme: *STABIL*"
+    )
     await update.message.reply_markdown(message)
+
+status_handler = CommandHandler("status", status)
