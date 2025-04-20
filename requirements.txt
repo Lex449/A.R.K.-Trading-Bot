@@ -1,7 +1,4 @@
 python-telegram-bot==20.3
-aiohttp==3.9.3
-python-dotenv==1.0.1
-requests==2.31.0
-ccxt>=1.96.0,<4.0
 pandas==2.2.1
 ta==0.11.0
+python-dotenv==1.0.1
