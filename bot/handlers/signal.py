@@ -3,10 +3,10 @@ from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.analysis import analyse_market
 
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("📡 Signal wird analysiert...\nEinen Moment Geduld...")
+    await update.message.reply_text("📡 Markt wird analysiert...\nEinen Moment...")
 
-    symbol = "US100/USDT"  # Du kannst das später dynamisch machen (z. B. aus User-Input)
-    result = analyse_market(symbol=symbol)
+    symbol = "US100/USDT"
+    result = analyse_market(symbol)
 
     if result:
         trend = result["trend"]
@@ -19,12 +19,12 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             f"Trend: *{trend}*\n"
             f"Muster: *{pattern}*\n"
             f"Signalqualität: {stars}\n\n"
-            f"_Ermittelt durch A.R.K. – deinem KI-Trading-Mentor._"
+            f"_Analyse durchgeführt von A.R.K._"
         )
     else:
         message = (
-            f"⚠️ Aktuell kein klares Signal für {symbol}.\n"
-            f"A.R.K. beobachtet weiter den Markt und gibt Bescheid, sobald ein Einstieg erkennbar ist."
+            f"⚠️ Kein Signal erkannt für {symbol}.\n"
+            f"_A.R.K. bleibt wachsam._"
         )
 
     await update.message.reply_markdown(message)
