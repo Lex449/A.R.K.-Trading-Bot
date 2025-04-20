@@ -1,23 +1,13 @@
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, CommandHandler
 
-# Lege dein persönliches Admin-Passwort hier fest
-ADMIN_PASS = "arkshutdown123"
+async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    message = (
+        f"⛔️ A.R.K. wird jetzt heruntergefahren...\n"
+        f"👤 Angefordert von: {user.first_name}"
+    )
+    await update.message.reply_text(message)
+    await context.application.stop()
 
-async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = update.effective_user.language_code
-    user_input = " ".join(context.args) if context.args else ""
-
-    if user_input != ADMIN_PASS:
-        if lang == "de":
-            await update.message.reply_text("❌ Zugriff verweigert. Falsches Passwort.")
-        else:
-            await update.message.reply_text("❌ Access denied. Incorrect password.")
-        return
-
-    if lang == "de":
-        await update.message.reply_text("🛑 Bot wird jetzt gestoppt.")
-    else:
-        await update.message.reply_text("🛑 Shutting down now.")
-
-    await context.bot.shutdown()
+shutdown_handler = CommandHandler("shutdown", shutdown)
