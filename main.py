@@ -47,10 +47,11 @@ if __name__ == "__main__":
         print("🚀 Bot läuft im Polling-Modus...")
         # Starten des Bots und der Auto-Signale parallel
         await asyncio.gather(
-            app.run_polling(),
-            auto_signal_loop()
+            app.run_polling(),  # Hier den Bot direkt starten
+            auto_signal_loop()   # Auto-Signale parallel ausführen
         )
 
+    # Mit asyncio.run() den Event-Loop starten
     try:
         asyncio.run(main())  # Starte den Hauptprozess
     except Exception as e:
