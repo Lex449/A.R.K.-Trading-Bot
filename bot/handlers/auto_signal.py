@@ -11,7 +11,7 @@ chat_id = settings["DANIEL_TELEGRAM_ID"]
 
 async def auto_signal_loop():
     while True:
-        symbol = "NDX"  # Gültiger Index bei TwelveData, z. B. Nasdaq 100
+        symbol = "NDX"  # Nasdaq 100 (gültig bei TwelveData)
         result = analyse_market(symbol)
 
         if result:
@@ -19,7 +19,6 @@ async def auto_signal_loop():
             confidence = result["confidence"]
             pattern = result["pattern"]
 
-            # Nur bei Qualität ab 3 Sternen
             if confidence >= 3:
                 stars = "⭐️" * confidence + "✩" * (5 - confidence)
 
@@ -37,4 +36,4 @@ async def auto_signal_loop():
         else:
             print("[Warnung] Keine Daten oder Analysefehler")
 
-        await asyncio.sleep(60)  # 60 Sekunden warten
+        await asyncio.sleep(60)  # alle 60 Sekunden neu prüfen
