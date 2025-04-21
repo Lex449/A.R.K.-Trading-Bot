@@ -45,12 +45,13 @@ app.add_error_handler(handle_error)
 if __name__ == "__main__":
     async def main():
         print("🚀 Bot läuft im Polling-Modus...")
+        # Starten des Bots und der Auto-Signale parallel
         await asyncio.gather(
-            app.run_polling(),  # Startet das Polling
-            auto_signal_loop()   # Startet die Auto-Signale
+            app.run_polling(),
+            auto_signal_loop()
         )
 
     try:
-        asyncio.run(main())
+        asyncio.run(main())  # Starte den Hauptprozess
     except Exception as e:
         print(f"❌ Fehler im Hauptprozess: {e}")
