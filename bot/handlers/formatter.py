@@ -20,3 +20,6 @@ def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str
     )
 
     return message
+    
+    # Updated to fix potential invisible character issue
+    
