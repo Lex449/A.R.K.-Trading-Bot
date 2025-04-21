@@ -8,13 +8,11 @@ def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str
         "Short": "📉",
         "Neutral": "⏳"
     }
-
     trends_text = {
         "Long": "Aufwärtstrend erkannt",
         "Short": "Abwärtstrend erkannt",
         "Neutral": "Seitwärtsphase"
     }
-
     endings = [
         "_Bleib wachsam – A.R.K. scannt weiter._",
         "_A.R.K. beobachtet. Du reagierst._",
@@ -27,13 +25,14 @@ def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str
     stars = "⭐️" * confidence + "✩" * (5 - confidence)
     footer = random.choice(endings)
 
-    message = (
-        f"{emoji} *Signal für {symbol}*\n"
-        f"-----------------------------\n"
-        f"📈 *Trend:* {trend_text}\n"
-        f"📊 *Muster:* {pattern}\n"
-        f"⭐️ *Qualität:* {stars}\n\n"
-        f"{footer}"
-    )
+    message_parts = [
+        f"{emoji} *Signal für {symbol}*",
+        "-----------------------------",
+        f"📈 *Trend:* {trend_text}",
+        f"📊 *Muster:* {pattern}",
+        f"⭐️ *Qualität:* {stars}",
+        "",
+        footer
+    ]
 
-    return message
+    return "\n".join(message_parts)
