@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.analysis import analyse_market
+from bot.utils.formatter import format_signal
 
 async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("🔍 Analyse läuft...")
@@ -9,18 +10,7 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     result = analyse_market(symbol)
 
     if result:
-        trend = result["trend"]
-        confidence = result["confidence"]
-        pattern = result["pattern"]
-        stars = "⭐️" * confidence + "✩" * (5 - confidence)
-
-        message = (
-            f"📈 *Analyse für {symbol}*\n"
-            f"Trend: *{trend}*\n"
-            f"Daten: *{pattern}*\n"
-            f"Bewertung: {stars}\n\n"
-            f"_Diese Analyse ist informativ – kein Einstiegssignal._"
-        )
+        message = format_signal(symbol, result["trend"], result["confidence"], result["pattern"])
     else:
         message = (
             f"ℹ️ Analyse konnte nicht durchgeführt werden.\n"
