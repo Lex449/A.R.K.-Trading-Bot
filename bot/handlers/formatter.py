@@ -8,6 +8,7 @@ def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str
         "Short": "📉",
         "Neutral": "⏳"
     }
+
     trends_text = {
         "Long": "Aufwärtstrend erkannt",
         "Short": "Abwärtstrend erkannt",
