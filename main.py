@@ -24,7 +24,7 @@ bot_token = os.getenv("BOT_TOKEN")
 if not bot_token:
     raise ValueError("❌ BOT_TOKEN fehlt in der .env-Datei!")
 
-print("✅ Bot-Token geladen. Starte A.R.K...")
+print("✅ Bot-Token geladen. A.R.K. startet...")
 
 # === App erstellen ===
 app = ApplicationBuilder().token(bot_token).build()
@@ -43,12 +43,14 @@ app.add_error_handler(handle_error)
 
 # === Einstiegspunkt ===
 if __name__ == "__main__":
+    async def main():
+        print("🚀 Bot läuft im Polling-Modus...")
+        await asyncio.gather(
+            app.run_polling(),
+            auto_signal_loop()
+        )
+
     try:
-        loop = asyncio.get_event_loop()
-        loop.create_task(auto_signal_loop())  # Auto-Signal starten
-        app.run_polling()
-    except RuntimeError as e:
-        if "already running" in str(e):
-            print("⚠️ Event-Loop läuft bereits – typischer Railway-Fall.")
-        else:
-            raise
+        asyncio.run(main())
+    except Exception as e:
+        print(f"❌ Fehler im Hauptprozess: {e}")
