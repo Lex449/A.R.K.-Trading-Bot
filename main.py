@@ -1,5 +1,4 @@
 import os
-import asyncio
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder
 
@@ -43,16 +42,10 @@ app.add_error_handler(handle_error)
 
 # === Einstiegspunkt ===
 if __name__ == "__main__":
-    async def main():
-        print("🚀 Bot läuft im Polling-Modus...")
-        
-        # Starte den Telegram-Bot im Polling-Modus
-        await asyncio.gather(
-            app.run_polling(),  # Bot Polling starten
-            auto_signal_loop()   # Starte Auto-Signal im Hintergrund
-        )
-
-    try:
-        asyncio.run(main())  # Verwende asyncio.run() um den Event-Loop zu starten
-    except Exception as e:
-        print(f"❌ Fehler im Hauptprozess: {e}")
+    print("🚀 Bot läuft im Polling-Modus...")
+    
+    # Bot Polling starten - Kein Event-Loop, einfach die Methode starten
+    app.run_polling()
+    
+    # Automatisches Signal wird im Hintergrund ausgeführt
+    auto_signal_loop()
