@@ -8,31 +8,30 @@ def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str
         "Short": "📉",
         "Neutral": "⏳"
     }
-    emoji = emojis.get(trend, "📊")
-    stars = "⭐️" * confidence + "✩" * (5 - confidence)
-
-    quotes = [
-        "Bleib fokussiert. A.R.K. scannt weiter.",
-        "Disziplin schlägt Timing. Immer.",
-        "Der beste Einstieg ist manchmal Geduld.",
-        "Du bist der Trader. A.R.K. dein Radar.",
-        "Nicht klicken ist auch eine Entscheidung."
+    trends_text = {
+        "Long": "Aufwärtstrend erkannt",
+        "Short": "Abwärtstrend erkannt",
+        "Neutral": "Seitwärtsphase"
+    }
+    endings = [
+        "_Bleib wachsam – A.R.K. scannt weiter._",
+        "_A.R.K. beobachtet. Du reagierst._",
+        "_Präzision ist der Schlüssel. Handle nicht blind._",
+        "_Noch kein Einstieg? Geduld zahlt sich aus._"
     ]
 
+    emoji = emojis.get(trend, "📊")
+    trend_text = trends_text.get(trend, "Unklarer Trend")
+    stars = "⭐️" * confidence + "✩" * (5 - confidence)
+    footer = random.choice(endings)
+
     message = (
-        f"{emoji} *Signal für {symbol}*
-"
-        f"━━━━━━━━━━━━━━━━━━━━━
-"
-        f"📈 *Trend:* {trend}
-"
-        f"📊 *Muster:* {pattern}
-"
-        f"⭐️ *Qualität:* {stars}
-"
-        f"━━━━━━━━━━━━━━━━━━━━━
-"
-        f"🧠 _{random.choice(quotes)}_"
+        f"{emoji} *Signal für {symbol}*\n"
+        f"-----------------------------\n"
+        f"📈 *Trend:* {trend_text}\n"
+        f"📊 *Muster:* {pattern}\n"
+        f"⭐️ *Qualität:* {stars}\n\n"
+        f"{footer}"
     )
 
     return message
