@@ -1,5 +1,3 @@
-# bot/utils/formatter.py
-
 import random
 
 def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str:
@@ -8,11 +6,7 @@ def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str
         "Short": "📉",
         "Neutral": "⏳"
     }
-    trends_text = {
-        "Long": "Aufwärtstrend erkannt",
-        "Short": "Abwärtstrend erkannt",
-        "Neutral": "Seitwärtsphase"
-    }
+
     endings = [
         "_Bleib wachsam – A.R.K. scannt weiter._",
         "_A.R.K. beobachtet. Du reagierst._",
@@ -21,14 +15,13 @@ def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str
     ]
 
     emoji = emojis.get(trend, "📊")
-    trend_text = trends_text.get(trend, "Unklarer Trend")
     stars = "⭐️" * confidence + "✩" * (5 - confidence)
     footer = random.choice(endings)
 
     message = (
         f"{emoji} *Signal für {symbol}*\n"
         f"-----------------------------\n"
-        f"📈 *Trend:* {trend_text}\n"
+        f"📈 *Trend:* {trend}\n"
         f"📊 *Muster:* {pattern}\n"
         f"⭐️ *Qualität:* {stars}\n\n"
         f"{footer}"
