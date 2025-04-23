@@ -12,7 +12,7 @@ async def auto_signal_loop():
         for symbol in settings["SYMBOLS"]:
             result = analyze_symbol(symbol)
             if result and result["signal"]:
-                message = f"📡 *A.R.K. Signal* für {result['symbol']}: *{result['signal']}*
+                message = f"📡 *A.R.K. Signal* für {result['symbol']}: *{result['signal']}*"
 "
                 message += f"Trend: {result['trend']} | RSI: {result['rsi']:.2f}
 "
