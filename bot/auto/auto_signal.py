@@ -7,7 +7,6 @@ from bot.utils.analysis import analyze_symbol
 config = get_settings()
 bot = Bot(token=config["BOT_TOKEN"])
 chat_id = config["TELEGRAM_CHAT_ID"]
-
 last_sent_signals = {}
 
 def log(msg):
@@ -20,7 +19,7 @@ async def send_signal(symbol: str, result: dict):
         f"Signal: *{result['signal']}*\n"
         f"RSI: `{result['rsi']:.2f}`\n"
         f"Trend: {result['trend']}\n"
-        f"Muster: {result['pattern']}\n\n"
+        f"Muster: {result['pattern']}`\n\n"
         f"_A.R.K. scannt rund um die Uhr – nur bei echtem Vorteil._"
     )
     await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
@@ -30,7 +29,6 @@ async def auto_signal_loop():
     symbols = config["AUTO_SIGNAL_SYMBOLS"]
     interval = config["AUTO_SIGNAL_INTERVAL"]
     max_per_hour = config["MAX_SIGNALS_PER_HOUR"]
-
     log("⏱️ Auto-Signal-Loop gestartet...")
 
     while True:
@@ -44,7 +42,7 @@ async def auto_signal_loop():
 
                 key = f"{symbol}_{current_hour}"
                 if last_sent_signals.get(key, 0) >= max_per_hour:
-                    log(f"⚠️ {symbol} → Max Signals für diese Stunde erreicht.")
+                    log(f"⚠️ {symbol} → Max Signals erreicht ({max_per_hour}/h)")
                     continue
 
                 await send_signal(symbol, result)
