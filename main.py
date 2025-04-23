@@ -23,7 +23,7 @@ if not bot_token:
 
 print("✅ Bot-Token geladen. A.R.K. startet...")
 
-# === App erstellen ===
+# === Anwendung initialisieren ===
 app = ApplicationBuilder().token(bot_token).build()
 
 # === Handler hinzufügen ===
@@ -35,20 +35,17 @@ app.add_handler(analyse_handler)
 app.add_handler(recap_handler)
 app.add_handler(shutdown_handler)
 
-# === Fehlerbehandlung aktivieren ===
+# === Fehlerbehandlung ===
 app.add_error_handler(handle_error)
 
-# === Replit-Kompatibilität herstellen ===
+# === Async-Kompatibilität für Railway ===
 nest_asyncio.apply()
 
+# === Hauptfunktion ===
 async def main():
-    print("🚀 Bot läuft im Polling-Modus (Replit-safe)...")
+    print("🚀 Bot läuft im Polling-Modus (Railway-safe)...")
+    asyncio.create_task(auto_signal_loop())  # Starte Signal-Loop im Hintergrund
+    await app.run_polling()  # Polling starten (Telegram-Listener)
 
-    await app.initialize()
-    asyncio.create_task(auto_signal_loop())  # Auto-Signale starten
-    await app.start()  # Starte Bot
-    await app.updater.start_polling()  # Explizit Polling-Modus starten
-    await app.updater.idle()  # Bis Stop warten
-
-# Starte Event Loop
+# === Ausführung starten ===
 asyncio.get_event_loop().run_until_complete(main())
