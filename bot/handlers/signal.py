@@ -15,7 +15,7 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Analyse jedes Symbols
     for symbol in symbols:
         try:
-            result = analyse_market(symbol)  # Marktanalyse durchführen
+            result = analyze_symbol(symbol)  # Marktanalyse durchführen
 
             if result:
                 # Wenn eine Analyse erfolgreich war, wird sie formatiert und der Liste hinzugefügt
