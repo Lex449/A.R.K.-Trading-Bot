@@ -1,17 +1,18 @@
 # bot/utils/dns_monitor.py
 
-import asyncio
 import aiohttp
+import asyncio
 from datetime import datetime
 from telegram import Bot
 from bot.config.settings import get_settings
 
-notified = False  # Wird True, wenn schon benachrichtigt wurde
+notified = False  # Flag für Benachrichtigung, ob Domain erreichbar
 
 async def check_dns_and_notify():
+    """Überwacht die DNS-Verbindung und sendet Benachrichtigung, wenn die Domain erreichbar ist."""
     global notified
     settings = get_settings()
-    bot = Bot(token=settings["TOKEN"])
+    bot = Bot(token=settings["BOT_TOKEN"])
     url = "https://arktradingbot.com"
 
     while True:
@@ -27,12 +28,12 @@ async def check_dns_and_notify():
                             f"_Zeit:_ {timestamp}"
                         )
                         await bot.send_message(
-                            chat_id=settings["DANIEL_ID"],
+                            chat_id=settings["DANIEL_TELEGRAM_ID"],
                             text=message,
                             parse_mode="Markdown"
                         )
-                        notified = True  # Nur einmal benachrichtigen
+                        notified = True
         except Exception as e:
             print(f"[DNS CHECK ERROR] {e}")
 
-        await asyncio.sleep(900)  # 15 Minuten warten
+        await asyncio.sleep(900)  # 15 Minuten warten, bevor erneut geprüft wird
