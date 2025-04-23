@@ -1,6 +1,7 @@
-import random
+# bot/utils/formatter.py
 
 def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str:
+    """Formatiert das Handelssignal für die Ausgabe im Telegram-Chat."""
     emojis = {
         "Long": "🚀",
         "Short": "📉",
@@ -16,7 +17,7 @@ def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str
 
     emoji = emojis.get(trend, "📊")
     stars = "⭐️" * confidence + "✩" * (5 - confidence)
-    footer = random.choice(endings)
+    footer = endings[confidence % len(endings)]
 
     message = (
         f"{emoji} *Signal für {symbol}*\n"
