@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
-from telegram.ext import ApplicationBuilder
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from bot.handlers.start import start_handler
 from bot.handlers.ping import ping_handler
 from bot.handlers.signal import signal_handler
@@ -11,6 +12,7 @@ from bot.handlers.shutdown import shutdown_handler
 from bot.utils.error_handler import handle_error
 from bot.auto.auto_signal import auto_signal_loop  # Automatische Signale
 import asyncio
+import nest_asyncio
 
 # === ENV laden ===
 load_dotenv()
@@ -22,7 +24,7 @@ if not bot_token:
 print("✅ Bot-Token geladen. A.R.K. startet...")
 
 # === App erstellen ===
-app = ApplicationBuilder().token(bot_token).build()
+app = Application.builder().token(bot_token).build()
 
 # === Handler hinzufügen ===
 app.add_handler(start_handler)
@@ -51,5 +53,8 @@ async def main():
         print(f"❌ Fehler im Hauptprozess: {e}")
 
 if __name__ == "__main__":
+    # Bei Verwendung von asyncio innerhalb von Replit/Colab/andere Asynchrone Umgebungen wird nest_asyncio verwendet
+    nest_asyncio.apply()  # Dies löst das Event-Loop-Problem, wenn es mehrfach ausgeführt wird.
+    
     # Starte das Hauptprogramm
     asyncio.run(main())
