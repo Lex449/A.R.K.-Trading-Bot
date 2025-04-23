@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder
 from bot.handlers.start import start_handler
 from bot.handlers.ping import ping_handler
 from bot.handlers.signal import signal_handler
@@ -10,9 +9,9 @@ from bot.handlers.analyse import analyse_handler
 from bot.handlers.recap import recap_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.utils.error_handler import handle_error
-from bot.auto.auto_signal import auto_signal_loop  # Automatische Signale
+from bot.auto.auto_signal import auto_signal_loop
 import asyncio
-import nest_asyncio
+import nest_asyncio  # Wichtig für Replit!
 
 # === ENV laden ===
 load_dotenv()
@@ -24,7 +23,7 @@ if not bot_token:
 print("✅ Bot-Token geladen. A.R.K. startet...")
 
 # === App erstellen ===
-app = Application.builder().token(bot_token).build()
+app = ApplicationBuilder().token(bot_token).build()
 
 # === Handler hinzufügen ===
 app.add_handler(start_handler)
@@ -38,23 +37,22 @@ app.add_handler(shutdown_handler)
 # === Fehlerbehandlung aktivieren ===
 app.add_error_handler(handle_error)
 
-# === Einstiegspunkt ===
+# === Hauptfunktion ===
 async def main():
     try:
         print("🚀 Bot läuft im Polling-Modus...")
-        
-        # Auto-Signals in einem separaten Task ausführen
-        asyncio.create_task(auto_signal_loop())  # Das automatische Signal läuft im Hintergrund
 
-        # Starte den Polling-Modus des Bots
+        # Auto-Signals im Hintergrund starten
+        asyncio.create_task(auto_signal_loop())
+
+        # Starte Telegram-Bot
         await app.run_polling()
 
     except Exception as e:
         print(f"❌ Fehler im Hauptprozess: {e}")
 
+# === Startpunkt mit Replit-Kompatibilität ===
 if __name__ == "__main__":
-    # Bei Verwendung von asyncio innerhalb von Replit/Colab/andere Asynchrone Umgebungen wird nest_asyncio verwendet
-    nest_asyncio.apply()  # Dies löst das Event-Loop-Problem, wenn es mehrfach ausgeführt wird.
-    
-    # Starte das Hauptprogramm
-    asyncio.run(main())
+    nest_asyncio.apply()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
