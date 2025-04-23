@@ -4,22 +4,24 @@ from bot.utils.analysis import analyse_market
 from bot.config.settings import get_settings
 
 async def auto_signal_loop():
+    """Automatisierter Signal-Loop, der alle 5 Minuten läuft und Signale sendet."""
+    
     settings = get_settings()
-    bot = Bot(token=settings["BOT_TOKEN"])
-    chat_id = settings["DANIEL_TELEGRAM_ID"]
+    bot = Bot(token=settings["BOT_TOKEN"])  # Bot mit dem Token aus der .env
+    chat_id = settings["DANIEL_TELEGRAM_ID"]  # Telegram ID für Benachrichtigungen
 
-    symbols = ["US100/USDT", "US30/USDT", "US500/USDT"]
+    symbols = ["US100/USDT", "US30/USDT", "US500/USDT"]  # Märkte, die überwacht werden
 
     while True:
         for symbol in symbols:
             try:
-                result = analyse_market(symbol)
+                result = analyse_market(symbol)  # Marktanalyse durchführen
 
                 if result:
                     trend = result["trend"]
                     confidence = result["confidence"]
                     pattern = result["pattern"]
-
+                    # Wenn das Signal stark genug ist, wird es formatiert und gesendet
                     if confidence >= 3:
                         stars = "⭐️" * confidence + "✩" * (5 - confidence)
                         message = (
@@ -38,4 +40,4 @@ async def auto_signal_loop():
             except Exception as e:
                 print(f"[Fehler] Fehler bei der Analyse von {symbol}: {e}")
 
-        await asyncio.sleep(300)
+        await asyncio.sleep(300)  # 5 Minuten Pause zwischen den Loops, bevor die Analyse erneut durchgeführt wird
