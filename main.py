@@ -1,4 +1,6 @@
 import os
+import asyncio
+import nest_asyncio
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder
 from bot.handlers.start import start_handler
@@ -10,8 +12,6 @@ from bot.handlers.recap import recap_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.utils.error_handler import handle_error
 from bot.auto.auto_signal import auto_signal_loop
-import asyncio
-import nest_asyncio  # Wichtig für Replit!
 
 # === ENV laden ===
 load_dotenv()
@@ -42,16 +42,16 @@ async def main():
     try:
         print("🚀 Bot läuft im Polling-Modus...")
 
-        # Auto-Signals im Hintergrund starten
+        # Starte automatischen Signal-Loop im Hintergrund
         asyncio.create_task(auto_signal_loop())
 
-        # Starte Telegram-Bot
+        # Starte Telegram Bot
         await app.run_polling()
 
     except Exception as e:
         print(f"❌ Fehler im Hauptprozess: {e}")
 
-# === Startpunkt mit Replit-Kompatibilität ===
+# === Replit-Kompatibler Startpunkt ===
 if __name__ == "__main__":
     nest_asyncio.apply()
     loop = asyncio.get_event_loop()
