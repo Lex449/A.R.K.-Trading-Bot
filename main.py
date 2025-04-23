@@ -1,8 +1,6 @@
 import os
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder
-
-# === Handler ===
 from bot.handlers.start import start_handler
 from bot.handlers.ping import ping_handler
 from bot.handlers.signal import signal_handler
@@ -10,11 +8,9 @@ from bot.handlers.status import status_handler
 from bot.handlers.analyse import analyse_handler
 from bot.handlers.recap import recap_handler
 from bot.handlers.shutdown import shutdown_handler
-
-# === Utils ===
-from bot.config.settings import get_settings
 from bot.utils.error_handler import handle_error
 from bot.auto.auto_signal import auto_signal_loop  # Automatische Signale
+import asyncio
 
 # === ENV laden ===
 load_dotenv()
@@ -41,11 +37,19 @@ app.add_handler(shutdown_handler)
 app.add_error_handler(handle_error)
 
 # === Einstiegspunkt ===
+async def main():
+    try:
+        print("🚀 Bot läuft im Polling-Modus...")
+        
+        # Auto-Signals in einem separaten Task ausführen
+        asyncio.create_task(auto_signal_loop())  # Das automatische Signal läuft im Hintergrund
+
+        # Starte den Polling-Modus des Bots
+        await app.run_polling()
+
+    except Exception as e:
+        print(f"❌ Fehler im Hauptprozess: {e}")
+
 if __name__ == "__main__":
-    print("🚀 Bot läuft im Polling-Modus...")
-    
-    # Bot Polling starten - Kein Event-Loop, einfach die Methode starten
-    app.run_polling()
-    
-    # Automatisches Signal wird im Hintergrund ausgeführt
-    auto_signal_loop()
+    # Starte das Hauptprogramm
+    asyncio.run(main())
