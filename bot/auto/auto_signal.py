@@ -1,43 +1,37 @@
 import asyncio
-import os
-import time
 from datetime import datetime
 from telegram import Bot
+from bot.config.settings import get_settings
 from bot.utils.analysis import analyze_symbol
-from bot.config import config
 
-bot = Bot(token=os.getenv("BOT_TOKEN"))
+config = get_settings()
+bot = Bot(token=config["BOT_TOKEN"])
+chat_id = config["TELEGRAM_CHAT_ID"]
 
-# Signal-Tracking
 last_sent_signals = {}
 
-def log(message):
-    now = datetime.now().strftime("%H:%M:%S")
-    print(f"[{now}] {message}")
+def log(msg):
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
 
-async def send_signal(symbol, signal_data):
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
-    if not chat_id:
-        log("❌ TELEGRAM_CHAT_ID fehlt in der .env")
-        return
-
+async def send_signal(symbol: str, result: dict):
     message = (
-        f"**Auto Signal für {symbol}**\n"
-        f"Preis: {signal_data['price']}\n"
-        f"Signal: {signal_data['signal']} ⭐️\n"
-        f"RSI: {signal_data['rsi']:.2f}\n"
-        f"Trend: {signal_data['trend']}\n"
-        f"Muster: {signal_data['pattern']}"
+        f"📡 *Auto-Signal: {symbol}*\n"
+        f"Preis: `{result['price']}`\n"
+        f"Signal: *{result['signal']}*\n"
+        f"RSI: `{result['rsi']:.2f}`\n"
+        f"Trend: {result['trend']}\n"
+        f"Muster: {result['pattern']}\n\n"
+        f"_A.R.K. scannt rund um die Uhr – nur bei echtem Vorteil._"
     )
     await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
-    log(f"✅ Signal gesendet für {symbol}: {signal_data['signal']}")
+    log(f"✅ Signal gesendet für {symbol} → {result['signal']}")
 
 async def auto_signal_loop():
-    symbols = config.AUTO_SIGNAL_SYMBOLS
-    interval = int(config.SIGNAL_CHECK_INTERVAL_SEC)
-    max_signals = int(config.MAX_SIGNALS_PER_HOUR)
+    symbols = config["AUTO_SIGNAL_SYMBOLS"]
+    interval = config["AUTO_SIGNAL_INTERVAL"]
+    max_per_hour = config["MAX_SIGNALS_PER_HOUR"]
 
-    log("🔄 Auto-Signal-Loop gestartet...")
+    log("⏱️ Auto-Signal-Loop gestartet...")
 
     while True:
         current_hour = datetime.now().strftime("%Y-%m-%d %H")
@@ -45,16 +39,18 @@ async def auto_signal_loop():
             try:
                 result = analyze_symbol(symbol)
                 if not result or not result.get("signal"):
+                    log(f"🔍 {symbol} → Kein verwertbares Signal.")
                     continue
 
-                last_key = f"{symbol}_{current_hour}"
-                if last_sent_signals.get(last_key, 0) >= max_signals:
-                    continue  # Skip if max per hour reached
+                key = f"{symbol}_{current_hour}"
+                if last_sent_signals.get(key, 0) >= max_per_hour:
+                    log(f"⚠️ {symbol} → Max Signals für diese Stunde erreicht.")
+                    continue
 
                 await send_signal(symbol, result)
-                last_sent_signals[last_key] = last_sent_signals.get(last_key, 0) + 1
+                last_sent_signals[key] = last_sent_signals.get(key, 0) + 1
 
             except Exception as e:
-                log(f"❌ Fehler bei Analyse von {symbol}: {e}")
+                log(f"❌ Fehler bei {symbol}: {e}")
 
         await asyncio.sleep(interval)
