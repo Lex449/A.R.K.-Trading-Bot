@@ -1,42 +1,50 @@
+# bot/auto/auto_signal.py
+# Automatischer Signal-Loop, der regelmäßig Signale generiert und versendet
+
 import asyncio
+import datetime
 from telegram import Bot
 from bot.utils.analysis import analyze_symbol
-from bot.config.settings import get_settings
+from bot.config import config
+
+bot = Bot(token=config.TELEGRAM_TOKEN)
+
+async def send_auto_signal(symbol: str):
+    """Führt die Analyse durch und sendet ein Signal (falls vorhanden) automatisch an den Bot-Channel."""
+    try:
+        analysis = analyze_symbol(symbol)
+        if not analysis or not analysis.get("signal"):
+            return  # Kein Signal vorhanden
+
+        signal = analysis["signal"]
+        emoji = "🚀" if signal == "LONG" else "🔻"
+        text = (
+            f"*A.R.K. Auto-Signal*\n"
+            f"Symbol: `{symbol}`\n"
+            f"Signal: *{signal}* {emoji}\n"
+            f"RSI: `{round(analysis['rsi'], 2)}`\n"
+            f"Trend: `{analysis['trend']}`\n"
+            f"Muster: `{analysis['pattern']}`\n"
+            f"Preis: `${round(analysis['price'], 2)}`\n"
+            f"_Zeitpunkt: {datetime.datetime.now().strftime('%H:%M:%S')}_"
+        )
+
+        await bot.send_message(
+            chat_id=config.TELEGRAM_CHAT_ID,
+            text=text,
+            parse_mode="Markdown"
+        )
+    except Exception as e:
+        print(f"[AutoSignal-Fehler] {e}")
 
 async def auto_signal_loop():
-    """Automatisierter Live-Signal-Loop: 5 ETFs alle 5 Minuten."""
-    settings = get_settings()
-    bot = Bot(token=settings["BOT_TOKEN"])
-    symbols = ["QQQ", "SPY", "DIA", "IWM", "MDY"]
+    """Wiederholt ausgeführter Loop, der alle Märkte regelmäßig analysiert und Signale versendet."""
+    symbols = config.AUTO_SIGNAL_SYMBOLS
+    interval = config.AUTO_SIGNAL_INTERVAL  # z. B. alle 60 Sekunden
+
+    print(f"Auto-Signal-Loop gestartet ({interval}s Intervall)...")
 
     while True:
         for symbol in symbols:
-            try:
-                result = analyze_symbol(symbol)
-                if result and result.get("signal"):
-                    trend = result.get("trend", "—")
-                    rsi = float(result.get("rsi", 0))
-                    pattern = result.get("pattern", "—")
-                    stars = "⭐️" * (5 if result.get("signal") == "LONG" else 4) + "✩"
-
-                    message = (
-                        f"🧠 *A.R.K. LIVE-Signal* für {symbol}\n"
-                        f"*Signal:* `{result['signal']}`\n"
-                        f"*Trend:* {trend}\n"
-                        f"*RSI:* {rsi:.2f}\n"
-                        f"*Muster:* {pattern}\n"
-                        f"*Qualität:* {stars}\n\n"
-                        f"_Jede Chance nutzen – alle 5 Minuten!_"
-                    )
-
-                    await bot.send_message(
-                        chat_id=settings["TELEGRAM_CHAT_ID"],
-                        text=message,
-                        parse_mode="Markdown"
-                    )
-                else:
-                    print(f"[Info] Kein Signal für {symbol} oder zu schwach.")
-            except Exception as e:
-                print(f"[Fehler] Fehler bei {symbol}: {e}")
-
-        await asyncio.sleep(settings["SIGNAL_CHECK_INTERVAL_SEC"])  # exakt 5 Minuten
+            await send_auto_signal(symbol)
+        await asyncio.sleep(interval)
