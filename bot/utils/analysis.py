@@ -3,6 +3,7 @@
 
 import requests
 from bot.config import config
+
 def fetch_time_series(symbol: str, interval: str, outputsize: int = 60):
     """Ruft OHLC-Daten für das gegebene Symbol und Intervall von TwelveData ab."""
     base_url = "https://api.twelvedata.com/time_series"
@@ -46,8 +47,8 @@ def calculate_rsi(closes, period: int = 14):
     rsi_values = []
     gains = 0.0
     losses = 0.0
-    for i in range(1, period+1):
-        change = closes[i] - closes[i-1]
+    for i in range(1, period + 1):
+        change = closes[i] - closes[i - 1]
         if change >= 0:
             gains += change
         else:
@@ -59,8 +60,8 @@ def calculate_rsi(closes, period: int = 14):
     else:
         rs = avg_gain / avg_loss
         rsi_values.append(100.0 - (100.0 / (1.0 + rs)))
-    for i in range(period+1, len(closes)):
-        change = closes[i] - closes[i-1]
+    for i in range(period + 1, len(closes)):
+        change = closes[i] - closes[i - 1]
         gain = change if change > 0 else 0.0
         loss = -change if change < 0 else 0.0
         avg_gain = (avg_gain * (period - 1) + gain) / period
