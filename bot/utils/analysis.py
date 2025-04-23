@@ -3,7 +3,6 @@
 
 import requests
 from bot.config import config
-
 def fetch_time_series(symbol: str, interval: str, outputsize: int = 60):
     """Ruft OHLC-Daten für das gegebene Symbol und Intervall von TwelveData ab."""
     base_url = "https://api.twelvedata.com/time_series"
