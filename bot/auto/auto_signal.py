@@ -1,50 +1,60 @@
-# bot/auto/auto_signal.py
-# Automatischer Signal-Loop, der regelmäßig Signale generiert und versendet
-
 import asyncio
-import datetime
+import os
+import time
+from datetime import datetime
 from telegram import Bot
 from bot.utils.analysis import analyze_symbol
 from bot.config import config
 
-bot = Bot(token=config.TELEGRAM_TOKEN)
+bot = Bot(token=os.getenv("BOT_TOKEN"))
 
-async def send_auto_signal(symbol: str):
-    """Führt die Analyse durch und sendet ein Signal (falls vorhanden) automatisch an den Bot-Channel."""
-    try:
-        analysis = analyze_symbol(symbol)
-        if not analysis or not analysis.get("signal"):
-            return  # Kein Signal vorhanden
+# Signal-Tracking
+last_sent_signals = {}
 
-        signal = analysis["signal"]
-        emoji = "🚀" if signal == "LONG" else "🔻"
-        text = (
-            f"*A.R.K. Auto-Signal*\n"
-            f"Symbol: `{symbol}`\n"
-            f"Signal: *{signal}* {emoji}\n"
-            f"RSI: `{round(analysis['rsi'], 2)}`\n"
-            f"Trend: `{analysis['trend']}`\n"
-            f"Muster: `{analysis['pattern']}`\n"
-            f"Preis: `${round(analysis['price'], 2)}`\n"
-            f"_Zeitpunkt: {datetime.datetime.now().strftime('%H:%M:%S')}_"
-        )
+def log(message):
+    now = datetime.now().strftime("%H:%M:%S")
+    print(f"[{now}] {message}")
 
-        await bot.send_message(
-            chat_id=config.TELEGRAM_CHAT_ID,
-            text=text,
-            parse_mode="Markdown"
-        )
-    except Exception as e:
-        print(f"[AutoSignal-Fehler] {e}")
+async def send_signal(symbol, signal_data):
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not chat_id:
+        log("❌ TELEGRAM_CHAT_ID fehlt in der .env")
+        return
+
+    message = (
+        f"**Auto Signal für {symbol}**\n"
+        f"Preis: {signal_data['price']}\n"
+        f"Signal: {signal_data['signal']} ⭐️\n"
+        f"RSI: {signal_data['rsi']:.2f}\n"
+        f"Trend: {signal_data['trend']}\n"
+        f"Muster: {signal_data['pattern']}"
+    )
+    await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+    log(f"✅ Signal gesendet für {symbol}: {signal_data['signal']}")
 
 async def auto_signal_loop():
-    """Wiederholt ausgeführter Loop, der alle Märkte regelmäßig analysiert und Signale versendet."""
     symbols = config.AUTO_SIGNAL_SYMBOLS
-    interval = config.AUTO_SIGNAL_INTERVAL  # z. B. alle 60 Sekunden
+    interval = int(config.SIGNAL_CHECK_INTERVAL_SEC)
+    max_signals = int(config.MAX_SIGNALS_PER_HOUR)
 
-    print(f"Auto-Signal-Loop gestartet ({interval}s Intervall)...")
+    log("🔄 Auto-Signal-Loop gestartet...")
 
     while True:
+        current_hour = datetime.now().strftime("%Y-%m-%d %H")
         for symbol in symbols:
-            await send_auto_signal(symbol)
+            try:
+                result = analyze_symbol(symbol)
+                if not result or not result.get("signal"):
+                    continue
+
+                last_key = f"{symbol}_{current_hour}"
+                if last_sent_signals.get(last_key, 0) >= max_signals:
+                    continue  # Skip if max per hour reached
+
+                await send_signal(symbol, result)
+                last_sent_signals[last_key] = last_sent_signals.get(last_key, 0) + 1
+
+            except Exception as e:
+                log(f"❌ Fehler bei Analyse von {symbol}: {e}")
+
         await asyncio.sleep(interval)
