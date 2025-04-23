@@ -1,28 +1,70 @@
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.utils.analysis import analyze_symbol
+from bot.config.settings import get_settings
 
-async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Führt eine Marktanalyse für ein bestimmtes Symbol durch (z. B. US100)."""
-    symbol = "US100"  # Du kannst hier später dynamisch via Argumente erweitern
+analyse_handler = CommandHandler("analyse", lambda update, context: analyse(update, context))
 
-    result = analyze_symbol(symbol)
+async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    settings = get_settings()
+    symbols = list(settings["SYMBOLS"].keys())
 
-    if result is None:
-        await update.message.reply_text("⚠️ Analyse fehlgeschlagen. Bitte später erneut versuchen.")
-        return
+    header = "🧠 *A.R.K. LIVE-MARKTÜBERSICHT*\n_Einschätzung aller beobachteten ETFs_\n\n"
+    response = [header]
 
-    response = (
-        f"**Analyse für {result['symbol']}**\n"
-        f"Preis: {result['price']}\n"
-        f"RSI: {result['rsi']:.2f}\n"
-        f"EMA (Short): {result['ema_short']:.2f}\n"
-        f"EMA (Long): {result['ema_long']:.2f}\n"
-        f"Muster: {result['pattern']}\n"
-        f"Trend: {result['trend'] or 'Unklar'}\n"
-        f"Signal: {result['signal'] or 'Kein Signal'}"
+    for symbol in symbols:
+        result = analyze_symbol(symbol)
+        if not result:
+            response.append(f"❌ *{symbol}*: _Keine Daten oder Analyse derzeit nicht möglich._\n")
+            continue
+
+        signal = result.get("signal", "—")
+        trend = result.get("trend", "—")
+        rsi = float(result.get("rsi", 0))
+        pattern = result.get("pattern", "—")
+
+        # === Sternebewertung ===
+        confidence = 0
+        reason = ""
+
+        if signal == "LONG":
+            if rsi < 30:
+                confidence = 5
+                reason = "Überverkauft & bullisch – klare Long-Chance."
+            elif rsi < 40:
+                confidence = 4
+                reason = "Solider Aufwärtstrend – Long möglich."
+            else:
+                confidence = 3
+                reason = "Leichter Vorteil für Long – abwarten möglich."
+        elif signal == "SHORT":
+            if rsi > 70:
+                confidence = 5
+                reason = "Überkauft & bärisch – Short-Setup ideal."
+            elif rsi > 60:
+                confidence = 4
+                reason = "Korrektur wahrscheinlich – Short denkbar."
+            else:
+                confidence = 2
+                reason = "Vorsichtiger Abwärtstrend – aber unsicher."
+        else:
+            confidence = 1
+            reason = "Kein Signal – Markt derzeit neutral oder unklar."
+
+        stars = "⭐️" * confidence + "✩" * (5 - confidence)
+        arrow = "📈" if signal == "LONG" else "📉" if signal == "SHORT" else "➖"
+
+        response.append(
+            f"*{symbol}* {arrow}\n"
+            f"> *Signal:* `{signal}`\n"
+            f"> *Trend:* {trend}\n"
+            f"> *RSI:* {rsi:.2f}\n"
+            f"> *Muster:* {pattern}\n"
+            f"> *Qualität:* {stars}\n"
+            f"> _{reason}_\n"
+        )
+
+    await update.message.reply_text(
+        "\n".join(response),
+        parse_mode="Markdown"
     )
-
-    await update.message.reply_text(response, parse_mode="Markdown")
-
-analyse_handler = CommandHandler("analyse", analyse)
