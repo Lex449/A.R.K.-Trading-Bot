@@ -1,0 +1,11 @@
+# Auszuführende Datei beim Run-Button
+run = "python3 main.py"
+
+# Python-Version
+language = "python"
+modules = ["python-3.12"]
+
+# Nix-Konfiguration
+[nix]
+channel = "stable-24_05"
+packages = ["glibcLocales"]
