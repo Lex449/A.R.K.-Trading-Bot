@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
-from bot.utils.analysis import analyse_market
+from bot.utils.analysis import analyze_symbol
 from bot.utils.formatter import format_signal
 
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
