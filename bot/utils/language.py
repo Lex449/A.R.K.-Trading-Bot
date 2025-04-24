@@ -4,14 +4,15 @@ from telegram import Update
 
 def get_language(update: Update) -> str:
     """
-    Erkennt die Sprache des Benutzers anhand des Telegram-Profils.
-    Gibt 'de' oder 'en' zurück. Standard ist Englisch.
+    Bestimmt die bevorzugte Sprache des Nutzers auf Basis der Telegram-Spracheinstellung.
+
+    Rückgabe:
+        'de' – wenn Sprache auf Deutsch gesetzt ist.
+        'en' – in allen anderen Fällen (inkl. Fallback).
     """
     try:
-        lang_code = update.effective_user.language_code
-        if lang_code and lang_code.lower().startswith("de"):
-            return "de"
-        else:
-            return "en"
-    except Exception:
+        lang_code = update.effective_user.language_code or ""
+        return "de" if lang_code.lower().startswith("de") else "en"
+    except Exception as e:
+        print(f"[WARN] Language detection failed: {e}")
         return "en"
