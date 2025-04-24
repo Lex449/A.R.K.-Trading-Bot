@@ -1,10 +1,8 @@
 # bot/engine/analysis.py
 
-from bot.engine.data_provider import fetch_data
 from bot.engine.trading_logic import analyze_trend
 
 def run_analysis(symbols: list):
-    summary = []
     ranking = []
     strong_setups = []
 
@@ -22,12 +20,11 @@ def run_analysis(symbols: list):
         comment = result["comment"]
         emoji = result["emoji"]
 
+        # Sterne-Bewertung für das Ranking
         stars = "⭐️" * confidence + "✩" * (5 - confidence)
-
-        # Ranking
         ranking.append(f"`TOP` *{symbol}* {emoji} {stars}")
 
-        # Nur starke Signale anzeigen
+        # Nur starke Setups ab Confidence 3 anzeigen
         if confidence >= 3:
             block = (
                 f"*{symbol}* {emoji}\n"
@@ -39,7 +36,7 @@ def run_analysis(symbols: list):
             )
             strong_setups.append(block)
 
-    # Sortiere nach Confidence
+    # Sortiere das Ranking nach Anzahl Sterne (Confidence)
     ranking = sorted(ranking, reverse=True)
 
-    return summary, ranking, strong_setups
+    return ranking, strong_setups
