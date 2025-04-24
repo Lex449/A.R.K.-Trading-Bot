@@ -1,4 +1,4 @@
-# /bot/handlers/help.py
+# bot/handlers/help.py
 
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
@@ -9,30 +9,31 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if lang == "de":
         message = (
-            "🛠️ *A.R.K. Hilfe & Übersicht*\n"
-            "--------------------------------------\n"
-            "`/start` – Starte deine Session mit A.R.K.\n"
-            "`/analyse` – Live-Marktscan aller Top-Indizes\n"
-            "`/signal` – Einzel-Signal auf Abruf\n"
-            "`/status` – Systemstatus prüfen\n"
-            "`/recap` – Tagesrückblick erhalten\n"
-            "`/shutdown` – Bot sicher herunterfahren\n\n"
-            "📈 _A.R.K. denkt, scannt, filtert – du entscheidest._"
+            "🧠 *A.R.K. Hilfe & Übersicht*\n"
+            "-------------------------------------\n"
+            "`/start` – Starte den Trading-Mentor\n"
+            "`/analyse` – Live-Marktüberblick mit Ranking\n"
+            "`/signal` – Konkretes Einstiegssignal abrufen\n"
+            "`/status` – System-Check deines A.R.K. Bots\n"
+            "`/recap` – Täglicher Rückblick (bald)\n"
+            "`/shutdown` – Bot manuell stoppen (nur Admin)\n\n"
+            "📣 _Tipp: Ruhige Hände, klare Signale. A.R.K. denkt für dich mit._\n"
+            "💬 Feedback? Community? → [Telegram-Channel](https://t.me/arktradingcommunity)"
         )
     else:
         message = (
-            "🛠️ *A.R.K. Help & Commands*\n"
-            "--------------------------------------\n"
-            "`/start` – Start your session with A.R.K.\n"
-            "`/analyse` – Scan all major indices live\n"
-            "`/signal` – Instant signal on request\n"
-            "`/status` – System check\n"
-            "`/recap` – Get today’s recap\n"
-            "`/shutdown` – Shutdown the bot safely\n\n"
-            "📈 _A.R.K. thinks, scans, filters – your call._"
+            "🧠 *A.R.K. Help & Commands*\n"
+            "-------------------------------------\n"
+            "`/start` – Launch your trading mentor\n"
+            "`/analyse` – Live market scan & signal ranking\n"
+            "`/signal` – Get your current entry signal\n"
+            "`/status` – System diagnostics & uptime check\n"
+            "`/recap` – Daily review (coming soon)\n"
+            "`/shutdown` – Shutdown command (admin only)\n\n"
+            "📣 _Tip: Stay patient. Precision wins. Let A.R.K. do the thinking._\n"
+            "💬 Feedback or support? → [Telegram Community](https://t.me/arktradingcommunity)"
         )
 
     await update.message.reply_markdown(message)
 
-# === Handler exportieren ===
 help_handler = CommandHandler("help", help_command)
