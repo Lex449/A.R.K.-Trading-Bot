@@ -2,10 +2,11 @@
 
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
+from bot.config.settings import get_settings
 import logging
 
-# Nur autorisierte User dürfen den Bot stoppen – Daniel only
-ALLOWED_USER_IDS = [7699862580]
+settings = get_settings()
+ALLOWED_USER_IDS = [int(settings["TELEGRAM_CHAT_ID"])]
 
 shutdown_handler = CommandHandler("shutdown", lambda update, context: shutdown(update, context))
 
@@ -14,7 +15,7 @@ async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if user_id not in ALLOWED_USER_IDS:
         await update.message.reply_text("❌ Zugriff verweigert. Nur für Administratoren.")
-        logging.warning(f"[SHUTDOWN] Unberechtigter Zugriff: {user_id}")
+        logging.warning(f"[A.R.K. - SHUTDOWN] Unberechtigter Shutdown-Versuch von User-ID: {user_id}")
         return
 
     try:
@@ -23,8 +24,8 @@ async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "_System sicher beendet – morgen wieder bereit._",
             parse_mode="Markdown"
         )
-        logging.info("[SHUTDOWN] Bot wurde regulär beendet.")
+        logging.info("[A.R.K. - SHUTDOWN] Shutdown wurde erfolgreich durch autorisierten Benutzer ausgeführt.")
         await context.application.stop()
     except Exception as e:
-        logging.error(f"[SHUTDOWN ERROR] {e}")
+        logging.error(f"[A.R.K. - SHUTDOWN ERROR] Shutdown fehlgeschlagen: {e}")
         await update.message.reply_text("❌ Fehler beim Shutdown. Bitte manuell prüfen.")
