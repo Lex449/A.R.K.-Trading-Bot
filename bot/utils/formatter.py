@@ -1,31 +1,32 @@
 # bot/utils/formatter.py
 
 def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str:
-    """Formatiert das Handelssignal für die Ausgabe im Telegram-Chat."""
+    """
+    Formatiert das Handelssignal für die Ausgabe im Telegram-Chat.
+    """
     emojis = {
-        "Long": "🚀",
-        "Short": "📉",
-        "Neutral": "⏳"
+        "LONG": "🚀",
+        "SHORT": "📉",
+        "Neutral": "⏳",
+        None: "⚪️"
     }
 
-    endings = [
+    footer_lines = [
         "_Bleib wachsam – A.R.K. scannt weiter._",
-        "_A.R.K. beobachtet. Du reagierst._",
-        "_Präzision ist der Schlüssel. Handle nicht blind._",
-        "_Noch kein Einstieg? Geduld zahlt sich aus._"
+        "_Präzision schlägt Panik._",
+        "_Noch kein Einstieg? Geduld zahlt sich aus._",
+        "_Ruhige Hände, starke Entscheidungen._"
     ]
 
-    emoji = emojis.get(trend, "📊")
+    emoji = emojis.get(trend.upper(), "⚪️")
     stars = "⭐️" * confidence + "✩" * (5 - confidence)
-    footer = endings[confidence % len(endings)]
+    footer = footer_lines[confidence % len(footer_lines)]
 
-    message = (
+    return (
         f"{emoji} *Signal für {symbol}*\n"
         f"-----------------------------\n"
-        f"📈 *Trend:* {trend}\n"
-        f"📊 *Muster:* {pattern}\n"
+        f"📈 *Trend:* `{trend}`\n"
+        f"📊 *Muster:* `{pattern}`\n"
         f"⭐️ *Qualität:* {stars}\n\n"
         f"{footer}"
     )
-
-    return message
