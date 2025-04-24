@@ -2,38 +2,37 @@
 
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
-from bot.utils.language import get_language
+
+help_handler = CommandHandler("help", lambda update, context: help_command(update, context))
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    lang = get_language(update)
+    lang = update.effective_user.language_code or "en"
 
-    if lang == "de":
-        message = (
-            "🧠 *A.R.K. Hilfe & Übersicht*\n"
-            "-------------------------------------\n"
-            "`/start` – Starte den Trading-Mentor\n"
-            "`/analyse` – Live-Marktüberblick mit Ranking\n"
-            "`/signal` – Konkretes Einstiegssignal abrufen\n"
-            "`/status` – System-Check deines A.R.K. Bots\n"
-            "`/recap` – Täglicher Rückblick (bald)\n"
-            "`/shutdown` – Bot manuell stoppen (nur Admin)\n\n"
-            "📣 _Tipp: Ruhige Hände, klare Signale. A.R.K. denkt für dich mit._\n"
-            "💬 Feedback? Community? → [Telegram-Channel](https://t.me/arktradingcommunity)"
+    if lang.startswith("de"):
+        msg = (
+            "🛠️ *A.R.K. Hilfe & Übersicht*\n"
+            "────────────────────────────\n"
+            "`/start` – Bot starten & verbinden\n"
+            "`/analyse` – Marktscan & Chancenübersicht\n"
+            "`/signal` – Manuelles Live-Signal anfordern\n"
+            "`/status` – Systemcheck & Status\n"
+            "`/recap` – Tagesrückblick (BETA)\n"
+            "`/shutdown` – Bot sicher stoppen (nur Admin)\n"
+            "\n"
+            "_Fragen? Schreib uns: @arktradingteam_"
         )
     else:
-        message = (
-            "🧠 *A.R.K. Help & Commands*\n"
-            "-------------------------------------\n"
-            "`/start` – Launch your trading mentor\n"
-            "`/analyse` – Live market scan & signal ranking\n"
-            "`/signal` – Get your current entry signal\n"
-            "`/status` – System diagnostics & uptime check\n"
-            "`/recap` – Daily review (coming soon)\n"
-            "`/shutdown` – Shutdown command (admin only)\n\n"
-            "📣 _Tip: Stay patient. Precision wins. Let A.R.K. do the thinking._\n"
-            "💬 Feedback or support? → [Telegram Community](https://t.me/arktradingcommunity)"
+        msg = (
+            "🛠️ *A.R.K. Help & Overview*\n"
+            "────────────────────────────\n"
+            "`/start` – Launch the bot & connect\n"
+            "`/analyse` – Market scan & top picks\n"
+            "`/signal` – Request live signal manually\n"
+            "`/status` – System check & uptime\n"
+            "`/recap` – Daily recap (BETA)\n"
+            "`/shutdown` – Safely stop the bot (admin only)\n"
+            "\n"
+            "_Need help? DM us: @arktradingteam_"
         )
 
-    await update.message.reply_markdown(message)
-
-help_handler = CommandHandler("help", help_command)
+    await update.message.reply_markdown(msg)
