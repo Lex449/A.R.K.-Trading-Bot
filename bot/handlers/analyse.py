@@ -1,5 +1,3 @@
-# bot/handlers/analyse.py
-
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.engine.analysis_engine import analyze_market
@@ -12,12 +10,12 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     symbols = settings["AUTO_SIGNAL_SYMBOLS"]
     report = []
 
-    await update.message.reply_text("🧠 Analyse der Märkte läuft...")
+    await update.message.reply_text("🧠 Analyse läuft...")
 
     for symbol in symbols:
         result = analyze_market(symbol)
         if not result:
-            report.append(f"*{symbol}*: ⚠️ *Keine verwertbaren Daten.*")
+            report.append(f"*{symbol}*: ⚠️ _Keine verwertbaren Daten._")
             continue
 
         confidence = result["confidence"]
@@ -27,12 +25,12 @@ async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"*{symbol}*\n"
             f"> *Trend:* `{result['trend']}` | *Pattern:* `{result['pattern']}`\n"
             f"> *RSI:* `{result['rsi']:.2f}` | *Qualität:* {stars}\n"
-            f"> *Stärke:* `{confidence:.2f}%`\n"
+            f"> *Stärke:* `{confidence:.2f}%`"
         )
         report.append(block)
 
     if not report:
-        report.append("_Keine starken Setups erkannt – Märkte derzeit neutral._")
+        report.append("_Keine starken Setups erkannt – Markt neutral._")
 
     final = "📊 *A.R.K. Analyseübersicht*\n\n" + "\n\n".join(report)
     await update.message.reply_markdown(final)
