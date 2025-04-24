@@ -40,16 +40,17 @@ app.add_handler(recap_handler)
 app.add_handler(shutdown_handler)
 app.add_handler(help_handler)
 
+# === Fehlerbehandlung aktivieren ===
 app.add_error_handler(handle_error)
 
-# === Async für Railway ===
+# === Async für Railway vorbereiten ===
 nest_asyncio.apply()
 
 # === Startfunktion ===
 async def main():
-    print("🚀 A.R.K. aktiviert. Signale werden überwacht...")
-    asyncio.create_task(auto_signal_loop())
-    await app.run_polling()
+    print("🚀 A.R.K. aktiviert. Signale werden rund um die Uhr analysiert...")
+    asyncio.create_task(auto_signal_loop())  # Background-Loop für Signale starten
+    await app.run_polling()  # Telegram Polling starten
 
-# === Starte Bot ===
+# === Bot starten ===
 asyncio.run(main())
