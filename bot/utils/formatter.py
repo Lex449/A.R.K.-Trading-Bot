@@ -1,36 +1,26 @@
 # bot/utils/formatter.py
 
-def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str:
+def format_signal(symbol: str, trend: str, confidence: float, pattern: str, lang: str = "en") -> str:
     """
-    Formatiert das Analyse-Ergebnis für Telegram.
+    Formatiert das Analyseergebnis für die Telegram-Ausgabe.
     """
 
-    trend_emojis = {
-        "Aufwärtstrend": "🚀",
-        "Abwärtstrend": "📉",
-        "Seitwärts": "⏳",
-        "Neutral": "📊"
-    }
+    # Emojis für Stimmung
+    emoji_trend = "📈" if trend == "up" else "📉"
+    emoji_conf = "⭐" * min(int(confidence // 5), 5)
+    emoji_pattern = "🟢" if "Bullish" in pattern else "🔴" if "Bearish" in pattern else "⚪️"
 
-    commentary = {
-        5: "Top-Setup – sofortiger Blick lohnt sich.",
-        4: "Solide Chance – genauer hinsehen.",
-        3: "Potenzial vorhanden – aber auf Bestätigung warten.",
-        2: "Wenig Klarheit – eher abwarten.",
-        1: "Neutral – kein klarer Vorteil.",
-    }
-
-    emoji = trend_emojis.get(trend, "📊")
-    stars = "⭐️" * confidence + "✩" * (5 - confidence)
-    note = commentary.get(confidence, "Keine Bewertung.")
-
-    message = (
-        f"{emoji} *Signal für {symbol}*\n"
-        f"-----------------------------\n"
-        f"📈 *Trend:* {trend}\n"
-        f"📊 *Muster:* {pattern}\n"
-        f"⭐️ *Qualität:* {stars}\n"
-        f"🧠 *Kommentar:* _{note}_"
-    )
-
-    return message
+    if lang == "de":
+        return (
+            f"*{symbol}* {emoji_trend}\n"
+            f"• *Trend:* {'Aufwärts' if trend == 'up' else 'Abwärts'}\n"
+            f"• *Vertrauen:* {confidence:.2f}% {emoji_conf}\n"
+            f"• *Pattern:* {pattern} {emoji_pattern}"
+        )
+    else:
+        return (
+            f"*{symbol}* {emoji_trend}\n"
+            f"• *Trend:* {'Uptrend' if trend == 'up' else 'Downtrend'}\n"
+            f"• *Confidence:* {confidence:.2f}% {emoji_conf}\n"
+            f"• *Pattern:* {pattern} {emoji_pattern}"
+        )
