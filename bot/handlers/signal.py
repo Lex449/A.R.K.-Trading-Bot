@@ -1,42 +1,36 @@
+# /bot/handlers/signal.py
+
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
-from bot.utils.analysis import analyze_symbol
+from bot.engine.analysis import analyze_symbol
 from bot.utils.formatter import format_signal
+from bot.config.settings import get_settings
+
+signal_handler = CommandHandler("signal", lambda update, context: signal(update, context))
 
 async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Dieser Handler wird aufgerufen, wenn der Benutzer den /signal-Befehl ausführt."""
-    
-    # Informiere den Benutzer, dass die Analyse gestartet wird
-    await update.message.reply_text("📡 Analysiere Märkte...")
+    """Sendet ein kompaktes Markt-Signal für alle aktiven Assets."""
+    await update.message.reply_text("📡 A.R.K. scannt aktuelle Marktlage...")
 
-    symbols = ["US100/USDT", "US30/USDT", "US500/USDT"]  # Märkte, die analysiert werden sollen
-    results = []  # Ergebnisse der Analyse
+    settings = get_settings()
+    symbols = settings["AUTO_SIGNAL_SYMBOLS"]
+    messages = []
 
-    # Analyse jedes Symbols
     for symbol in symbols:
         try:
-            result = analyze_symbol(symbol)  # Marktanalyse durchführen
-
+            result = analyze_symbol(symbol)
             if result:
-                # Wenn eine Analyse erfolgreich war, wird sie formatiert und der Liste hinzugefügt
-                trend = result["trend"]
-                confidence = result["confidence"]
-                pattern = result["pattern"]
-                formatted_signal = format_signal(symbol, trend, confidence, pattern)
-                results.append(formatted_signal)
+                msg = format_signal(
+                    symbol=symbol,
+                    trend=result.get("trend", "Neutral"),
+                    confidence=result.get("confidence", 0),
+                    pattern=result.get("pattern", "Kein Muster")
+                )
             else:
-                results.append(f"⚠️ Keine Analyse-Daten für {symbol}")
-
+                msg = f"⚠️ Keine Analyse möglich für {symbol}."
         except Exception as e:
-            # Fehlerbehandlung bei der Analyse jedes Symbols
-            print(f"[ERROR] Fehler bei der Analyse von {symbol}: {e}")
-            results.append(f"⚠️ Fehler bei der Analyse von {symbol}")
+            msg = f"❌ Fehler bei Analyse von {symbol}: {e}"
+        
+        messages.append(msg)
 
-    # Alle Signale in einer Nachricht zusammenfassen
-    message = "\n\n".join(results)
-
-    # Sende das Ergebnis der Analyse zurück an den Benutzer
-    await update.message.reply_markdown(message)
-
-# CommandHandler für den /signal Befehl
-signal_handler = CommandHandler("signal", signal)
+    await update.message.reply_markdown("\n\n".join(messages))
