@@ -1,8 +1,10 @@
 # bot/engine/data_provider.py
 
+import os
 import yfinance as yf
+import time
 from datetime import datetime
-from bot.engine.finnhub_client import finnhub_client
+from bot.engine.finnhub_client import get_finnhub_client
 from bot.engine.symbol_map import map_symbol
 
 def is_fallback_time():
@@ -16,12 +18,17 @@ def get_candles(symbol: str, interval: str = "5", limit: int = 100):
 
 def get_candles_finnhub(symbol: str, interval: str = "5", limit: int = 100):
     mapped = map_symbol(symbol)
+    client = get_finnhub_client()
+
+    to_time = int(time.time())
+    from_time = to_time - (limit * 60 * int(interval))
 
     try:
-        response = finnhub_client.stock_candles(
+        response = client.stock_candles(
             symbol=mapped,
             resolution=interval,
-            count=limit
+            _from=from_time,
+            to=to_time
         )
 
         print(f"[DEBUG] Finnhub response for {symbol}: {response}")
