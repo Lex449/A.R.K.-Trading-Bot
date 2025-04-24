@@ -4,39 +4,58 @@ import pandas as pd
 def candle_analysis(df):
     """
     Führt eine technische Analyse der Candlestick-Daten durch.
+    Erkennt RSI, EMA-Trendrichtung, Candlestick-Muster und berechnet eine Confidence-Score.
     """
 
-    # Berechnung des Relative Strength Index (RSI)
+    # RSI-Berechnung
     rsi = talib.RSI(df['close'], timeperiod=14)
 
-    # Berechnung des einfachen gleitenden Durchschnitts (SMA)
-    sma = talib.SMA(df['close'], timeperiod=30)
+    # EMA-Berechnung für Trendrichtung (Short = bearish, Long = bullish)
+    ema_short = talib.EMA(df['close'], timeperiod=9)
+    ema_long = talib.EMA(df['close'], timeperiod=21)
 
-    # Erkennen von Candlestick-Mustern
-    engulfing = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])  # Engulfing-Muster
-    hammer = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])  # Hammer-Muster
-    doji = talib.CDLDOJI(df['open'], df['high'], df['low'], df['close'])  # Doji-Muster
+    # Candlestick Pattern Erkennung
+    engulfing = talib.CDLENGULFING(df['open'], df['high'], df['low'], df['close'])
+    hammer = talib.CDLHAMMER(df['open'], df['high'], df['low'], df['close'])
+    doji = talib.CDLDOJI(df['open'], df['high'], df['low'], df['close'])
 
-    # Das letzte Element in den Arrays enthält das neueste Muster.
-    last = df.iloc[-1]
+    # Letzter Wert jeder Analyse
+    last_rsi = rsi.iloc[-1]
+    last_ema_short = ema_short.iloc[-1]
+    last_ema_long = ema_long.iloc[-1]
+    last_engulfing = engulfing.iloc[-1]
+    last_hammer = hammer.iloc[-1]
+    last_doji = doji.iloc[-1]
 
-    # Entscheidung: Long/Short basierend auf RSI, SMA und Mustern
+    # Trendbestimmung
     trend = "Neutral"
-    if rsi[-1] < 30 and engulfing[-1] != 0:  # Kaufsignal
+    if last_rsi < 30 and last_ema_short > last_ema_long and last_engulfing != 0:
         trend = "Long"
-    elif rsi[-1] > 70 and engulfing[-1] != 0:  # Verkaufssignal
+    elif last_rsi > 70 and last_ema_short < last_ema_long and last_engulfing != 0:
         trend = "Short"
-    
-    # Musterentscheidung
+
+    # Muster-Label
     pattern = "Neutral"
-    if hammer[-1] != 0:
+    if last_hammer != 0:
         pattern = "Hammer"
-    elif doji[-1] != 0:
+    elif last_doji != 0:
         pattern = "Doji"
-    elif engulfing[-1] != 0:
+    elif last_engulfing != 0:
         pattern = "Engulfing"
 
-    # Vertrauen (Confidence) - höher, wenn RSI im neutralen Bereich ist und das Muster stark ist
-    confidence = 4 if 30 < rsi[-1] < 70 else 2
+    # Confidence-Skala von 1–5
+    confidence = 1
+    if pattern != "Neutral":
+        confidence += 1
+    if trend != "Neutral":
+        confidence += 1
+    if 45 < last_rsi < 55:
+        confidence += 1
+    if abs(last_ema_short - last_ema_long) > 0.1:
+        confidence += 1
 
-    return {"trend": trend, "pattern": pattern, "confidence": confidence}
+    return {
+        "trend": trend,
+        "pattern": pattern,
+        "confidence": min(confidence, 5)
+    }
