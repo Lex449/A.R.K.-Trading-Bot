@@ -2,7 +2,7 @@
 
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
-from bot.engine.analysis import run_analysis
+from bot.engine.analysis_engine import analyze_market
 from bot.config.settings import get_settings
 
 analyse_handler = CommandHandler("analyse", lambda update, context: analyse(update, context))
@@ -10,22 +10,27 @@ analyse_handler = CommandHandler("analyse", lambda update, context: analyse(upda
 async def analyse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     settings = get_settings()
     symbols = settings["AUTO_SIGNAL_SYMBOLS"]
+    report = []
 
-    await update.message.reply_text("🧠 Marktanalyse wird durchgeführt...")
+    await update.message.reply_text("🧠 Analyse läuft...")
 
-    try:
-        summary, ranking, strong_setups = run_analysis(symbols)
+    for symbol in symbols:
+        result = analyze_market(symbol)
+        if not result:
+            continue
 
-        message = "🧠 *A.R.K. Marktanalyse (Live)*\n_Nur klare Chancen – kein Lärm._\n\n"
-        message += "\n".join(ranking) + "\n\n"
+        stars = "⭐️" * result["confidence"] + "✩" * (5 - result["confidence"])
+        block = (
+            f"*{symbol}*\n"
+            f"> *Signal:* {result['signal']}\n"
+            f"> *Trend:* {result['trend']} | *Muster:* {result['pattern']}\n"
+            f"> *RSI:* {result['rsi']:.2f}\n"
+            f"> *Qualität:* {stars}\n"
+        )
+        report.append(block)
 
-        if strong_setups:
-            message += "\n".join(strong_setups)
-        else:
-            message += "_Aktuell keine starken Setups – Markt neutral._"
+    if not report:
+        report.append("_Keine starken Setups – Markt neutral._")
 
-        await update.message.reply_markdown(message)
-
-    except Exception as e:
-        await update.message.reply_text("❌ Analyse fehlgeschlagen.")
-        print(f"[ERROR] Analyse-Handler: {e}")
+    final = "📊 *A.R.K. Analyseübersicht*\n\n" + "\n\n".join(report)
+    await update.message.reply_markdown(final)
