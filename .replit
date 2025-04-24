@@ -1,11 +1,9 @@
-# Auszuführende Datei beim Run-Button
-run = "python3 main.py"
+# .replit
 
-# Python-Version
+run = "python3 main.py"
 language = "python"
 modules = ["python-3.12"]
 
-# Nix-Konfiguration
 [nix]
 channel = "stable-24_05"
 packages = ["glibcLocales"]
