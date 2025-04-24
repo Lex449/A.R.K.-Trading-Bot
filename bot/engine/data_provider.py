@@ -7,16 +7,19 @@ from datetime import datetime
 from bot.engine.finnhub_client import get_finnhub_client
 from bot.engine.symbol_map import map_symbol
 
-def is_fallback_time():
-    now = datetime.utcnow().hour
-    return now < 7 or now > 22  # Fallback außerhalb der Hauptbörsenzeiten
+INTERVAL = os.getenv("INTERVAL", "1")  # Intervall in Minuten
+FINNHUB_ENABLED_HOURS = range(7, 23)  # Finnhub nur zwischen 7–22 UTC
+CANDLE_LIMIT = 100  # Kann später dynamisch gemacht werden
 
-def get_candles(symbol: str, interval: str = "5", limit: int = 100):
+def is_fallback_time():
+    return datetime.utcnow().hour not in FINNHUB_ENABLED_HOURS
+
+def get_candles(symbol: str, interval: str = INTERVAL, limit: int = CANDLE_LIMIT):
     if is_fallback_time():
         return get_candles_yfinance(symbol, interval, limit)
     return get_candles_finnhub(symbol, interval, limit)
 
-def get_candles_finnhub(symbol: str, interval: str = "5", limit: int = 100):
+def get_candles_finnhub(symbol: str, interval: str = INTERVAL, limit: int = CANDLE_LIMIT):
     mapped = map_symbol(symbol)
     client = get_finnhub_client()
 
@@ -45,10 +48,10 @@ def get_candles_finnhub(symbol: str, interval: str = "5", limit: int = 100):
         } for i in range(len(response["t"]))]
 
     except Exception as e:
-        print(f"[ERROR] Finnhub API failed: {e}")
+        print(f"[ERROR] Finnhub API failed for {symbol}: {e}")
         return []
 
-def get_candles_yfinance(symbol: str, interval: str = "5", limit: int = 100):
+def get_candles_yfinance(symbol: str, interval: str = INTERVAL, limit: int = CANDLE_LIMIT):
     yf_symbol = map_symbol(symbol, fallback=True)
     try:
         df = yf.download(tickers=yf_symbol, period="5d", interval=f"{interval}m", progress=False)
@@ -63,5 +66,5 @@ def get_candles_yfinance(symbol: str, interval: str = "5", limit: int = 100):
         } for index, row in df.iterrows()]
 
     except Exception as e:
-        print(f"[ERROR] yfinance fallback failed: {e}")
+        print(f"[ERROR] yfinance fallback failed for {symbol}: {e}")
         return []
