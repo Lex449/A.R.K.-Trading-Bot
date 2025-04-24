@@ -1,3 +1,5 @@
+# bot/handlers/signal.py
+
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from bot.engine.analysis_engine import analyze_market
@@ -25,9 +27,9 @@ async def signal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 )
                 results.append(message)
             else:
-                results.append(f"⚠️ No signal for {symbol}")
+                results.append(f"⚠️ No valid signal for `{symbol}`.")
         except Exception as e:
-            results.append(f"❌ Error with {symbol}: {e}")
+            results.append(f"❌ Error while analyzing `{symbol}`: `{e}`")
 
-    final_message = "\n\n".join(results)
-    await update.message.reply_markdown(final_message)
+    response = "\n\n".join(results)
+    await update.message.reply_markdown(response)
