@@ -20,11 +20,12 @@ def run_analysis(symbols: list):
         comment = result["comment"]
         emoji = result["emoji"]
 
-        # Sterne-Bewertung für das Ranking
+        # Sterne-Bewertung visuell und für Sortierung
         stars = "⭐️" * confidence + "✩" * (5 - confidence)
-        ranking.append(f"`TOP` *{symbol}* {emoji} {stars}")
+        rank_line = f"`TOP` *{symbol}* {emoji} {stars} – *Trend:* {trend}, RSI: {rsi}"
+        ranking.append((confidence, rank_line))
 
-        # Nur starke Setups ab Confidence 3 anzeigen
+        # Nur Signale mit Qualität 3+ anzeigen
         if confidence >= 3:
             block = (
                 f"*{symbol}* {emoji}\n"
@@ -36,7 +37,8 @@ def run_analysis(symbols: list):
             )
             strong_setups.append(block)
 
-    # Sortiere das Ranking nach Anzahl Sterne (Confidence)
-    ranking = sorted(ranking, reverse=True)
+    # Ranking nach Stärke absteigend sortieren
+    ranking.sort(reverse=True)
+    sorted_ranking = [r[1] for r in ranking]
 
-    return ranking, strong_setups
+    return sorted_ranking, strong_setups
