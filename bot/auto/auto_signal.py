@@ -21,7 +21,7 @@ async def send_signal(symbol: str, result: dict):
         f"Signal: *{result['signal']}*\n"
         f"RSI: `{result['rsi']:.2f}`\n"
         f"Trend: {result['trend']}\n"
-        f"Muster: {result['pattern']}`\n\n"
+        f"Muster: `{result['pattern']}`\n\n"
         f"_A.R.K. scannt rund um die Uhr – nur bei echtem Vorteil._"
     )
     await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
@@ -29,28 +29,28 @@ async def send_signal(symbol: str, result: dict):
 
 async def auto_signal_loop():
     symbols = config["AUTO_SIGNAL_SYMBOLS"]
-    interval = config["AUTO_SIGNAL_INTERVAL"]
+    interval = config["SIGNAL_CHECK_INTERVAL_SEC"]
     max_per_hour = config["MAX_SIGNALS_PER_HOUR"]
     log("⏱️ Auto-Signal-Loop gestartet...")
 
     while True:
-        current_hour = datetime.now().strftime("%Y-%m-%d %H")
+        current_hour = datetime.utcnow().strftime("%Y-%m-%d %H")
         for symbol in symbols:
             try:
                 result = analyze_market(symbol)
                 if not result or not result.get("signal"):
-                    log(f"🔍 {symbol} → Kein verwertbares Signal.")
+                    log(f"[DEBUG] {symbol} → Kein verwertbares Signal.")
                     continue
 
                 key = f"{symbol}_{current_hour}"
                 if last_sent_signals.get(key, 0) >= max_per_hour:
-                    log(f"⚠️ {symbol} → Max Signals erreicht ({max_per_hour}/h)")
+                    log(f"⚠️ {symbol} → Limit erreicht ({max_per_hour}/h)")
                     continue
 
                 await send_signal(symbol, result)
                 last_sent_signals[key] = last_sent_signals.get(key, 0) + 1
 
             except Exception as e:
-                log(f"❌ Fehler bei {symbol}: {e}")
+                log(f"[ERROR] Fehler bei {symbol}: {e}")
 
         await asyncio.sleep(interval)
