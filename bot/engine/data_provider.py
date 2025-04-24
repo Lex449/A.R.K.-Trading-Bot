@@ -7,9 +7,9 @@ from datetime import datetime
 from bot.engine.finnhub_client import get_finnhub_client
 from bot.engine.symbol_map import map_symbol
 
-INTERVAL = os.getenv("INTERVAL", "1")  # Intervall in Minuten
-FINNHUB_ENABLED_HOURS = range(7, 23)  # Finnhub nur zwischen 7–22 UTC
-CANDLE_LIMIT = 100  # Kann später dynamisch gemacht werden
+INTERVAL = os.getenv("INTERVAL", "1")  # Minutenintervall für Candles
+FINNHUB_ENABLED_HOURS = range(7, 23)  # UTC-Zeitraum, in dem Finnhub aktiviert ist
+CANDLE_LIMIT = 100  # Anzahl der abgefragten Kerzen
 
 def is_fallback_time():
     return datetime.utcnow().hour not in FINNHUB_ENABLED_HOURS
@@ -24,7 +24,7 @@ def get_candles_finnhub(symbol: str, interval: str = INTERVAL, limit: int = CAND
     client = get_finnhub_client()
 
     to_time = int(time.time())
-    from_time = to_time - (limit * 60 * int(interval))
+    from_time = to_time - (limit * 60 * int(interval))  # Intervall in Sekunden
 
     try:
         response = client.stock_candles(
