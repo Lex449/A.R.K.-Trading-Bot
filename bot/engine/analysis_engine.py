@@ -2,49 +2,39 @@
 
 from bot.engine.data_provider import get_candles
 from bot.utils.indicator import calculate_rsi, calculate_ema, detect_candlestick_pattern
-from bot.config.settings import get_settings
 
-settings = get_settings()
+def analyze_market(symbol: str) -> dict | None:
+    """
+    Führt eine technische Analyse durch und liefert:
+    - Trendrichtung basierend auf EMA-Schnitt
+    - RSI zur Einschätzung von Überkauft-/Überverkauft-Zonen
+    - Erkanntes Candlestick-Muster
 
-def analyze_market(symbol: str):
+    Returns:
+        dict mit Analyseergebnis oder None bei Fehlern
+    """
     candles = get_candles(symbol)
     if not candles or len(candles) < 50:
         return None
 
-    closes = candles["close"].tolist()
+    closes = [c["close"] for c in candles]
 
-    rsi_values = calculate_rsi(closes, settings["RSI_PERIOD"])
-    ema_short = calculate_ema(closes, settings["EMA_SHORT_PERIOD"])
-    ema_long = calculate_ema(closes, settings["EMA_LONG_PERIOD"])
+    # Indikatoren berechnen
+    rsi = calculate_rsi(closes)[-1]
+    ema_short = calculate_ema(closes, 20)[-1]
+    ema_long = calculate_ema(closes, 50)[-1]
 
-    if not rsi_values or not ema_short or not ema_long:
-        return None
+    trend = "up" if ema_short > ema_long else "down"
+    confidence = abs(ema_short - ema_long) / ema_long * 100
 
-    rsi = rsi_values[-1]
-    pattern = detect_candlestick_pattern(candles)
-    trend = "Uptrend" if ema_short[-1] > ema_long[-1] else "Downtrend"
-
-    # Signal-Entscheidung
-    signal = None
-    if rsi < 30 and pattern in ["Hammer", "Bullish Engulfing"]:
-        signal = "LONG"
-    elif rsi > 70 and pattern in ["Shooting Star", "Bearish Engulfing"]:
-        signal = "SHORT"
-
-    confidence = 1
-    if signal == "LONG" and rsi < 25:
-        confidence = 5
-    elif signal == "SHORT" and rsi > 75:
-        confidence = 5
-    elif signal:
-        confidence = 3
+    # Pattern erkennen
+    import pandas as pd
+    df = pd.DataFrame(candles)
+    pattern = detect_candlestick_pattern(df)
 
     return {
-        "symbol": symbol,
-        "price": candles["close"].iloc[-1],
-        "rsi": round(rsi, 2),
         "trend": trend,
-        "pattern": pattern,
-        "signal": signal,
-        "confidence": confidence
+        "confidence": round(confidence, 2),
+        "rsi": round(rsi, 2),
+        "pattern": pattern
     }
