@@ -1,5 +1,3 @@
-# bot/utils/formatter.py
-
 def format_signal(symbol: str, trend: str, confidence: float, pattern: str, rsi: float = None, lang: str = "en") -> str:
     """
     Formatiert das Analyseergebnis für die Telegram-Ausgabe auf Mentor-Niveau – mit präzisem Ton, starken Emojis und Motivationsfaktor.
@@ -15,7 +13,6 @@ def format_signal(symbol: str, trend: str, confidence: float, pattern: str, rsi:
         "fire": "🔥",
         "chart": "📈",
         "bot": "🤖",
-        "warn": "⚠️"
     }
 
     trend_text = {
@@ -29,7 +26,10 @@ def format_signal(symbol: str, trend: str, confidence: float, pattern: str, rsi:
         emojis["neutral"]
     )
 
-    confidence_stars = emojis["confidence"] * min(int(confidence // 5), 5)
+    # Max 5 Sterne, basierend auf Vertrauen (z. B. 87 % = 4 Sterne)
+    confidence_stars = emojis["confidence"] * min(int(confidence / 20), 5)
+
+    # RSI nur anzeigen, wenn vorhanden
     rsi_line = f"• *RSI:* {rsi:.2f} {emojis['rsi']}\n" if rsi is not None else ""
 
     if lang == "de":
