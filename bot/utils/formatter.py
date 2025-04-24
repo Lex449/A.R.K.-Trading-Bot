@@ -1,52 +1,39 @@
-def format_signal(symbol: str, trend: str, confidence: float, pattern: str, rsi: float = None, lang: str = "en") -> str:
-    """
-    Formatiert das Analyseergebnis für die Telegram-Ausgabe auf Mentor-Niveau – mit präzisem Ton, starken Emojis und Motivationsfaktor.
-    """
-    emojis = {
-        "trend_up": "🚀",
-        "trend_down": "📉",
-        "bullish": "🟢",
-        "bearish": "🔴",
-        "neutral": "⚪️",
-        "rsi": "📊",
-        "confidence": "⭐️",
-        "fire": "🔥",
-        "chart": "📈",
-        "bot": "🤖",
+def format_signal(symbol: str, trend: str, confidence: float, pattern: str, lang: str) -> str:
+    stars = "⭐️" * round(confidence)
+
+    names_en = {
+        "US100": "NASDAQ 100",
+        "US30": "Dow Jones",
+        "SPX500": "S&P 500",
+        "IWM": "Russell 2000",
+        "QQQ": "NASDAQ ETF",
+        "DIA": "Dow ETF",
+        "MDY": "MidCap 400"
     }
 
-    trend_text = {
-        "de": "Aufwärtstrend" if trend == "up" else "Abwärtstrend",
-        "en": "Uptrend" if trend == "up" else "Downtrend"
+    names_de = {
+        "US100": "NASDAQ 100",
+        "US30": "Dow Jones",
+        "SPX500": "S&P 500",
+        "IWM": "Russell 2000",
+        "QQQ": "NASDAQ ETF",
+        "DIA": "Dow ETF",
+        "MDY": "MidCap 400"
     }
 
-    pattern_emoji = (
-        emojis["bullish"] if "Bullish" in pattern else
-        emojis["bearish"] if "Bearish" in pattern else
-        emojis["neutral"]
-    )
-
-    # Max 5 Sterne, basierend auf Vertrauen (z. B. 87 % = 4 Sterne)
-    confidence_stars = emojis["confidence"] * min(int(confidence / 20), 5)
-
-    # RSI nur anzeigen, wenn vorhanden
-    rsi_line = f"• *RSI:* {rsi:.2f} {emojis['rsi']}\n" if rsi is not None else ""
+    name = names_de.get(symbol, symbol) if lang == "de" else names_en.get(symbol, symbol)
 
     if lang == "de":
         return (
-            f"{emojis['chart']} *{symbol}* – A.R.K. Analyse\n"
-            f"• *Trend:* {trend_text['de']} {emojis['trend_up'] if trend == 'up' else emojis['trend_down']}\n"
-            f"• *Vertrauen:* {confidence:.2f}% {confidence_stars}\n"
-            f"{rsi_line}"
-            f"• *Pattern:* {pattern} {pattern_emoji}\n\n"
-            f"{emojis['bot']} _Bleib fokussiert – A.R.K. beobachtet den Markt für dich._"
+            f"📊 *{name}*\n"
+            f"Trend: *{trend.upper()}*\n"
+            f"Zuversicht: {stars} ({round(confidence, 2)}/5)\n"
+            f"Signalmuster: `{pattern}`"
         )
     else:
         return (
-            f"{emojis['chart']} *{symbol}* – A.R.K. Analysis\n"
-            f"• *Trend:* {trend_text['en']} {emojis['trend_up'] if trend == 'up' else emojis['trend_down']}\n"
-            f"• *Confidence:* {confidence:.2f}% {confidence_stars}\n"
-            f"{rsi_line}"
-            f"• *Pattern:* {pattern} {pattern_emoji}\n\n"
-            f"{emojis['bot']} _Stay sharp – A.R.K. is watching the market for you._"
+            f"📊 *{name}*\n"
+            f"Trend: *{trend.upper()}*\n"
+            f"Confidence: {stars} ({round(confidence, 2)}/5)\n"
+            f"Pattern: `{pattern}`"
         )
