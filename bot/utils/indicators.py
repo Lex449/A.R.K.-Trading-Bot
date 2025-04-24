@@ -12,10 +12,8 @@ def calculate_rsi(closes: list, period: int = 14):
 
     for i in range(1, period + 1):
         change = closes[i] - closes[i - 1]
-        if change >= 0:
-            gains += change
-        else:
-            losses += -change
+        gains += max(change, 0)
+        losses += max(-change, 0)
 
     avg_gain = gains / period
     avg_loss = losses / period
@@ -53,9 +51,6 @@ def calculate_ema(closes: list, period: int):
     return ema
 
 def detect_candlestick_pattern(df: pd.DataFrame):
-    """
-    Erkennt klassische Muster: Bullish/Bearish Engulfing, Hammer, Shooting Star.
-    """
     pattern = "Neutral"
     if len(df) < 2:
         return pattern
@@ -67,10 +62,10 @@ def detect_candlestick_pattern(df: pd.DataFrame):
     last_body = last["close"] - last["open"]
 
     # Engulfing Pattern
-    if prev_body < 0 and last_body > 0 and last["close"] > prev["open"] and last["open"] < prev["close"]:
-        pattern = "Bullish Engulfing"
-    elif prev_body > 0 and last_body < 0 and last["close"] < prev["open"] and last["open"] > prev["close"]:
-        pattern = "Bearish Engulfing"
+    if prev_body < 0 < last_body and last["close"] > prev["open"] and last["open"] < prev["close"]:
+        return "Bullish Engulfing"
+    elif prev_body > 0 > last_body and last["close"] < prev["open"] and last["open"] > prev["close"]:
+        return "Bearish Engulfing"
 
     # Hammer / Shooting Star
     body = abs(last["close"] - last["open"])
@@ -80,8 +75,8 @@ def detect_candlestick_pattern(df: pd.DataFrame):
 
     if range_total > 0:
         if body < range_total * 0.3 and lower_shadow > body * 2 and upper_shadow < body * 0.5:
-            pattern = "Hammer"
+            return "Hammer"
         elif body < range_total * 0.3 and upper_shadow > body * 2 and lower_shadow < body * 0.5:
-            pattern = "Shooting Star"
+            return "Shooting Star"
 
     return pattern
