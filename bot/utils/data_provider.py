@@ -4,33 +4,35 @@ import os
 import requests
 import pandas as pd
 import yfinance as yf
+import time
 from datetime import datetime
 from bot.config.settings import get_settings
 
 settings = get_settings()
 
 FINNHUB_API_KEY = settings["FINNHUB_API_KEY"]
-USE_YFINANCE = settings["USE_YFINANCE"]
 INTERVAL = settings["INTERVAL"]
+USE_YFINANCE = settings.get("USE_YFINANCE", False)
 
-# === Uhrzeitbasierter Switch (Finnhub tagsüber, yfinance nachts) ===
-def should_use_yfinance():
-    now = datetime.utcnow().hour
-    return now < 6 or now > 20  # Off-Times = vor 6 Uhr und nach 20 Uhr UTC
-
-# === Finnhub Abruf ===
+# === Finnhub nutzt Unix-Zeitfenster, daher Umstellung auf von/bis ===
 def fetch_finnhub_data(symbol: str):
-    url = f"https://finnhub.io/api/v1/stock/candle"
+    resolution = convert_interval(INTERVAL)
+    now = int(time.time())
+    past = now - (int(resolution) * 60 * 100)  # letzte 100 Kerzen
+
+    url = "https://finnhub.io/api/v1/stock/candle"
     params = {
         "symbol": symbol,
-        "resolution": convert_interval(INTERVAL),
-        "count": 100,
+        "resolution": resolution,
+        "from": past,
+        "to": now,
         "token": FINNHUB_API_KEY
     }
 
     try:
         response = requests.get(url, params=params, timeout=10)
         data = response.json()
+
         if data.get("s") != "ok":
             print(f"[Finnhub] Fehler bei {symbol}: {data}")
             return None
@@ -48,12 +50,11 @@ def fetch_finnhub_data(symbol: str):
         print(f"[Finnhub] API-Error für {symbol}: {e}")
         return None
 
-# === yfinance Abruf ===
+# === Fallback via yfinance (nachts in UTC-Zeit) ===
 def fetch_yfinance_data(symbol: str):
     try:
-        ticker = yf.Ticker(symbol)
-        df = ticker.history(period="2d", interval=INTERVAL)
-        df = df.reset_index()
+        df = yf.download(tickers=symbol, period="2d", interval=INTERVAL, progress=False)
+        df.reset_index(inplace=True)
         df.rename(columns={"Open": "open", "High": "high", "Low": "low", "Close": "close", "Date": "datetime"}, inplace=True)
         df = df[["datetime", "open", "high", "low", "close"]]
         return df
@@ -61,22 +62,27 @@ def fetch_yfinance_data(symbol: str):
         print(f"[yfinance] Fehler bei {symbol}: {e}")
         return None
 
-# === Automatischer Provider-Wechsel ===
+# === Uhrzeitbasierter Provider-Switch ===
+def should_use_yfinance():
+    hour = datetime.utcnow().hour
+    return hour < 6 or hour > 20
+
+# === Automatischer Dataprovider ===
 def fetch_market_data(symbol: str):
     if USE_YFINANCE and should_use_yfinance():
         return fetch_yfinance_data(symbol)
-    else:
-        return fetch_finnhub_data(symbol)
+    return fetch_finnhub_data(symbol)
 
-# === Zeitintervall-Mapping für Finnhub ===
+# === Intervall-Mapping für Finnhub (nur für Minutenintervalle notwendig) ===
 def convert_interval(interval_str: str) -> str:
     mapping = {
-        "1min": "1",
-        "5min": "5",
-        "15min": "15",
-        "30min": "30",
-        "60min": "60",
+        "1": "1",
+        "1m": "1",
+        "5m": "5",
+        "15m": "15",
+        "30m": "30",
+        "60m": "60",
         "1h": "60",
         "1d": "D"
     }
-    return mapping.get(interval_str, "5")
+    return mapping.get(interval_str, "1")
