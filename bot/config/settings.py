@@ -1,5 +1,3 @@
-# bot/config/settings.py
-
 import os
 from dotenv import load_dotenv
 
@@ -15,9 +13,10 @@ def get_settings():
             "US100": "^NDX",
             "US30": "^DJI",
             "SPX500": "^GSPC",
-            "DE40": "^GDAXI",
-            "JP225": "^N225",
-            "HK50": "^HSI"
+            "IWM": "IWM",
+            "QQQ": "QQQ",
+            "DIA": "DIA",
+            "MDY": "MDY"
         },
 
         "INTERVAL": os.getenv("INTERVAL", "1m"),
@@ -25,8 +24,8 @@ def get_settings():
         "EMA_SHORT_PERIOD": int(os.getenv("EMA_SHORT_PERIOD", 9)),
         "EMA_LONG_PERIOD": int(os.getenv("EMA_LONG_PERIOD", 21)),
 
-        "AUTO_SIGNAL_SYMBOLS": os.getenv("AUTO_SIGNAL_SYMBOLS", "US100,US30,SPX500,DE40,JP225,HK50").split(","),
-        "AUTO_SIGNAL_INTERVAL": int(os.getenv("AUTO_SIGNAL_INTERVAL", 90)),
+        "AUTO_SIGNAL_SYMBOLS": os.getenv("AUTO_SIGNAL_SYMBOLS", "US100,US30,SPX500,IWM,QQQ,DIA,MDY").split(","),
+        "AUTO_SIGNAL_INTERVAL": int(os.getenv("AUTO_SIGNAL_INTERVAL", 60)),
         "SIGNAL_CHECK_INTERVAL_SEC": int(os.getenv("SIGNAL_CHECK_INTERVAL_SEC", 60)),
-        "MAX_SIGNALS_PER_HOUR": int(os.getenv("MAX_SIGNALS_PER_HOUR", 8)),
+        "MAX_SIGNALS_PER_HOUR": int(os.getenv("MAX_SIGNALS_PER_HOUR", 9000)),
     }
