@@ -2,31 +2,35 @@
 
 def format_signal(symbol: str, trend: str, confidence: int, pattern: str) -> str:
     """
-    Formatiert das Handelssignal für die Ausgabe im Telegram-Chat.
+    Formatiert das Analyse-Ergebnis für Telegram.
     """
-    emojis = {
-        "LONG": "🚀",
-        "SHORT": "📉",
-        "Neutral": "⏳",
-        None: "⚪️"
+
+    trend_emojis = {
+        "Aufwärtstrend": "🚀",
+        "Abwärtstrend": "📉",
+        "Seitwärts": "⏳",
+        "Neutral": "📊"
     }
 
-    footer_lines = [
-        "_Bleib wachsam – A.R.K. scannt weiter._",
-        "_Präzision schlägt Panik._",
-        "_Noch kein Einstieg? Geduld zahlt sich aus._",
-        "_Ruhige Hände, starke Entscheidungen._"
-    ]
+    commentary = {
+        5: "Top-Setup – sofortiger Blick lohnt sich.",
+        4: "Solide Chance – genauer hinsehen.",
+        3: "Potenzial vorhanden – aber auf Bestätigung warten.",
+        2: "Wenig Klarheit – eher abwarten.",
+        1: "Neutral – kein klarer Vorteil.",
+    }
 
-    emoji = emojis.get(trend.upper(), "⚪️")
+    emoji = trend_emojis.get(trend, "📊")
     stars = "⭐️" * confidence + "✩" * (5 - confidence)
-    footer = footer_lines[confidence % len(footer_lines)]
+    note = commentary.get(confidence, "Keine Bewertung.")
 
-    return (
+    message = (
         f"{emoji} *Signal für {symbol}*\n"
         f"-----------------------------\n"
-        f"📈 *Trend:* `{trend}`\n"
-        f"📊 *Muster:* `{pattern}`\n"
-        f"⭐️ *Qualität:* {stars}\n\n"
-        f"{footer}"
+        f"📈 *Trend:* {trend}\n"
+        f"📊 *Muster:* {pattern}\n"
+        f"⭐️ *Qualität:* {stars}\n"
+        f"🧠 *Kommentar:* _{note}_"
     )
+
+    return message
