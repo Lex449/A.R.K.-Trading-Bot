@@ -39,7 +39,7 @@ async def fetch_data(symbol: str) -> list:
 async def analyze_symbol(symbol: str):
     """Analysiert das Symbol und gibt das Signal zurück."""
     # Holen der Kursdaten
-    data = await asyncio.to_thread(fetch_data, symbol)
+    data = await asyncio.to_thread(fetch_data, symbol)  # Async-Funktion korrekt verwenden
     
     if not data or len(data) < 20:
         return f"❌ No sufficient data for {symbol}."
