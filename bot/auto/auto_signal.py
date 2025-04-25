@@ -15,15 +15,21 @@ config = get_settings()
 
 logger = logging.getLogger(__name__)
 
+# Auto-Signal Loop: Diese Funktion kümmert sich um das automatische Senden von Signalen in regelmäßigen Abständen
 async def auto_signal_loop():
     """
     Diese Funktion kümmert sich um das automatische Senden von Signalen
     in regelmäßigen Abständen (z.B. alle 60 Sekunden).
     """
+    bot = None  # Stelle sicher, dass der Bot korrekt definiert und instanziiert wird
+    chat_id = int(config["TELEGRAM_CHAT_ID"])
+    
+    # Sicherstellen, dass der Bot nicht None ist
+    if bot is None:
+        logger.error("Bot-Instanz konnte nicht abgerufen werden.")
+        return
+
     while True:
-        bot = None  # Hier kannst du deinen Bot definieren, um Nachrichten zu senden
-        chat_id = int(config["TELEGRAM_CHAT_ID"])
-        
         # Starte die Analyse für jedes Symbol
         symbols = config["AUTO_SIGNAL_SYMBOLS"]
         if not symbols:
@@ -40,7 +46,8 @@ async def auto_signal_loop():
                 result = await analyze_symbol(formatted_symbol)  # Hier wird die Analyse-Funktion aufgerufen
 
                 if isinstance(result, str):
-                    await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")  # Falls das Ergebnis ein String ist, wird es gesendet
+                    # Falls das Ergebnis ein String ist, wird es gesendet
+                    await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")
                 else:
                     # Detaillierte Ausgabe für jedes Symbol
                     response = f"Symbol: {formatted_symbol}\n"
@@ -62,6 +69,7 @@ async def auto_signal_loop():
         # Pause zwischen den Runden, um das API-Limit nicht zu überschreiten
         await asyncio.sleep(60)  # Diese Pause kannst du nach Belieben anpassen
 
+# Tägliche Analysejob-Funktion
 async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     """
     Führt täglich eine kompakte Analyse aller überwachten Indizes durch
