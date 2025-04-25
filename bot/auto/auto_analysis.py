@@ -1,34 +1,45 @@
+# bot/auto/auto_analysis.py
+
 import os
 import json
-import logging
+import asyncio
+from bot.engine.analysis_engine import analyze_symbol
+from bot.utils.language import get_language
+from bot.utils.i18n import get_text
+from bot.utils.autoscaler import run_autoscaler
 from telegram.ext import ContextTypes
-from bot.engine.analysis import analyze_symbol
 
-logger = logging.getLogger(__name__)
+async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
+    """
+    Wird täglich automatisch ausgelöst:
+    Sendet eine kompakte Analyse der wichtigsten Symbole.
+    """
+    bot = context.bot
+    chat_id = int(os.getenv("TELEGRAM_CHAT_ID"))
 
-async def run_auto_analysis(context: ContextTypes.DEFAULT_TYPE):
-    """
-    Führt automatisch die Analyse aller Symbolgruppen durch und sendet Ergebnisse an einen Chat.
-    Dieser Job wird täglich ausgeführt.
-    """
-    chat_id = context.job.context
-    # Pfad zur Gruppen-Konfigurationsdatei
-    config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "config", "groups.json"))
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            groups = json.load(f)
-    except Exception as e:
-        logger.error("Konnte Gruppen-Konfigurationsdatei nicht laden: %s", e)
+    # Auto-Scaler zuerst prüfen
+    await run_autoscaler(bot, chat_id)
+
+    # Symbole aus Umgebungsvariablen holen
+    symbols_env = os.getenv("AUTO_SIGNAL_SYMBOLS", "")
+    symbols = [s.strip() for s in symbols_env.split(",") if s.strip()]
+
+    if not symbols:
+        await bot.send_message(chat_id=chat_id, text="❌ Keine Symbole für Auto-Analyse definiert.")
         return
 
-    # Jede Gruppe verarbeiten
-    for group_name, symbols in groups.items():
-        header = f"Automatische Analyse für Gruppe: {group_name}"
-        await context.bot.send_message(chat_id=chat_id, text=header)
-        for symbol in symbols:
-            try:
-                result = await analyze_symbol(symbol, lang="de")
-                await context.bot.send_message(chat_id=chat_id, text=result)
-            except Exception as e:
-                logger.error("Fehler bei automatischer Analyse von %s: %s", symbol, e)
-                await context.bot.send_message(chat_id=chat_id, text=f"Analyse für {symbol} fehlgeschlagen.")
+    # Sprache erkennen (default Deutsch)
+    lang = "de"
+
+    await bot.send_message(chat_id=chat_id, text="📊 Starte tägliche Analyse...")
+
+    # Symbole analysieren
+    for symbol in symbols:
+        try:
+            result = await analyze_symbol(symbol, lang=lang)
+            await bot.send_message(chat_id=chat_id, text=result)
+            await asyncio.sleep(1.5)  # Kleiner Delay, damit Telegram nicht throttelt
+        except Exception as e:
+            await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
+
+    await bot.send_message(chat_id=chat_id, text="✅ Tägliche Analyse abgeschlossen!")
