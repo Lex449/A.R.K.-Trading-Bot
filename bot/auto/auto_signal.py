@@ -27,6 +27,9 @@ async def auto_signal_loop():
         logger.error("Bot-Instanz konnte nicht abgerufen werden.")
         return
 
+    # Lösche den Webhook zu Beginn, um Konflikte zu vermeiden
+    await bot.delete_webhook()
+
     while True:
         symbols = config["AUTO_SIGNAL_SYMBOLS"]
         if not symbols:
@@ -58,51 +61,3 @@ async def auto_signal_loop():
                 await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
 
         await asyncio.sleep(60)  # Pause zwischen den Runden
-
-# Tägliche Analysejob-Funktion
-async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
-    """
-    Führt täglich eine kompakte Analyse aller überwachten Indizes durch
-    und sendet die Ergebnisse automatisch an den Telegram-Chat.
-    """
-    bot: Bot = context.bot
-    chat_id = int(config["TELEGRAM_CHAT_ID"])
-
-    await bot.send_message(chat_id=chat_id, text="📊 *Starte tägliche Analyse...*", parse_mode="Markdown")
-
-    try:
-        await run_autoscaler(bot, chat_id)
-    except Exception as e:
-        logger.error(f"Fehler beim Autoscaler: {e}")
-        await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler beim Autoscaler: {e}")
-
-    symbols = config["AUTO_SIGNAL_SYMBOLS"]
-    if not symbols:
-        await bot.send_message(chat_id=chat_id, text="❌ Keine Symbole für Auto-Analyse definiert.")
-        return
-
-    for symbol in symbols:
-        try:
-            formatted_symbol = format_symbol(symbol)
-            logger.info(f"Starte Analyse für Symbol: {formatted_symbol}")
-
-            result = await analyze_symbol(formatted_symbol)
-
-            if isinstance(result, str):
-                await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")
-            else:
-                response = f"Symbol: {formatted_symbol}\n"
-                response += f"Signal: {result['signal']}\n"
-                response += f"RSI: {result['rsi']}\n"
-                response += f"Trend: {result['trend']}\n"
-                response += f"Pattern: {result['pattern']}\n"
-                response += f"Stars: {result['stars']}/5"
-                await bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
-
-            await asyncio.sleep(1.5)
-
-        except Exception as e:
-            logger.error(f"Fehler bei der Analyse von {symbol}: {e}")
-            await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
-
-    await bot.send_message(chat_id=chat_id, text="✅ *Tägliche Analyse abgeschlossen!*", parse_mode="Markdown")
