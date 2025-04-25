@@ -23,17 +23,24 @@ async def fetch_data(symbol: str) -> list:
             interval=settings["INTERVAL"],  # 1-Minuten-Intervall
             outputsize=50  # Maximale Anzahl der abgerufenen Datenpunkte
         ).as_json()
-        
-        # Rückgabe der Daten
-        return series.get("values", [])
+
+        # Überprüfen des Typs der zurückgegebenen Daten
+        if isinstance(series, dict) and "values" in series:
+            print(f"[DEBUG] Rohantwort für {symbol}: {series}")  # Ausgabe der Antwort für Debugging
+            return series["values"]
+        else:
+            print(f"[ERROR] Unerwartetes Datenformat für {symbol}: {series}")
+            return []
+
     except Exception as e:
-        print(f"[ERROR] Data fetch failed for {symbol}: {e}")
+        print(f"[ERROR] Datenabruf fehlgeschlagen für {symbol}: {e}")
         return []
 
 async def analyze_symbol(symbol: str):
     """Analysiert das Symbol und gibt das Signal zurück."""
     # Holen der Kursdaten
-    data = await fetch_data(symbol)  # Hier sicherstellen, dass await verwendet wird
+    data = await asyncio.to_thread(fetch_data, symbol)
+    
     if not data or len(data) < 20:
         return f"❌ No sufficient data for {symbol}."
 
@@ -108,33 +115,3 @@ def generate_stars(rsi: float, trend: str, sideways: bool) -> int:
     elif rsi > 70:
         stars -= 1  # RSI > 70 = Überkauft = weniger Sterne
     return min(max(stars, 1), 5)  # Sterne müssen zwischen 1 und 5 liegen
-
-def format_analysis(symbol: str, rsi: float, ema_short: float, ema_long: float, trend: str, stars: int, lang: str) -> str:
-    """Formatiert die Analyse-Ausgabe abhängig von der Sprache (de/en)."""
-    trend_text = {
-        "up": {"de": "steigender Trend", "en": "uptrend"},
-        "down": {"de": "fallender Trend", "en": "downtrend"},
-        "neutral": {"de": "neutraler Trend", "en": "neutral trend"}
-    }
-    
-    # Sterne als Text darstellen
-    star_str = "★" * stars + "☆" * (5 - stars)
-
-    if lang == "de":
-        return (
-            f"Analyse für {symbol}:\n"
-            f"RSI: {rsi}\n"
-            f"EMA({settings['EMA_SHORT_PERIOD']}): {ema_short} | "
-            f"EMA({settings['EMA_LONG_PERIOD']}): {ema_long}\n"
-            f"Trend: {trend_text[trend]['de']}\n"
-            f"Bewertung: {star_str} ({stars}/5)"
-        )
-    else:
-        return (
-            f"Analysis for {symbol}:\n"
-            f"RSI: {rsi}\n"
-            f"EMA({settings['EMA_SHORT_PERIOD']}): {ema_short} | "
-            f"EMA({settings['EMA_LONG_PERIOD']}): {ema_long}\n"
-            f"Trend: {trend_text[trend]['en']}\n"
-            f"Rating: {star_str} ({stars}/5)"
-        )
