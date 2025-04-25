@@ -26,8 +26,8 @@ async def fetch_data(symbol: str) -> list:
         print(f"[ERROR] Data fetch failed for {symbol}: {e}")
         return []
 
-async def analyze_symbol(symbol: str, lang: str = "en") -> str:
-    """Analysiert ein Symbol und gibt ein Text-Rating zurück."""
+async def analyze_market(symbol: str):
+    """Analysiert das Symbol und gibt das Signal zurück."""
     data = await asyncio.to_thread(fetch_data, symbol)
     if not data or len(data) < 20:
         return f"❌ No sufficient data for {symbol}."
@@ -40,7 +40,14 @@ async def analyze_symbol(symbol: str, lang: str = "en") -> str:
     sideways = detect_sideways(closes)
     stars = generate_stars(rsi, trend, sideways)
 
-    return format_analysis(symbol, rsi, ema_short, ema_long, trend, stars, lang)
+    return {
+        "price": closes[-1],  # Letzter Preis
+        "signal": "BUY" if trend == "up" else "SELL",  # Signal basierend auf dem Trend
+        "rsi": rsi,
+        "trend": trend,
+        "pattern": "bullish" if trend == "up" else "bearish",  # Muster, basierend auf dem Trend
+        "stars": stars
+    }
 
 def calculate_rsi(prices: list, period: int = 14) -> float:
     gains, losses = [], []
@@ -87,30 +94,3 @@ def generate_stars(rsi: float, trend: str, sideways: bool) -> int:
     elif rsi > 70:
         stars -= 1
     return min(max(stars, 1), 5)
-
-def format_analysis(symbol: str, rsi: float, ema_short: float, ema_long: float, trend: str, stars: int, lang: str) -> str:
-    trend_text = {
-        "up": {"de": "steigender Trend", "en": "uptrend"},
-        "down": {"de": "fallender Trend", "en": "downtrend"},
-        "neutral": {"de": "neutraler Trend", "en": "neutral trend"}
-    }
-    star_str = "★" * stars + "☆" * (5 - stars)
-
-    if lang == "de":
-        return (
-            f"Analyse für {symbol}:\n"
-            f"RSI: {rsi}\n"
-            f"EMA({settings['EMA_SHORT_PERIOD']}): {ema_short} | "
-            f"EMA({settings['EMA_LONG_PERIOD']}): {ema_long}\n"
-            f"Trend: {trend_text[trend]['de']}\n"
-            f"Bewertung: {star_str} ({stars}/5)"
-        )
-    else:
-        return (
-            f"Analysis for {symbol}:\n"
-            f"RSI: {rsi}\n"
-            f"EMA({settings['EMA_SHORT_PERIOD']}): {ema_short} | "
-            f"EMA({settings['EMA_LONG_PERIOD']}): {ema_long}\n"
-            f"Trend: {trend_text[trend]['en']}\n"
-            f"Rating: {star_str} ({stars}/5)"
-        )
