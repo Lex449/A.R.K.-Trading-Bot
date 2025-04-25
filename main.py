@@ -52,11 +52,13 @@ async def main():
     logging.info("🚀 A.R.K. Bot 1.0 aktiviert – bereit für Signale und Befehle...")
 
     # === Bot starten ===
+    # Der Bot startet mit `run_polling` und wartet auf Nachrichten
     await app.run_polling()
 
     # *** Hier den Auto-Signal Loop starten ***
     # Nachdem die Anwendung und der Bot initialisiert sind, starten wir den Auto-Signal-Loop
-    await auto_signal_loop()
+    logging.info("Starte den Auto-Signal-Loop.")
+    await auto_signal_loop()  # Jetzt wird der Auto-Signal Loop nach dem Bot-Start aufgerufen.
 
 if __name__ == "__main__":
     asyncio.run(main())
