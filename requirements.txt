@@ -6,3 +6,4 @@ pandas==2.2.1
 aiohttp==3.9.3
 twelvedata==1.1.2
 setuptools==67.6.0
+websocket-client==1.5.1
