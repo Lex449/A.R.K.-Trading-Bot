@@ -21,14 +21,16 @@ async def auto_signal_loop():
     Diese Funktion kümmert sich um das automatische Senden von Signalen
     in regelmäßigen Abständen (z.B. alle 60 Sekunden).
     """
-    bot = None  # Stelle sicher, dass der Bot korrekt definiert und instanziiert wird
+    # Bot korrekt initialisieren
+    bot = Bot(token=os.getenv("BOT_TOKEN"))
     chat_id = int(config["TELEGRAM_CHAT_ID"])
-    
+
     # Sicherstellen, dass der Bot nicht None ist
     if bot is None:
         logger.error("Bot-Instanz konnte nicht abgerufen werden.")
         return
 
+    # Solange die Anwendung läuft, wird der Loop fortlaufend arbeiten
     while True:
         # Starte die Analyse für jedes Symbol
         symbols = config["AUTO_SIGNAL_SYMBOLS"]
@@ -68,6 +70,7 @@ async def auto_signal_loop():
 
         # Pause zwischen den Runden, um das API-Limit nicht zu überschreiten
         await asyncio.sleep(60)  # Diese Pause kannst du nach Belieben anpassen
+
 
 # Tägliche Analysejob-Funktion
 async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
