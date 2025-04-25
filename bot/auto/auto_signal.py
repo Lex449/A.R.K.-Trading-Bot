@@ -48,11 +48,12 @@ async def auto_signal_loop():
         for symbol in symbols:
             try:
                 # Marktdaten analysieren
-                result = await analyze_symbol(symbol)
+                result = await analyze_symbol(symbol)  # Async Analyse mit Fehlerbehandlung
                 if not result or not result.get("signal"):
                     log(f"[DEBUG] {symbol} → Kein verwertbares Signal.")
                     continue
 
+                # Schlüssel für das Signal pro Stunde
                 key = f"{symbol}_{current_hour}"
                 if last_sent_signals.get(key, 0) >= max_per_hour:
                     log(f"⚠️ {symbol} → Limit erreicht ({max_per_hour}/h)")
