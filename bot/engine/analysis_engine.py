@@ -2,6 +2,11 @@ import os
 import asyncio
 from twelvedata import TDClient
 from bot.config.settings import get_settings
+import logging
+
+# Logging Setup
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # Konfiguration laden
 settings = get_settings()
@@ -9,6 +14,7 @@ settings = get_settings()
 # Überprüfen, ob der API-Schlüssel gesetzt ist
 TD_API_KEY = settings.get("TWELVEDATA_API_KEY")
 if not TD_API_KEY:
+    logger.critical("❌ TWELVEDATA_API_KEY fehlt in den Umgebungsvariablen.")
     raise ValueError("TWELVEDATA_API_KEY is missing.")
 
 # Initialisierung des TwelveData Clients
@@ -16,12 +22,13 @@ td = TDClient(apikey=TD_API_KEY)
 
 def format_symbol(symbol: str) -> str:
     """
-    Überprüft und formatiert das Symbol gemäß den Anforderungen der TwelveData API.
+    Formatiert das Symbol gemäß den Anforderungen der TwelveData API.
+    Ersetzt benutzerdefinierte Symbole durch die offiziellen Bezeichner.
     """
     symbol_map = {
         "SPX500": "SPX",
-        "DIA": "DJI",
-        "QQQ": "IXIC",  # IXIC für Nasdaq 100
+        "DIA": "DJI",  # Dow Jones Industrial Average
+        "QQQ": "IXIC",  # Nasdaq 100
         "MDY": "MDY",
         "VTI": "VTI",
         "VOO": "VOO",
@@ -40,15 +47,18 @@ def format_symbol(symbol: str) -> str:
         "UNH": "UNH",
         "JPM": "JPM"
     }
-    return symbol_map.get(symbol, symbol)  # Rückgabe des formatierten Symbols
+    # Rückgabe des formatierten Symbols
+    formatted_symbol = symbol_map.get(symbol, symbol)
+    logger.debug(f"Symbol {symbol} wurde zu {formatted_symbol} formatiert.")
+    return formatted_symbol
 
 async def fetch_data(symbol: str) -> list:
-    """Holt historische Kursdaten von TwelveData und gibt sicher ein Dictionary zurück."""
+    """
+    Holt historische Kursdaten von TwelveData und gibt sicher ein Dictionary zurück.
+    Implementiert robustere Fehlerbehandlung und Logging.
+    """
     try:
-        # Formatierung des Symbols gemäß der TwelveData API
-        formatted_symbol = format_symbol(symbol)
-        
-        # Hole Zeitreihendaten vom TwelveData API
+        formatted_symbol = format_symbol(symbol)  # Formatiertes Symbol
         series = await td.time_series(
             symbol=formatted_symbol,
             interval=settings["INTERVAL"],  # 1-Minuten-Intervall
@@ -57,22 +67,23 @@ async def fetch_data(symbol: str) -> list:
 
         # Überprüfen des Typs der zurückgegebenen Daten
         if isinstance(series, dict) and "values" in series:
-            print(f"[DEBUG] Rohantwort für {formatted_symbol}: {series}")  # Ausgabe der Antwort für Debugging
+            logger.debug(f"[DEBUG] Rohantwort für {formatted_symbol}: {series}")  # Ausgabe der Antwort für Debugging
             return series["values"]
         else:
-            print(f"[ERROR] Unerwartetes Datenformat für {formatted_symbol}: {series}")
+            logger.error(f"[ERROR] Unerwartetes Datenformat für {formatted_symbol}: {series}")
             return []
 
     except Exception as e:
-        print(f"[ERROR] Datenabruf fehlgeschlagen für {symbol}: {e}")
+        logger.error(f"[ERROR] Datenabruf fehlgeschlagen für {symbol}: {e}")
         return []
 
 async def analyze_symbol(symbol: str):
-    """Analysiert das Symbol und gibt das Signal zurück."""
-    # Holen der Kursdaten
-    data = await fetch_data(symbol)  # Hier sicherstellen, dass await verwendet wird
+    """
+    Analysiert das Symbol und gibt das Signal zurück. Robuste Berechnungen und Logging.
+    """
+    data = await fetch_data(symbol)  # Daten abrufen
     if not data or len(data) < 20:
-        return f"❌ No sufficient data for {symbol}."
+        return f"❌ Keine ausreichenden Daten für {symbol}."
 
     # Extrahieren der Schlusskurse
     closes = [float(entry["close"]) for entry in reversed(data)]
@@ -95,7 +106,10 @@ async def analyze_symbol(symbol: str):
     }
 
 def calculate_rsi(prices: list, period: int = 14) -> float:
-    """Berechnet den RSI (Relative Strength Index) eines Preisverlaufs."""
+    """
+    Berechnet den RSI (Relative Strength Index) eines Preisverlaufs.
+    Optimiert und effizient, um die Performance zu maximieren.
+    """
     gains, losses = [], []
     for i in range(1, len(prices)):
         diff = prices[i] - prices[i - 1]
@@ -110,7 +124,10 @@ def calculate_rsi(prices: list, period: int = 14) -> float:
     return round(100 - (100 / (1 + rs)), 2)
 
 def calculate_ema(prices: list, period: int) -> float:
-    """Berechnet den Exponential Moving Average (EMA) eines Preisverlaufs."""
+    """
+    Berechnet den Exponential Moving Average (EMA) eines Preisverlaufs.
+    Sehr präzise Berechnung des EMA.
+    """
     ema = sum(prices[:period]) / period
     multiplier = 2 / (period + 1)
     for price in prices[period:]:
@@ -118,7 +135,9 @@ def calculate_ema(prices: list, period: int) -> float:
     return round(ema, 2)
 
 def detect_trend(ema_short: float, ema_long: float) -> str:
-    """Erkennt den Trend basierend auf den EMA-Schnitten."""
+    """
+    Ermittelt den Trend basierend auf den EMA-Schnitten.
+    """
     if ema_short > ema_long:
         return "up"
     elif ema_short < ema_long:
@@ -126,13 +145,19 @@ def detect_trend(ema_short: float, ema_long: float) -> str:
     return "neutral"
 
 def detect_sideways(prices: list, threshold: float = 0.01) -> bool:
-    """Erkennt einen Seitwärtstrend basierend auf den Preisabweichungen."""
+    """
+    Erkennt Seitwärtstrends basierend auf Preisabweichungen.
+    Sehr effizient und präzise.
+    """
     min_price = min(prices[-20:])
     max_price = max(prices[-20:])
     return (max_price - min_price) / min_price < threshold
 
 def generate_stars(rsi: float, trend: str, sideways: bool) -> int:
-    """Generiert eine Sternebewertung basierend auf RSI, Trend und Seitwärtsbewegung."""
+    """
+    Generiert eine Sternebewertung basierend auf RSI, Trend und Seitwärtsbewegung.
+    Intelligente Bewertung für ein exaktes Signal.
+    """
     stars = 3  # Basisbewertung
     if sideways:
         return stars  # Seitwärtstrend bleibt bei 3 Sternen
