@@ -45,8 +45,10 @@ def format_symbol(symbol: str) -> str:
 async def fetch_data(symbol: str) -> list:
     """Holt historische Kursdaten von TwelveData."""
     try:
+        # Formatierung des Symbols gemäß der TwelveData API
+        formatted_symbol = format_symbol(symbol)
+        
         # Hole Zeitreihendaten vom TwelveData API
-        formatted_symbol = format_symbol(symbol)  # Formatiertes Symbol
         series = await td.time_series(
             symbol=formatted_symbol,
             interval=settings["INTERVAL"],  # 1-Minuten-Intervall
