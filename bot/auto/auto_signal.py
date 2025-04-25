@@ -8,11 +8,13 @@ from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.autoscaler import run_autoscaler
 from bot.config.settings import get_settings
+import logging
 
 # Konfiguration laden
 config = get_settings()
 
-# Auto-Signal-Job für die tägliche Analyse und das Senden der Ergebnisse an Telegram
+logger = logging.getLogger(__name__)
+
 async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     """
     Führt täglich eine kompakte Analyse aller überwachten Indizes durch
@@ -29,6 +31,7 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     try:
         await run_autoscaler(bot, chat_id)  # Überprüfung des Autoscalers
     except Exception as e:
+        logger.error(f"Fehler beim Autoscaler: {e}")
         await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler beim Autoscaler: {e}")  # Fehlerprotokollierung
 
     # Überprüfen, ob Symbole für die Auto-Analyse definiert wurden
@@ -42,6 +45,8 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
         try:
             # Symbol analysieren und Ergebnis zurückgeben
             formatted_symbol = format_symbol(symbol)  # Formatierung des Symbols gemäß TwelveData API
+            logger.info(f"Starte Analyse für Symbol: {formatted_symbol}")  # Logge, welches Symbol gerade analysiert wird
+
             result = await analyze_symbol(formatted_symbol)  # Hier wird die Analyse-Funktion aufgerufen
             
             if isinstance(result, str):
@@ -58,8 +63,10 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
             
             # Kurze Pause zwischen den Nachrichten, um das Telegram API-Limit zu respektieren
             await asyncio.sleep(1.5)
+
         except Exception as e:
             # Fehler beim Abrufen der Analyse-Daten für das Symbol
+            logger.error(f"Fehler bei der Analyse von {symbol}: {e}")
             await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
 
     # Abschließende Nachricht nach der Analyse
