@@ -1,3 +1,26 @@
+# Byte-compiled / cache files
 __pycache__/
-*.pyc
+*.py[cod]
+*.so
+
+# Environment & sensitive config
 .env
+.env.*
+
+# IDEs & local dev files
+.vscode/
+.idea/
+*.swp
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon*
+
+# Python virtual environments
+.venv/
+venv/
+
+# Logs & reports
+*.log
