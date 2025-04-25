@@ -1,18 +1,17 @@
 import os
-import json
 import asyncio
+import logging
 from telegram import Bot
 from telegram.ext import ContextTypes
-from bot.engine.analysis_engine import analyze_symbol, format_symbol  # Sicherstellen, dass format_symbol korrekt verwendet wird
-from bot.utils.language import get_language
+from bot.engine.analysis_engine import analyze_symbol, format_symbol
 from bot.utils.i18n import get_text
 from bot.utils.autoscaler import run_autoscaler
 from bot.config.settings import get_settings
-import logging
 
 # Konfiguration laden
 config = get_settings()
 
+# Logger initialisieren
 logger = logging.getLogger(__name__)
 
 async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
@@ -27,7 +26,7 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     # Startnachricht an den Chat senden
     await bot.send_message(chat_id=chat_id, text="📊 *Starte tägliche Analyse...*", parse_mode="Markdown")
 
-    # Autoscaler starten (wenn konfiguriert)
+    # Autoscaler starten (falls konfiguriert)
     try:
         await run_autoscaler(bot, chat_id)  # Überprüfung des Autoscalers
     except Exception as e:
@@ -43,16 +42,15 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     # Analyse der Symbole
     for symbol in symbols:
         try:
-            # Symbol analysieren und Ergebnis zurückgeben
             formatted_symbol = format_symbol(symbol)  # Formatierung des Symbols gemäß TwelveData API
             logger.info(f"Starte Analyse für Symbol: {formatted_symbol}")  # Logge, welches Symbol gerade analysiert wird
 
-            result = await analyze_symbol(formatted_symbol)  # Hier wird die Analyse-Funktion aufgerufen
+            result = await analyze_symbol(formatted_symbol)  # Analyse durchführen
             
             if isinstance(result, str):
-                await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")  # Falls das Ergebnis ein String ist, wird es gesendet
+                await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")  # Falls das Ergebnis ein String ist
             else:
-                # Detaillierte Ausgabe für jedes Symbol
+                # Ausgabe für jedes Symbol detailliert
                 response = f"Symbol: {formatted_symbol}\n"
                 response += f"Signal: {result['signal']}\n"
                 response += f"RSI: {result['rsi']}\n"
@@ -63,11 +61,10 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
             
             # Kurze Pause zwischen den Nachrichten, um das Telegram API-Limit zu respektieren
             await asyncio.sleep(1.5)
-
+        
         except Exception as e:
-            # Fehler beim Abrufen der Analyse-Daten für das Symbol
             logger.error(f"Fehler bei der Analyse von {symbol}: {e}")
-            await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
+            await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")  # Fehlermeldung bei Analyse-Fehler
 
     # Abschließende Nachricht nach der Analyse
     await bot.send_message(chat_id=chat_id, text="✅ *Tägliche Analyse abgeschlossen!*", parse_mode="Markdown")
