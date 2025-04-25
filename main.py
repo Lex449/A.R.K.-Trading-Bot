@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder, CommandHandler
 from bot.handlers.commands import start, help_command, analyse_symbol, set_language
-from bot.auto.auto_signal import auto_signal_loop  # Importieren der auto_signal_loop-Funktion
+from bot.auto.auto_signal import auto_signal_loop  # Import von auto_signal_loop bleibt
 
 # === Setup Logging ===
 logging.basicConfig(
@@ -48,15 +48,15 @@ async def main():
     app.add_handler(CommandHandler("analyse", analyse_symbol))
     app.add_handler(CommandHandler("setlanguage", set_language))
 
-    # === Auto-Signal starten ===
-    # Sicherstellen, dass der Loop asynchron läuft
-    app.create_task(auto_signal_loop())  # Diese Zeile startet den Auto-Signal-Loop im Hintergrund
-
     # === Startmeldung ===
     logging.info("🚀 A.R.K. Bot 1.0 aktiviert – bereit für Signale und Befehle...")
 
     # === Bot starten ===
     await app.run_polling()
+
+    # *** Hier den Auto-Signal Loop starten ***
+    # Nachdem die Anwendung und der Bot initialisiert sind, starten wir den Auto-Signal-Loop
+    await auto_signal_loop()
 
 if __name__ == "__main__":
     asyncio.run(main())
