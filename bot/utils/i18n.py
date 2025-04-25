@@ -42,6 +42,10 @@ TEXTS = {
 def get_text(key: str, lang: str = "en") -> str:
     """
     Holt den passenden Text zum Schlüssel, abhängig von der Sprache.
-    Fallback: Englisch, wenn Sprache oder Key fehlt.
+    Falls die Sprache oder der Key nicht gefunden wird, wird Englisch als Fallback genutzt.
+    
+    :param key: Der Text-Key
+    :param lang: Die Sprache (Standard: "en")
+    :return: Der passende Text in der angeforderten Sprache oder Englisch als Fallback
     """
-    return TEXTS.get(key, {}).get(lang) or TEXTS.get(key, {}).get("en", "")
+    return TEXTS.get(key, {}).get(lang, TEXTS.get(key, {}).get("en", "Text not found"))
