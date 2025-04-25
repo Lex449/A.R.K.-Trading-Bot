@@ -2,8 +2,8 @@ import os
 import json
 import asyncio
 from telegram import Bot
-from telegram.ext import ContextTypes  # Füge diesen Import hinzu
-from bot.engine.analysis_engine import analyze_symbol, format_symbol
+from telegram.ext import ContextTypes  # Sicherstellen, dass dieser Import vorhanden ist
+from bot.engine.analysis_engine import analyze_symbol, format_symbol  # Stelle sicher, dass format_symbol korrekt verwendet wird
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.autoscaler import run_autoscaler
@@ -14,6 +14,53 @@ import logging
 config = get_settings()
 
 logger = logging.getLogger(__name__)
+
+async def auto_signal_loop():
+    """
+    Diese Funktion kümmert sich um das automatische Senden von Signalen
+    in regelmäßigen Abständen (z.B. alle 60 Sekunden).
+    """
+    while True:
+        bot = None  # Hier kannst du deinen Bot definieren, um Nachrichten zu senden
+        chat_id = int(config["TELEGRAM_CHAT_ID"])
+        
+        # Starte die Analyse für jedes Symbol
+        symbols = config["AUTO_SIGNAL_SYMBOLS"]
+        if not symbols:
+            logger.error("Keine Symbole für Auto-Analyse definiert.")
+            return
+
+        # Analyse der Symbole
+        for symbol in symbols:
+            try:
+                # Symbol analysieren und Ergebnis zurückgeben
+                formatted_symbol = format_symbol(symbol)  # Formatierung des Symbols gemäß TwelveData API
+                logger.info(f"Starte Analyse für Symbol: {formatted_symbol}")  # Logge, welches Symbol gerade analysiert wird
+
+                result = await analyze_symbol(formatted_symbol)  # Hier wird die Analyse-Funktion aufgerufen
+
+                if isinstance(result, str):
+                    await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")  # Falls das Ergebnis ein String ist, wird es gesendet
+                else:
+                    # Detaillierte Ausgabe für jedes Symbol
+                    response = f"Symbol: {formatted_symbol}\n"
+                    response += f"Signal: {result['signal']}\n"
+                    response += f"RSI: {result['rsi']}\n"
+                    response += f"Trend: {result['trend']}\n"
+                    response += f"Pattern: {result['pattern']}\n"
+                    response += f"Stars: {result['stars']}/5"
+                    await bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+                
+                # Kurze Pause zwischen den Nachrichten, um das Telegram API-Limit zu respektieren
+                await asyncio.sleep(1.5)
+
+            except Exception as e:
+                # Fehler beim Abrufen der Analyse-Daten für das Symbol
+                logger.error(f"Fehler bei der Analyse von {symbol}: {e}")
+                await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
+
+        # Pause zwischen den Runden, um das API-Limit nicht zu überschreiten
+        await asyncio.sleep(60)  # Diese Pause kannst du nach Belieben anpassen
 
 async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     """
