@@ -2,17 +2,25 @@
 
 from telegram import Update
 
+SUPPORTED_LANGUAGES = {
+    "de": "de",
+    "de-de": "de",
+    "de-at": "de",
+    "de-ch": "de",
+    "en": "en",
+    "en-us": "en",
+    "en-gb": "en"
+}
+
 def get_language(update: Update) -> str:
     """
-    Bestimmt die bevorzugte Sprache des Nutzers auf Basis der Telegram-Spracheinstellung.
-
-    Rückgabe:
-        'de' – wenn Sprache auf Deutsch gesetzt ist.
-        'en' – in allen anderen Fällen (inkl. Fallback).
+    Erkennt die Nutzersprache anhand der Telegram-Spracheinstellung.
+    Gibt 'de' für Deutsch oder 'en' für Englisch zurück.
+    Fallback ist Englisch bei unbekannten oder fehlenden Codes.
     """
     try:
-        lang_code = update.effective_user.language_code or ""
-        return "de" if lang_code.lower().startswith("de") else "en"
+        lang_code = (update.effective_user.language_code or "").lower()
+        return SUPPORTED_LANGUAGES.get(lang_code, "en")
     except Exception as e:
-        print(f"[WARN] Language detection failed: {e}")
+        print(f"[LANGUAGE WARNING] Sprach-Erkennung fehlgeschlagen: {e}")
         return "en"
