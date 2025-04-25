@@ -1,5 +1,3 @@
-# bot/auto/auto_analysis.py
-
 import os
 import json
 import asyncio
@@ -11,6 +9,7 @@ from bot.utils.i18n import get_text
 from bot.utils.autoscaler import run_autoscaler
 from bot.config.settings import get_settings
 
+# Konfiguration laden
 config = get_settings()
 
 async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
@@ -19,27 +18,46 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     und sendet die Ergebnisse automatisch an den Telegram-Chat.
     """
     bot: Bot = context.bot
-    chat_id = int(config["TELEGRAM_CHAT_ID"])
-    lang = "de"  # Standard (später optional dynamisch je Gruppe)
+    chat_id = int(config["TELEGRAM_CHAT_ID"])  # Telegram-Chat-ID aus den Einstellungen
+    lang = "de"  # Standard-Sprache (später optional dynamisch je Gruppe)
 
+    # Startnachricht an den Chat senden
     await bot.send_message(chat_id=chat_id, text="📊 *Starte tägliche Analyse...*", parse_mode="Markdown")
 
+    # Autoscaler starten (wenn konfiguriert)
     try:
-        await run_autoscaler(bot, chat_id)
+        await run_autoscaler(bot, chat_id)  # Überprüfung des Autoscalers
     except Exception as e:
-        await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler beim Autoscaler: {e}")
+        await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler beim Autoscaler: {e}")  # Fehlerprotokollierung
 
+    # Überprüfen, ob Symbole für die Auto-Analyse definiert wurden
     symbols = config["AUTO_SIGNAL_SYMBOLS"]
     if not symbols:
-        await bot.send_message(chat_id=chat_id, text="❌ Keine Symbole für Auto-Analyse definiert.")
+        await bot.send_message(chat_id=chat_id, text="❌ Keine Symbole für Auto-Analyse definiert.")  # Fehlermeldung bei leerer Symbol-Liste
         return
 
+    # Analyse der Symbole
     for symbol in symbols:
         try:
-            result = await analyze_symbol(symbol, lang=lang)
-            await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")
-            await asyncio.sleep(1.5)  # Telegram Throttle-Puffer
+            # Symbol analysieren und Ergebnis zurückgeben
+            result = await analyze_symbol(symbol)  # Hier wird die Analyse-Funktion aufgerufen
+            if isinstance(result, str):
+                await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")  # Falls das Ergebnis ein String ist, wird es gesendet
+            else:
+                # Detaillierte Ausgabe für jedes Symbol
+                response = f"Symbol: {symbol}\n"
+                response += f"Signal: {result['signal']}\n"
+                response += f"RSI: {result['rsi']}\n"
+                response += f"Trend: {result['trend']}\n"
+                response += f"Pattern: {result['pattern']}\n"
+                response += f"Stars: {result['stars']}/5"
+                await bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+            
+            # Kurze Pause zwischen den Nachrichten, um das Telegram API-Limit zu respektieren
+            await asyncio.sleep(1.5)
         except Exception as e:
+            # Fehler beim Abrufen der Analyse-Daten für das Symbol
             await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
 
+    # Abschließende Nachricht nach der Analyse
     await bot.send_message(chat_id=chat_id, text="✅ *Tägliche Analyse abgeschlossen!*", parse_mode="Markdown")
