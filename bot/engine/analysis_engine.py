@@ -18,7 +18,7 @@ async def fetch_data(symbol: str) -> list:
     """Holt historische Kursdaten von TwelveData."""
     try:
         # Hole Zeitreihendaten vom TwelveData API
-        series = td.time_series(
+        series = await td.time_series(
             symbol=symbol,
             interval=settings["INTERVAL"],  # 1-Minuten-Intervall
             outputsize=50  # Maximale Anzahl der abgerufenen Datenpunkte
@@ -39,8 +39,7 @@ async def fetch_data(symbol: str) -> list:
 async def analyze_symbol(symbol: str):
     """Analysiert das Symbol und gibt das Signal zurück."""
     # Holen der Kursdaten
-    data = await asyncio.to_thread(fetch_data, symbol)  # Async-Funktion korrekt verwenden
-    
+    data = await fetch_data(symbol)  # Hier sicherstellen, dass await verwendet wird
     if not data or len(data) < 20:
         return f"❌ No sufficient data for {symbol}."
 
