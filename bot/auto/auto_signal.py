@@ -5,6 +5,7 @@ from datetime import datetime
 from telegram import Bot
 from bot.config.settings import get_settings
 from bot.engine.analysis_engine import analyze_market
+from bot.utils.autoscaler import get_scaled_limit
 
 config = get_settings()
 bot = Bot(token=config["BOT_TOKEN"])
@@ -20,7 +21,7 @@ async def send_signal(symbol: str, result: dict):
         f"Preis: `{result['price']}`\n"
         f"Signal: *{result['signal']}*\n"
         f"RSI: `{result['rsi']:.2f}`\n"
-        f"Trend: {result['trend']}\n"
+        f"Trend: {result['trend']}`\n"
         f"Muster: `{result['pattern']}`\n\n"
         f"_A.R.K. scannt rund um die Uhr – nur bei echtem Vorteil._"
     )
@@ -30,11 +31,12 @@ async def send_signal(symbol: str, result: dict):
 async def auto_signal_loop():
     symbols = config["AUTO_SIGNAL_SYMBOLS"]
     interval = config["SIGNAL_CHECK_INTERVAL_SEC"]
-    max_per_hour = config["MAX_SIGNALS_PER_HOUR"]
     log("⏱️ Auto-Signal-Loop gestartet...")
 
     while True:
         current_hour = datetime.utcnow().strftime("%Y-%m-%d %H")
+        max_per_hour = get_scaled_limit(symbols)
+
         for symbol in symbols:
             try:
                 result = analyze_market(symbol)
