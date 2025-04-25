@@ -1,56 +1,53 @@
-# main.py
-
 import os
-import asyncio
-import nest_asyncio
+import logging
 from dotenv import load_dotenv
-from telegram.ext import ApplicationBuilder
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, filters
 
-from bot.handlers.start import start_handler
-from bot.handlers.ping import ping_handler
-from bot.handlers.status import status_handler
-from bot.handlers.signal import signal_handler
-from bot.handlers.analyse import analyse_handler
-from bot.handlers.shutdown import shutdown_handler
-from bot.handlers.recap import recap_handler
-from bot.handlers.help import help_handler
-
-from bot.utils.error_handler import handle_error
-from bot.auto.auto_signal import auto_signal_loop
-
-# === ENV laden ===
+# Laden der Umgebungsvariablen aus .env-Datei
 load_dotenv()
-bot_token = os.getenv("BOT_TOKEN")
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+if not TOKEN:
+    raise ValueError("TELEGRAM_TOKEN is not set in the environment variables")
 
-if not bot_token:
-    raise ValueError("❌ BOT_TOKEN fehlt. Bitte in .env oder Railway Variable setzen!")
+# Logging-Konfiguration
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
-print("✅ Bot-Token geladen. Initialisiere A.R.K...")
+# Import der Handler-Funktionen
+from bot.handlers.commands import start, help_command, analyse_symbol, set_language
+from bot.auto.auto_analysis import run_auto_analysis
 
-# === Telegram App vorbereiten ===
-app = ApplicationBuilder().token(bot_token).build()
+def main():
+    """Hauptfunktion zum Starten des Telegram-Bots."""
+    # Bot-Anwendung initialisieren
+    application = ApplicationBuilder().token(TOKEN).build()
 
-# === Handler binden ===
-app.add_handler(start_handler)
-app.add_handler(ping_handler)
-app.add_handler(status_handler)
-app.add_handler(signal_handler)
-app.add_handler(analyse_handler)
-app.add_handler(recap_handler)
-app.add_handler(shutdown_handler)
-app.add_handler(help_handler)
+    # Command-Handler registrieren
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("analyse", analyse_symbol))
+    application.add_handler(CommandHandler("setlanguage", set_language))
 
-# === Fehlerbehandlung aktivieren ===
-app.add_error_handler(handle_error)
+    # Automatische Analyse (täglich) einrichten, falls ADMIN_CHAT_ID gesetzt
+    admin_chat_id = os.getenv("ADMIN_CHAT_ID")
+    if admin_chat_id:
+        from datetime import time
+        admin_chat_id = int(admin_chat_id)
+        # Beispiel: Täglich um 14:00 UTC
+        application.job_queue.run_daily(
+            callback=run_auto_analysis,
+            time=time(hour=14, minute=0),
+            days=(0,1,2,3,4,5,6),
+            context=admin_chat_id
+        )
+        logger.info("Automatische tägliche Analyse aktiviert für Chat ID %s", admin_chat_id)
 
-# === Async für Railway vorbereiten ===
-nest_asyncio.apply()
+    # Bot starten (Polling)
+    logger.info("Starte Bot (Polling-Modus)")
+    application.run_polling()
 
-# === Startfunktion ===
-async def main():
-    print("🚀 A.R.K. aktiviert. Signale werden rund um die Uhr analysiert...")
-    asyncio.create_task(auto_signal_loop())  # Background-Loop für Signale starten
-    await app.run_polling()  # Telegram Polling starten
-
-# === Bot starten ===
-asyncio.run(main())
+if __name__ == "__main__":
+    main()
