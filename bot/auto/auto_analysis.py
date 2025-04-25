@@ -3,7 +3,7 @@ import json
 import asyncio
 from telegram import Bot
 from telegram.ext import ContextTypes
-from bot.engine.analysis_engine import analyze_symbol
+from bot.engine.analysis_engine import analyze_symbol, format_symbol  # Sicherstellen, dass format_symbol korrekt importiert wird
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.autoscaler import run_autoscaler
@@ -39,8 +39,10 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     # Analyse der Symbole
     for symbol in symbols:
         try:
+            # Formatieren des Symbols gemäß TwelveData API
+            formatted_symbol = format_symbol(symbol)
             # Symbol analysieren und Ergebnis zurückgeben
-            result = await analyze_symbol(symbol)  # Hier wird die Analyse-Funktion aufgerufen
+            result = await analyze_symbol(formatted_symbol)  # Hier wird die Analyse-Funktion aufgerufen
             if isinstance(result, str):
                 await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")  # Falls das Ergebnis ein String ist, wird es gesendet
             else:
