@@ -14,30 +14,54 @@ FALLBACK_SYMBOLS = [
 ]
 
 def get_scaled_symbols(current_count: int, max_count: int = 150) -> tuple:
-    # Berechnet die finale Liste an Symbolen, ergänzt wenn nötig aus FALLBACK_SYMBOLS.
-    needed = max_count // 12 - current_count  # max 12 Signale pro Symbol/Stunde
-    final = DEFAULT_SYMBOLS.copy()
+    """
+    Gibt eine Liste an Symbolen zurück, ergänzt mit Fallbacks falls nötig.
+    """
+    ideal_count = max_count // 12
+    additional_needed = max(ideal_count - current_count, 0)
 
+    final = DEFAULT_SYMBOLS.copy()
     added = []
+
     for sym in FALLBACK_SYMBOLS:
-        if needed <= 0:
+        if additional_needed <= 0:
             break
         if sym not in final:
             final.append(sym)
             added.append(sym)
-            needed -= 1
+            additional_needed -= 1
+
     return final, added
 
 async def run_autoscaler(bot: Bot, chat_id: int):
-    # Führt den Autoscaler aus und sendet eine Nachricht bei Erweiterung.
+    """
+    Prüft, ob weitere Symbole ergänzt werden sollten und sendet Update.
+    """
     env_symbols = os.getenv("AUTO_SIGNAL_SYMBOLS", "")
     current = [s.strip() for s in env_symbols.split(",") if s.strip()]
     scaled, new_added = get_scaled_symbols(len(current))
 
+    # ENV live updaten (für lokale Nutzung)
+    os.environ["AUTO_SIGNAL_SYMBOLS"] = ",".join(scaled)
+
     if new_added:
-        os.environ["AUTO_SIGNAL_SYMBOLS"] = ",".join(scaled)
         added_str = ", ".join(new_added)
-        msg = f"🚀 A.R.K. Auto-Scaler aktiviert!\nNeue Symbole ergänzt: {added_str}"
-        await bot.send_message(chat_id=chat_id, text=msg)
+        msg = (
+            f"🚀 *Auto-Scaler aktiviert*\n"
+            f"Neue Symbole hinzugefügt:\n`{added_str}`\n\n"
+            f"_Dein Bot ist jetzt besser vorbereitet._"
+        )
+        await bot.send_message(chat_id=chat_id, text=msg, parse_mode="Markdown")
     else:
-        await bot.send_message(chat_id=chat_id, text="✔️ A.R.K. Auto-Scaler: Alle Symbole bereits optimal.")
+        await bot.send_message(
+            chat_id=chat_id,
+            text="✅ *Auto-Scaler Check abgeschlossen:*\nAlle Symbole optimal.",
+            parse_mode="Markdown"
+        )
+
+def get_scaled_limit(symbols: list, max_total: int = 150) -> int:
+    """
+    Gibt zurück, wie viele Signale pro Symbol pro Stunde erlaubt sind.
+    """
+    count = len(symbols)
+    return max(1, max_total // count)
