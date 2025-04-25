@@ -1,5 +1,3 @@
-# main.py
-
 import asyncio
 import logging
 import nest_asyncio
@@ -18,14 +16,30 @@ logging.basicConfig(
 # === ENV vorbereiten ===
 load_dotenv()
 nest_asyncio.apply()
+
+# === Umgebungsvariablen laden und prüfen ===
 TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    logging.error("❌ BOT_TOKEN nicht gefunden in .env – Abbruch.")
+    exit(1)
+
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+if not TELEGRAM_CHAT_ID:
+    logging.error("❌ TELEGRAM_CHAT_ID nicht gefunden in .env – Abbruch.")
+    exit(1)
+
+TWELVEDATA_API_KEY = os.getenv("TWELVEDATA_API_KEY")
+if not TWELVEDATA_API_KEY:
+    logging.error("❌ TWELVEDATA_API_KEY nicht gefunden in .env – Abbruch.")
+    exit(1)
+
+INTERVAL = os.getenv("INTERVAL", "1min")
+if INTERVAL not in ["1min", "5min", "15min", "30min", "60min"]:
+    logging.error(f"❌ Ungültiges Intervall `{INTERVAL}` in .env. Erwartet: 1min, 5min, 15min, 30min oder 60min.")
+    exit(1)
 
 # === Main ===
 async def main():
-    if not TOKEN:
-        logging.error("❌ BOT_TOKEN nicht gefunden in .env – Abbruch.")
-        return
-
     app = ApplicationBuilder().token(TOKEN).build()
 
     # === Befehle verbinden ===
