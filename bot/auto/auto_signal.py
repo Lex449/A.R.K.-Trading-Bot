@@ -1,5 +1,3 @@
-# bot/auto/auto_signal.py
-
 import asyncio
 from datetime import datetime
 from telegram import Bot
