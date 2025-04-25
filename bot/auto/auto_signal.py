@@ -1,10 +1,10 @@
 # bot/auto/auto_signal.py
-from bot.engine.analysis_engine import analyze_symbol
+
 import asyncio
 from datetime import datetime
 from telegram import Bot
 from bot.config.settings import get_settings
-from bot.engine.analysis_engine import analyze_market  # Sicherstellen, dass der Import korrekt ist
+from bot.engine.analysis_engine import analyze_symbol  # Sicherstellen, dass der Import korrekt ist
 from bot.utils.autoscaler import get_scaled_limit
 
 # Bot- und Chat-Initialisierung
