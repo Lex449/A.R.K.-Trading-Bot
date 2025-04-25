@@ -28,8 +28,5 @@ apscheduler==3.8.1
 # Flask für Web-Dashboard
 flask==2.2.2
 
-# Logging für erweiterte Fehlerprotokollierung
-logging==0.5.1.2
-
 # Hilfsbibliothek für die Installation von Paketen
 setuptools==67.6.0
