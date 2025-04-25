@@ -21,7 +21,7 @@ def format_symbol(symbol: str) -> str:
     symbol_map = {
         "SPX500": "SPX",
         "DIA": "DJI",
-        "QQQ": "IXIC",
+        "QQQ": "IXIC",  # IXIC für Nasdaq 100
         "MDY": "MDY",
         "VTI": "VTI",
         "VOO": "VOO",
@@ -40,10 +40,10 @@ def format_symbol(symbol: str) -> str:
         "UNH": "UNH",
         "JPM": "JPM"
     }
-    return symbol_map.get(symbol, symbol)
+    return symbol_map.get(symbol, symbol)  # Rückgabe des formatierten Symbols
 
 async def fetch_data(symbol: str) -> list:
-    """Holt historische Kursdaten von TwelveData."""
+    """Holt historische Kursdaten von TwelveData und gibt sicher ein Dictionary zurück."""
     try:
         # Formatierung des Symbols gemäß der TwelveData API
         formatted_symbol = format_symbol(symbol)
