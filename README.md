@@ -10,7 +10,7 @@ A.R.K. auto-detects your language and responds in either English or German. The 
 
 Want to test, contribute or join the mission?
 
-→ Telegram: @arktradingteam
+→ Telegram: @ARKTradeBotOfficial
 → Email: hello@arktradingbot.com
 → Website: www.arktradingbot.com
 
@@ -28,7 +28,7 @@ A.R.K. erkennt automatisch deine Sprache und antwortet je nach Bedarf auf Deutsc
 
 Du willst mitmachen, testen oder A.R.K. weiterentwickeln?
 
-→ Telegram: @arktradingteam
+→ Telegram: @ARKTradeBotOfficial
 → E-Mail: hello@arktradingbot.com
 → Website: www.arktradingbot.com
 
