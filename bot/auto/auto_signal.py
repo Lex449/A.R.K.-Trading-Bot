@@ -1,6 +1,8 @@
 import os
+import json
 import asyncio
 from telegram import Bot
+from telegram.ext import ContextTypes  # Füge diesen Import hinzu
 from bot.engine.analysis_engine import analyze_symbol, format_symbol
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
