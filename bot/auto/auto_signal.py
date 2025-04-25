@@ -1,5 +1,5 @@
 # bot/auto/auto_signal.py
-
+from bot.engine.analysis_engine import analyze_symbol
 import asyncio
 from datetime import datetime
 from telegram import Bot
