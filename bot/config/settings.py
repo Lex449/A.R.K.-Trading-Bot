@@ -4,23 +4,28 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_settings():
+    """
+    Lädt die Umgebungsvariablen und überprüft deren Gültigkeit.
+    """
+    
     # === Prüfung der Umgebungsvariablen ===
     bot_token = os.getenv("BOT_TOKEN")
     if not bot_token:
-        raise ValueError("❌ BOT_TOKEN nicht in .env gefunden.")
+        raise ValueError("❌ BOT_TOKEN nicht in .env gefunden. Bitte sicherstellen, dass der Bot-Token gesetzt ist.")
 
     telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
     if not telegram_chat_id:
-        raise ValueError("❌ TELEGRAM_CHAT_ID nicht in .env gefunden.")
+        raise ValueError("❌ TELEGRAM_CHAT_ID nicht in .env gefunden. Bitte sicherstellen, dass die Chat-ID korrekt ist.")
     
     twelvedata_api_key = os.getenv("TWELVEDATA_API_KEY")
     if not twelvedata_api_key:
-        raise ValueError("❌ TWELVEDATA_API_KEY nicht in .env gefunden.")
+        raise ValueError("❌ TWELVEDATA_API_KEY nicht in .env gefunden. Bitte sicherstellen, dass der TwelveData API-Schlüssel gesetzt ist.")
     
     # === Überprüfen der Werte ===
     interval = os.getenv("INTERVAL", "1min")
-    if interval not in ["1min", "5min", "15min", "30min", "60min"]:
-        raise ValueError(f"❌ Ungültiges Intervall `{interval}` in .env. Erwartet: 1min, 5min, 15min, 30min oder 60min.")
+    valid_intervals = ["1min", "5min", "15min", "30min", "60min"]
+    if interval not in valid_intervals:
+        raise ValueError(f"❌ Ungültiges Intervall `{interval}` in .env. Erwartet: 1min, 5min, 15min, 30min oder 60min. Bitte Intervall anpassen.")
 
     # === Rückgabewerte ===
     return {
