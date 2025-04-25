@@ -50,7 +50,7 @@ async def auto_signal_loop():
         for symbol in symbols:
             try:
                 # Marktdaten analysieren
-                result = await analyze_market(symbol)
+                result = await analyze_symbol(symbol)
                 if not result or not result.get("signal"):
                     log(f"[DEBUG] {symbol} → Kein verwertbares Signal.")
                     continue
