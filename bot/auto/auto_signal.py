@@ -1,70 +1,66 @@
+import os
+import json
 import asyncio
-from datetime import datetime
 from telegram import Bot
+from telegram.ext import ContextTypes
+from bot.engine.analysis_engine import analyze_symbol, format_symbol  # Sicherstellen, dass format_symbol korrekt verwendet wird
+from bot.utils.language import get_language
+from bot.utils.i18n import get_text
+from bot.utils.autoscaler import run_autoscaler
 from bot.config.settings import get_settings
-from bot.engine.analysis_engine import analyze_symbol  # Sicherstellen, dass der Import korrekt ist
-from bot.utils.autoscaler import get_scaled_limit
 
-# Bot- und Chat-Initialisierung
+# Konfiguration laden
 config = get_settings()
-bot = Bot(token=config["BOT_TOKEN"])
-chat_id = config["TELEGRAM_CHAT_ID"]
-last_sent_signals = {}
 
-# Verbesserte Logging-Funktion
-def log(msg):
-    """Präzise Log-Ausgaben für Debugging und Nachverfolgung."""
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
+# Auto-Signal-Job für die tägliche Analyse und das Senden der Ergebnisse an Telegram
+async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
+    """
+    Führt täglich eine kompakte Analyse aller überwachten Indizes durch
+    und sendet die Ergebnisse automatisch an den Telegram-Chat.
+    """
+    bot: Bot = context.bot
+    chat_id = int(config["TELEGRAM_CHAT_ID"])  # Telegram-Chat-ID aus den Einstellungen
+    lang = "de"  # Standard-Sprache (später optional dynamisch je Gruppe)
 
-# Signal senden an Telegram
-async def send_signal(symbol: str, result: dict):
-    """Sendet ein Handelssignal an Telegram mit allen wichtigen Marktdaten."""
-    message = (
-        f"📡 *Auto-Signal: {symbol}*\n"
-        f"Preis: `{result['price']}`\n"
-        f"Signal: *{result['signal']}*\n"
-        f"RSI: `{result['rsi']:.2f}`\n"
-        f"Trend: {result['trend']}\n"
-        f"Muster: `{result['pattern']}`\n\n"
-        f"_A.R.K. scannt rund um die Uhr – nur bei echtem Vorteil._"
-    )
+    # Startnachricht an den Chat senden
+    await bot.send_message(chat_id=chat_id, text="📊 *Starte tägliche Analyse...*", parse_mode="Markdown")
+
+    # Autoscaler starten (wenn konfiguriert)
     try:
-        await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
-        log(f"✅ Signal gesendet für {symbol} → {result['signal']}")
+        await run_autoscaler(bot, chat_id)  # Überprüfung des Autoscalers
     except Exception as e:
-        log(f"[ERROR] Fehler beim Senden von Signal für {symbol}: {e}")
+        await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler beim Autoscaler: {e}")  # Fehlerprotokollierung
 
-# Auto-Signal Loop – überprüft die Symbole regelmäßig
-async def auto_signal_loop():
-    """Schleife, die kontinuierlich die Symbole überprüft und Signale sendet."""
+    # Überprüfen, ob Symbole für die Auto-Analyse definiert wurden
     symbols = config["AUTO_SIGNAL_SYMBOLS"]
-    interval = config["SIGNAL_CHECK_INTERVAL_SEC"]
-    log("⏱️ Auto-Signal-Loop gestartet...")
+    if not symbols:
+        await bot.send_message(chat_id=chat_id, text="❌ Keine Symbole für Auto-Analyse definiert.")  # Fehlermeldung bei leerer Symbol-Liste
+        return
 
-    while True:
-        current_hour = datetime.utcnow().strftime("%Y-%m-%d %H")
-        max_per_hour = get_scaled_limit(symbols)
+    # Analyse der Symbole
+    for symbol in symbols:
+        try:
+            # Symbol analysieren und Ergebnis zurückgeben
+            formatted_symbol = format_symbol(symbol)  # Formatierung des Symbols gemäß TwelveData API
+            result = await analyze_symbol(formatted_symbol)  # Hier wird die Analyse-Funktion aufgerufen
+            
+            if isinstance(result, str):
+                await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")  # Falls das Ergebnis ein String ist, wird es gesendet
+            else:
+                # Detaillierte Ausgabe für jedes Symbol
+                response = f"Symbol: {formatted_symbol}\n"
+                response += f"Signal: {result['signal']}\n"
+                response += f"RSI: {result['rsi']}\n"
+                response += f"Trend: {result['trend']}\n"
+                response += f"Pattern: {result['pattern']}\n"
+                response += f"Stars: {result['stars']}/5"
+                await bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+            
+            # Kurze Pause zwischen den Nachrichten, um das Telegram API-Limit zu respektieren
+            await asyncio.sleep(1.5)
+        except Exception as e:
+            # Fehler beim Abrufen der Analyse-Daten für das Symbol
+            await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
 
-        for symbol in symbols:
-            try:
-                # Marktdaten analysieren
-                result = await analyze_symbol(symbol)  # Async Analyse mit Fehlerbehandlung
-                if not result or not result.get("signal"):
-                    log(f"[DEBUG] {symbol} → Kein verwertbares Signal.")
-                    continue
-
-                # Schlüssel für das Signal pro Stunde
-                key = f"{symbol}_{current_hour}"
-                if last_sent_signals.get(key, 0) >= max_per_hour:
-                    log(f"⚠️ {symbol} → Limit erreicht ({max_per_hour}/h)")
-                    continue
-
-                # Signal senden
-                await send_signal(symbol, result)
-                last_sent_signals[key] = last_sent_signals.get(key, 0) + 1
-
-            except Exception as e:
-                log(f"[ERROR] Fehler bei {symbol}: {e}")
-
-        # Schlafen für das Intervall
-        await asyncio.sleep(interval)
+    # Abschließende Nachricht nach der Analyse
+    await bot.send_message(chat_id=chat_id, text="✅ *Tägliche Analyse abgeschlossen!*", parse_mode="Markdown")
