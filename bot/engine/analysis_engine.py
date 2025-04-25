@@ -14,22 +14,51 @@ if not TD_API_KEY:
 # Initialisierung des TwelveData Clients
 td = TDClient(apikey=TD_API_KEY)
 
+def format_symbol(symbol: str) -> str:
+    """
+    Überprüft und formatiert das Symbol gemäß den Anforderungen der TwelveData API.
+    """
+    symbol_map = {
+        "SPX500": "SPX",
+        "DIA": "DJI",
+        "QQQ": "IXIC",
+        "MDY": "MDY",
+        "VTI": "VTI",
+        "VOO": "VOO",
+        "SPY": "SPY",
+        "XLF": "XLF",
+        "XLK": "XLK",
+        "XLE": "XLE",
+        "AAPL": "AAPL",
+        "MSFT": "MSFT",
+        "TSLA": "TSLA",
+        "NVDA": "NVDA",
+        "META": "META",
+        "AMZN": "AMZN",
+        "GOOGL": "GOOGL",
+        "BRK.B": "BRK.B",
+        "UNH": "UNH",
+        "JPM": "JPM"
+    }
+    return symbol_map.get(symbol, symbol)
+
 async def fetch_data(symbol: str) -> list:
     """Holt historische Kursdaten von TwelveData."""
     try:
         # Hole Zeitreihendaten vom TwelveData API
+        formatted_symbol = format_symbol(symbol)  # Formatiertes Symbol
         series = await td.time_series(
-            symbol=symbol,
+            symbol=formatted_symbol,
             interval=settings["INTERVAL"],  # 1-Minuten-Intervall
             outputsize=50  # Maximale Anzahl der abgerufenen Datenpunkte
         ).as_json()
 
         # Überprüfen des Typs der zurückgegebenen Daten
         if isinstance(series, dict) and "values" in series:
-            print(f"[DEBUG] Rohantwort für {symbol}: {series}")  # Ausgabe der Antwort für Debugging
+            print(f"[DEBUG] Rohantwort für {formatted_symbol}: {series}")  # Ausgabe der Antwort für Debugging
             return series["values"]
         else:
-            print(f"[ERROR] Unerwartetes Datenformat für {symbol}: {series}")
+            print(f"[ERROR] Unerwartetes Datenformat für {formatted_symbol}: {series}")
             return []
 
     except Exception as e:
