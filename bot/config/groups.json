@@ -1,0 +1,20 @@
+{
+    "ark_etfs": [
+        "ARKK",
+        "ARKQ",
+        "ARKW",
+        "ARKF",
+        "ARKG",
+        "ARKX"
+    ],
+    "kryptowaehrungen": [
+        "BTC/USD",
+        "ETH/USD",
+        "DOGE/USD"
+    ],
+    "welt_indizes": [
+        "DJI",
+        "SPX",
+        "NASDAQ"
+    ]
+}
