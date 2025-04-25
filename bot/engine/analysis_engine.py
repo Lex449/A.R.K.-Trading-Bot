@@ -32,7 +32,7 @@ async def fetch_data(symbol: str) -> list:
         print(f"[ERROR] Data fetch failed for {symbol}: {e}")
         return []
 
-async def analyze_market(symbol: str):
+async def analyze_symbol(symbol: str):
     """Analysiert das Symbol und gibt das Signal zurück."""
     # Holen der Kursdaten
     data = await asyncio.to_thread(fetch_data, symbol)
