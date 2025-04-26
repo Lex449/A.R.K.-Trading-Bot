@@ -1,10 +1,17 @@
+# bot/engine/analysis_engine.py
+
 import os
 import requests
 import pandas as pd
 import numpy as np
 from bot.engine.pattern_detector import detect_candle_patterns
+from bot.utils.logger import setup_logger
 
-FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY')
+# === Setup Logging ===
+logger = setup_logger(__name__)
+
+# === Load API Config ===
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
 FINNHUB_BASE_URL = "https://finnhub.io/api/v1"
 
 async def analyze_symbol(symbol: str) -> dict:
@@ -17,7 +24,7 @@ async def analyze_symbol(symbol: str) -> dict:
         # Quote-Daten abrufen
         quote_url = f"{FINNHUB_BASE_URL}/quote"
         params = {"symbol": symbol, "token": FINNHUB_API_KEY}
-        quote_resp = requests.get(quote_url, params=params).json()
+        quote_resp = requests.get(quote_url, params=params, timeout=10).json()
 
         # Candle-Daten abrufen
         candles_url = f"{FINNHUB_BASE_URL}/stock/candle"
@@ -27,9 +34,10 @@ async def analyze_symbol(symbol: str) -> dict:
             "count": 30,
             "token": FINNHUB_API_KEY
         }
-        candles_resp = requests.get(candles_url, params=params).json()
+        candles_resp = requests.get(candles_url, params=params, timeout=10).json()
 
         if candles_resp.get("s") != "ok":
+            logger.warning(f"[Analysis Engine] No valid candles for {symbol}. Skipping.")
             return None
 
         # DataFrame bauen
@@ -67,7 +75,6 @@ async def analyze_symbol(symbol: str) -> dict:
             signal = "Sell"
 
         # Sterne-Rating
-        stars = 3
         if signal in ["Buy", "Sell"] and ("Engulfing" in detected_pattern):
             stars = 5
         elif signal in ["Buy", "Sell"] and (detected_pattern in ["Hammer", "Shooting Star"]):
@@ -80,6 +87,8 @@ async def analyze_symbol(symbol: str) -> dict:
         # Halteempfehlung
         holding_period = "Short-Term" if short_trend == mid_trend else "Mid-Term"
 
+        logger.info(f"[Analysis Engine] {symbol} analyzed: Signal={signal}, RSI={latest_rsi:.2f}, Pattern={detected_pattern}, Stars={stars}")
+        
         return {
             "signal": signal,
             "rsi": round(latest_rsi, 2),
@@ -92,5 +101,5 @@ async def analyze_symbol(symbol: str) -> dict:
         }
 
     except Exception as e:
-        print(f"Analysis error: {str(e)}")
+        logger.error(f"[Analysis Engine Error] {symbol}: {str(e)}")
         return None
