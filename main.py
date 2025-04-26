@@ -1,41 +1,62 @@
+# bot/main.py
+
+import asyncio
 import logging
 import os
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder, CommandHandler
 from bot.handlers.commands import start, help_command, analyse_symbol, set_language
+from bot.handlers.signal import signal_handler
+from bot.handlers.status import status
+from bot.handlers.shutdown import shutdown
 from bot.auto.auto_signal import auto_signal_loop
+from bot.utils.error_reporter import report_error
+from bot.config.settings import get_settings
 from telegram import Update
 
 # === Setup Logging ===
 logging.basicConfig(
-    format='[%(asctime)s] %(levelname)s – %(message)s',
+    format='[%(asctime)s] %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
-# === ENV laden ===
+# === Load .env ===
 load_dotenv()
 
-# === Umgebungsvariablen prüfen ===
-TOKEN = os.getenv("BOT_TOKEN")
-if not TOKEN:
-    logging.error("❌ BOT_TOKEN fehlt – Abbruch.")
-    exit(1)
+# === Validate critical ENV variables ===
+config = get_settings()
+TOKEN = config["BOT_TOKEN"]
 
-# === Hauptfunktion ===
-def main():
+# === Main Async Application ===
+async def main():
+    logging.info("🚀 A.R.K. Bot 2.0 – Made in Bali. Engineered with German Precision.")
+
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # === Handler ===
+    # === Register Handlers ===
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("analyse", analyse_symbol))
     app.add_handler(CommandHandler("setlanguage", set_language))
+    app.add_handler(CommandHandler("signal", signal_handler))
+    app.add_handler(CommandHandler("status", status))
+    app.add_handler(CommandHandler("shutdown", shutdown))
 
-    # === Log und Start-Info ===
-    logging.info("🚀 A.R.K. Bot 1.0 – Made in Bali. Engineered with German Precision.")
-    
-    # === Starte den Bot sauber ===
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    # === Start Background Auto-Signal Loop ===
+    async def start_auto_signals():
+        try:
+            await auto_signal_loop()
+        except Exception as e:
+            await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Auto Signal Loop")
+
+    asyncio.create_task(start_auto_signals())
+
+    # === Run Bot ===
+    try:
+        await app.run_polling(allowed_updates=Update.ALL_TYPES)
+    except Exception as e:
+        logging.critical(f"❌ Critical Error in Bot: {e}")
+        await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Main Polling Error")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
