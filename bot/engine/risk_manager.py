@@ -1,56 +1,67 @@
 # bot/engine/risk_manager.py
 
 import logging
+from bot.utils.logger import setup_logger
 
-# Setup logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# Setup structured logger
+logger = setup_logger(__name__)
 
 async def assess_signal_risk(signal_data: dict) -> tuple:
     """
-    Evaluates a trading signal based on its 'stars' rating
-    and generates an appropriate risk warning.
+    Evaluates a trading signal based on its 'stars' and 'rsi' rating
+    and generates an intelligent risk advisory.
 
     Args:
-        signal_data (dict): The full result dictionary from analyze_symbol() including 'stars'.
+        signal_data (dict): Full analysis result from analyze_symbol() including 'stars' and 'rsi'.
 
     Returns:
         tuple:
             - message (str): Risk advisory message
             - warning (bool): True if increased risk detected
     """
+    try:
+        stars = signal_data.get("stars", 0)
+        rsi = signal_data.get("rsi", None)
 
-    stars = signal_data.get("stars", 0)
-    rsi = signal_data.get("rsi", None)
+        # === Evaluation Logic ===
+        if stars >= 5:
+            logger.info("[Risk Manager] ✅ Ultra high quality signal (5⭐).")
+            return (
+                "✅ *Ultra high quality trade detected (5⭐).* _Excellent technical alignment._",
+                False
+            )
 
-    if stars >= 5:
-        logger.info("✅ Ultra high quality signal (5 stars). Minimal additional risk.")
-        return "✅ *Ultra high quality trade detected (5⭐).* _Excellent technical alignment._", False
+        if stars == 4:
+            logger.info("[Risk Manager] ✅ Strong trade detected (4⭐).")
+            return (
+                "✅ *Strong quality trade detected (4⭐).* _Solid conditions overall._",
+                False
+            )
 
-    elif stars == 4:
-        logger.info("✅ Solid high quality trade (4 stars).")
-        return "✅ *Good quality trade detected (4⭐).* _Conditions are favorable._", False
+        if stars == 3:
+            logger.warning("[Risk Manager] ⚠️ Medium risk trade (3⭐). Caution advised.")
+            rsi_warning = ""
 
-    elif stars == 3:
-        logger.warning("⚠️ Medium quality trade (3 stars). Increased caution advised.")
-        rsi_warning = ""
-        if rsi:
-            if rsi > 70:
-                rsi_warning = "\n🔴 *RSI is high (>70)* – market could be overbought."
-            elif rsi < 30:
-                rsi_warning = "\n🔵 *RSI is low (<30)* – market could be oversold."
+            if rsi is not None:
+                if rsi > 70:
+                    rsi_warning = "\n🔴 *RSI Alert:* Overbought (>70). Increased reversal risk."
+                elif rsi < 30:
+                    rsi_warning = "\n🔵 *RSI Alert:* Oversold (<30). Increased rebound probability."
 
-        warning_message = (
-            "⚠️ *Moderate risk detected (3-star trade).*"
-            "\n_Confirm additional indicators before entry._" +
-            rsi_warning
-        )
-        return warning_message, True
+            return (
+                "⚠️ *Medium risk trade detected (3⭐).* _Confirm with extra indicators._" + rsi_warning,
+                True
+            )
 
-    else:
-        logger.warning("❌ Very low quality signal detected (<3 stars). Entry not advised.")
+        logger.warning("[Risk Manager] ❌ Very low quality signal (<3⭐). Not recommended.")
         return (
-            "❌ *Low quality trade detected (<3⭐).*\n"
-            "_Entry is highly discouraged unless other strong factors are present._",
+            "❌ *Low quality trade detected (<3⭐).* _Entry not advised unless strong other factors exist._",
+            True
+        )
+
+    except Exception as e:
+        logger.error(f"[Risk Manager Error] {str(e)}")
+        return (
+            "⚠️ *Risk evaluation error.* _Proceed cautiously._",
             True
         )
