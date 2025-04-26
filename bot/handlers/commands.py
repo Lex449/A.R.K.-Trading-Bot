@@ -5,7 +5,7 @@ from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.config.settings import get_settings
 from bot.engine.analysis_engine import analyze_symbol
-from bot.utils.session_tracker import get_session_summary
+from bot.utils.session_tracker import get_session_report
 
 # Setup Logging
 logger = logging.getLogger(__name__)
