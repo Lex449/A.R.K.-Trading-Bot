@@ -1,37 +1,31 @@
 # bot/handlers/help.py
 
+import logging
 from telegram import Update
 from telegram.ext import ContextTypes
-from bot.utils.language import get_language
 from bot.utils.i18n import get_text
-from bot.utils.logger import setup_logger
+from bot.utils.language import get_language
 from bot.utils.error_reporter import report_error
 
-# Setup structured logger
-logger = setup_logger(__name__)
+# Setup Logger
+logger = logging.getLogger(__name__)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handler for /help command.
-    Sends the available command list to the user.
+    Provides an overview of all available bot commands.
     """
     chat_id = update.effective_chat.id
     user = update.effective_user.first_name or "Trader"
-    lang = get_language(chat_id)
-
-    logger.info(f"/help command requested by {user} (Chat ID: {chat_id})")
 
     try:
+        lang = get_language(update)
         help_text = get_text("help", lang)
 
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=help_text,
-            parse_mode="Markdown"
-        )
+        await update.message.reply_text(help_text)
 
-        logger.info(f"Help information sent to {user}")
+        logger.info(f"[HELP] Help command requested by {user} (Chat ID: {chat_id}).")
 
     except Exception as e:
         await report_error(context.bot, chat_id, e, context_info="Help Command Error")
-        logger.error(f"Error during help command: {e}")
+        logger.error(f"[HELP ERROR] {e}")
