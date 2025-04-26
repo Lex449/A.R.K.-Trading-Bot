@@ -1,11 +1,25 @@
 # bot/utils/market_time.py
 
-from datetime import datetime
+from datetime import datetime, time
 
-def is_trading_day() -> bool:
+def is_trading_day_and_time() -> bool:
     """
-    Überprüft, ob heute ein normaler Handelstag ist (Montag-Freitag).
-    Wochenende wird ausgeschlossen.
+    Prüft, ob heute ein US-Handelstag (Mo-Fr) ist UND ob die aktuelle UTC-Zeit
+    innerhalb der regulären Handelszeiten liegt (13:30 bis 20:00 UTC für NYSE/Nasdaq).
     """
-    today = datetime.utcnow().weekday()  # 0 = Montag, 6 = Sonntag
-    return today in [0, 1, 2, 3, 4]  # Nur Montag bis Freitag aktiv
+
+    now = datetime.utcnow()
+    weekday = now.weekday()  # 0 = Montag, 6 = Sonntag
+
+    # Check: Nur Montag bis Freitag
+    if weekday > 4:
+        return False
+
+    # Check: Nur zwischen 13:30 und 20:00 UTC
+    market_open = time(13, 30)
+    market_close = time(20, 0)
+
+    if market_open <= now.time() <= market_close:
+        return True
+
+    return False
