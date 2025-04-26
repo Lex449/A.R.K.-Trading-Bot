@@ -1,6 +1,25 @@
+import os
+import asyncio
+import logging
+from telegram import Bot
+from bot.engine.analysis_engine import analyze_symbol
+from bot.engine.risk_manager import assess_signal_risk
+from bot.utils.session_tracker import update_session_tracker
+from bot.utils.error_reporter import report_error
+from bot.utils.market_time import is_trading_day, is_trading_hours
+from bot.config.settings import get_settings
+
+# Setup logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Load configuration
+config = get_settings()
+
 async def auto_signal_loop():
     """
-    Continuously sends trading signals automatically at configured intervals.
+    Continuously sends trading signals automatically at configured intervals,
+    but only during active US trading hours.
     """
     bot = Bot(token=config["BOT_TOKEN"])
     chat_id = int(config["TELEGRAM_CHAT_ID"])
@@ -11,15 +30,17 @@ async def auto_signal_loop():
         logger.warning(f"Failed to delete webhook: {str(e)}")
 
     while True:
-        # Check if it's a trading day and trading hours
         if not is_trading_day() or not is_trading_hours():
-            logger.info("Not trading time. Bot is waiting...")
-            await asyncio.sleep(300)  # 5 Minuten schlafen
+            logger.info("⏸️ Outside trading hours. Waiting before next market check...")
+            await asyncio.sleep(300)  # 5 Minuten Pause
             continue
+
+        logger.info("✅ Trading hours detected. Starting analysis.")
+        await bot.send_message(chat_id=chat_id, text="✅ *Market open – Starting auto-analysis!*", parse_mode="Markdown")
 
         symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
         if not symbols:
-            logger.error("No symbols configured for auto-analysis.")
+            logger.error("❌ No symbols configured for auto-analysis.")
             await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
             continue
 
@@ -52,11 +73,11 @@ async def auto_signal_loop():
                 )
 
                 await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(1.5)  # Respect Telegram API limits
 
             except Exception as e:
                 await report_error(bot, chat_id, e, context_info=f"AutoSignal error with {symbol}")
                 logger.error(f"AutoSignal Error for {symbol}: {e}")
 
-        logger.info("Auto signal round completed. Waiting for next scan...")
+        logger.info("🔁 Auto-signal round completed. Waiting for next interval...")
         await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
