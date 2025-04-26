@@ -1,29 +1,35 @@
 # bot/handlers/start.py
 
-import logging
 from telegram import Update
 from telegram.ext import ContextTypes
-from bot.utils.i18n import get_text
 from bot.utils.language import get_language
+from bot.utils.i18n import get_text
+from bot.utils.error_reporter import report_error
+from bot.utils.logger import setup_logger
 
-# Setup logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# Setup structured logger
+logger = setup_logger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handler for /start command.
-    Sends a welcome message and basic bot information.
+    Greets the user and provides initial bot instructions.
     """
-    user = update.effective_user.first_name or "Trader"
     chat_id = update.effective_chat.id
+    user = update.effective_user.first_name or "Trader"
     lang = get_language(chat_id) or "en"
 
-    greeting = get_text("start", lang).format(user=user)
-    help_text = get_text("help", lang)
-
     try:
-        await update.message.reply_text(f"{greeting}\n\n{help_text}", parse_mode="Markdown")
-        logger.info(f"[Start] {user} ({chat_id}) – Start command received.")
+        greeting = get_text("start_greeting", lang).format(user=user)
+        help_hint = get_text("start_help_hint", lang)
+
+        await update.message.reply_text(
+            f"{greeting}\n\n{help_hint}",
+            parse_mode="Markdown"
+        )
+
+        logger.info(f"Start command triggered by {user} (Chat ID: {chat_id})")
+
     except Exception as e:
-        logger.error(f"[Start Error] {e}")
+        await report_error(context.bot, chat_id, e, context_info="Start Command Error")
+        logger.error(f"Error in /start command: {e}")
