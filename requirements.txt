@@ -1,32 +1,5 @@
-# Telegram
-python-telegram-bot==20.3          # Telegram Bot API für Interaktion.
-
-# Umgebungsvariablen laden
-python-dotenv==1.0.1               # Zum Laden der Umgebungsvariablen aus .env
-
-# Asynchrones Event Loop Management
-nest_asyncio==1.6.0                # Ermöglicht asyncio in Jupyter-Umgebungen oder anderen blockierenden Setups
-
-# HTTP Requests
-requests==2.31.0                   # Zum Senden von HTTP-Anfragen
-
-# Pandas für Datenmanipulation
-pandas==2.2.1                      # Zum Verarbeiten und Analysieren von Daten
-
-# Asynchronous HTTP Requests
-aiohttp==3.9.3                     # Asynchrone HTTP-Requests für effiziente Datenabrufe
-
-# TwelveData API für Echtzeit-Marktdaten
-twelvedata==1.1.2                  # Zugriff auf Finanzmarkt-Daten von TwelveData
-
-# WebSocket für Echtzeitdaten
-websocket-client==1.5.1            # WebSocket-Client für Echtzeitkommunikation
-
-# Task Scheduler für geplante Aufgaben
-apscheduler==3.8.1                 # Planer für wiederkehrende Aufgaben
-
-# Flask für Web-Dashboard
-flask==2.2.2                       # Web-Framework für das Dashboard
-
-# Hilfsbibliothek für die Installation von Paketen
-setuptools==67.6.0                 # Paketverwaltung und Installation von Abhängigkeiten
+python-telegram-bot==20.3
+python-dotenv==1.0.1
+nest_asyncio==1.6.0
+requests==2.31.0
+aiohttp==3.9.3
