@@ -1,18 +1,14 @@
-# bot/handlers/shutdown.py
-
 import logging
 import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.utils.error_reporter import report_error
 
-# Setup Logger
+# Setup logger for shutdown handler
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handler for /shutdown command.
     Gracefully shuts down the bot after notifying the user.
     """
     chat_id = update.effective_chat.id
@@ -21,21 +17,20 @@ async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     try:
         await context.bot.send_message(
             chat_id=chat_id,
-            text="⚠️ *Shutdown initiated.*\nThe bot will go offline shortly...",
+            text="⚠️ *Shutdown initiated.*\nThe bot will go offline shortly.",
             parse_mode="Markdown"
         )
 
         logger.warning(f"Shutdown command triggered by {user} (Chat ID: {chat_id})")
 
-        # Kleine Pause für sicheres Senden
+        # Wait a moment to ensure messages are delivered
         await asyncio.sleep(2)
 
-        # Bot sauber beenden
+        # Shutdown the application gracefully
         await context.application.stop()
         await context.application.shutdown()
-
-        logger.info("✅ A.R.K. Bot shutdown completed successfully.")
+        logger.info("✅ A.R.K. Bot shutdown completed.")
 
     except Exception as e:
-        await report_error(context.bot, chat_id, e, context_info="Shutdown Command Error")
-        logger.error(f"❌ Error during shutdown triggered by {user}: {e}")
+        logger.error(f"Error during shutdown: {e}")
+        await report_error(context.bot, chat_id, e, context_info="Shutdown Handler Error")
