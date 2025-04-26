@@ -1,3 +1,5 @@
+# bot/utils/telegram_utils.py
+
 import logging
 import requests
 
@@ -7,34 +9,36 @@ logger.setLevel(logging.INFO)
 
 def get_updates_from_telegram(bot_token: str) -> dict:
     """
-    Fetches updates from the Telegram API for the given bot token.
-
+    Fetches the latest updates from the Telegram API.
+    
     Args:
-        bot_token (str): The Telegram bot token.
+        bot_token (str): Telegram bot token.
 
     Returns:
-        dict: Parsed JSON updates if successful, otherwise None.
+        dict: Parsed response if successful, otherwise None.
     """
     url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
+    headers = {"Accept": "application/json"}
 
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, headers=headers, timeout=10)
 
-        logger.debug(f"Telegram API Response Code: {response.status_code}")
-        logger.debug(f"Telegram API Response Body: {response.text}")
-
+        logger.debug(f"[Telegram API] Status: {response.status_code}")
         if response.status_code == 200:
-            updates = response.json()
-            logger.info("Successfully fetched updates from Telegram.")
-            return updates
+            logger.info("[Telegram API] Successfully retrieved updates.")
+            return response.json()
         else:
-            logger.error(f"Error fetching updates: HTTP {response.status_code} - {response.text}")
+            logger.error(f"[Telegram API] Failed: {response.status_code} - {response.text}")
             return None
 
     except requests.exceptions.Timeout:
-        logger.warning("Request to Telegram API timed out.")
+        logger.warning("[Telegram API] Request timed out.")
+        return None
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"[Telegram API] Request error: {str(e)}")
         return None
 
     except Exception as e:
-        logger.error(f"Exception occurred while fetching updates: {str(e)}")
+        logger.critical(f"[Telegram API] Unexpected error: {str(e)}")
         return None
