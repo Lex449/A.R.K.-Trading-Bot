@@ -4,32 +4,34 @@ import asyncio
 import logging
 import os
 from dotenv import load_dotenv
-from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler
+from telegram import Update
 from bot.handlers.commands import start, help_command, analyze_symbol, set_language
 from bot.handlers.signal import signal_handler
 from bot.handlers.status import status_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.auto.auto_signal import auto_signal_loop
 from bot.utils.error_reporter import report_error
-from bot.config.settings import get_settings
 from bot.utils.logging import setup_logger
+from bot.config.settings import get_settings
 
 # === Setup Logging ===
 setup_logger()
 
-# === Load Environment ===
+# === Load .env Variables ===
 load_dotenv()
+
+# === Load Settings ===
 config = get_settings()
 TOKEN = config["BOT_TOKEN"]
 
-# === Start Telegram Bot ===
-async def start_telegram_bot():
-    logging.info("🚀 Starting A.R.K. Bot – Made in Bali. Engineered with German Precision.")
+async def run_bot():
+    logging.info("🚀 A.R.K. Bot 2.0 – Made in Bali. Engineered with German Precision.")
 
+    # === Build the Application ===
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # Register Commands
+    # === Register Handlers ===
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("analyse", analyze_symbol))
@@ -38,29 +40,25 @@ async def start_telegram_bot():
     app.add_handler(CommandHandler("status", status_handler))
     app.add_handler(CommandHandler("shutdown", shutdown_handler))
 
-    return app
+    # === Initialize App (Important!) ===
+    await app.initialize()
 
-# === Main Application ===
-async def main():
-    app = await start_telegram_bot()
+    # === Start Auto Signal Loop (Parallel) ===
+    asyncio.create_task(auto_signal_loop())
 
-    # Launch Auto Signal Loop separately
-    auto_signal_task = asyncio.create_task(auto_signal_loop())
+    # === Start Polling ===
+    await app.start()
+    await app.updater.start_polling()
 
-    try:
-        await app.start()
-        await app.updater.start_polling()
-        logging.info("✅ Bot polling and auto-signal running.")
-        await app.updater.idle()
-    except Exception as e:
-        logging.critical(f"❌ Critical Error in Bot: {e}")
-        await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Main Polling Error")
-    finally:
-        auto_signal_task.cancel()
-        await app.stop()
-        await app.shutdown()
-        logging.info("🛑 Bot stopped cleanly.")
+    # === Keep Bot Running ===
+    await app.updater.idle()
 
-# === Entry Point ===
+    # === Shutdown Safely ===
+    await app.stop()
+    await app.shutdown()
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(run_bot())
+    except Exception as e:
+        logging.critical(f"❌ Critical Error in Bot Main Loop: {e}")
