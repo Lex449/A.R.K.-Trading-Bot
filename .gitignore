@@ -6,6 +6,7 @@ __pycache__/
 # Environment & sensitive config
 .env
 .env.*
+.envrc
 
 # IDEs & local dev files
 .vscode/
@@ -16,7 +17,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 ehthumbs.db
-Icon*
+Icon?
 
 # Python virtual environments
 .venv/
@@ -24,3 +25,10 @@ venv/
 
 # Logs & reports
 *.log
+logs/
+*.sqlite3
+
+# Other temporary files
+*.bak
+*.tmp
+*.temp
