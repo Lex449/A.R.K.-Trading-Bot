@@ -1,32 +1,23 @@
 # bot/auto/scheduler.py
 
-import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
-from bot.auto.auto_signal import auto_signal_loop
-from bot.auto.auto_analysis import daily_analysis_job
+from bot.auto.auto_signal_loop import auto_signal_loop
+from bot.auto.daily_analysis import daily_analysis_job
 
-# Setup Logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-def start_scheduler(app):
-    """
-    Starts the trading signal scheduler and daily analysis scheduler.
-    """
-
+def setup_scheduler(application):
     scheduler = AsyncIOScheduler()
 
-    # Auto Signal Loop (läuft permanent im Hintergrund)
-    app.create_task(auto_signal_loop())
-
-    # Daily Analysis Job – jeden Handelstag 30 Minuten vor US-Börsenstart
+    # Tägliche Analyse einmal pro Tag um 16:00 Bali-Zeit
     scheduler.add_job(
         daily_analysis_job,
-        CronTrigger(hour=9, minute=0, timezone="America/New_York"),  # 09:00 NY Time (vor 09:30 NYSE-Opening)
-        args=(app.bot,),
-        name="Daily Market Analysis Job"
+        trigger="cron",
+        hour=16,
+        minute=0,
+        timezone="Asia/Makassar",  # WITA (Bali)
+        args=[application]
     )
 
+    # AutoSignal Loop (läuft ohnehin dauerhaft)
+    application.create_task(auto_signal_loop())
+
     scheduler.start()
-    logger.info("✅ Scheduler gestartet: Auto-Signale & tägliche Analyse aktiviert.")
