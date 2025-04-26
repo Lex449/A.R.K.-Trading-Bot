@@ -1,29 +1,42 @@
 # bot/utils/holiday_checker.py
 
-from datetime import datetime
+"""
+Checks if today is a US stock market holiday.
+Designed for fast pre-checks before data polling or trading logic.
+"""
 
-# Liste der wichtigsten US-Feiertage (Monat, Tag)
+from datetime import datetime
+import logging
+from bot.utils.logger import setup_logger
+
+# Setup structured logger
+logger = setup_logger(__name__)
+
+# Key US market holidays (static approximation)
 US_MARKET_HOLIDAYS = [
-    (1, 1),    # Neujahr
+    (1, 1),    # New Year's Day
     (7, 4),    # Independence Day
-    (12, 25),  # Weihnachten
-    (11, 23),  # Thanksgiving (annähernd, vereinfacht)
-    (1, 15),   # Martin Luther King Jr. Day (immer 3. Montag, hier als 15. pauschalisiert)
-    (2, 19),   # Presidents' Day (3. Montag im Februar, vereinfacht)
-    (5, 27),   # Memorial Day (letzter Montag im Mai, ca. 27.)
-    (9, 2),    # Labor Day (erster Montag im September, ca. 2.)
+    (12, 25),  # Christmas Day
+    (11, 23),  # Thanksgiving (approximate)
+    (1, 15),   # MLK Day (approximated as Jan 15)
+    (2, 19),   # Presidents' Day (approximated as Feb 19)
+    (5, 27),   # Memorial Day (approximate)
+    (9, 2),    # Labor Day (approximate)
 ]
 
 def is_us_holiday() -> bool:
     """
-    Checks if today is a recognized US stock market holiday.
+    Checks whether today is a (static) US stock market holiday.
 
     Returns:
-        bool: True if today is a holiday, False otherwise.
+        bool: True if today matches a holiday, False otherwise.
     """
     today = datetime.utcnow()
     today_tuple = (today.month, today.day)
 
     if today_tuple in US_MARKET_HOLIDAYS:
+        logger.info(f"🛑 Today is a US holiday: {today_tuple}")
         return True
-    return False
+    else:
+        logger.debug(f"✅ No holiday detected today: {today_tuple}")
+        return False
