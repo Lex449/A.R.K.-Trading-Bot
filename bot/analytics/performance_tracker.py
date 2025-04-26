@@ -10,9 +10,9 @@ performance_data = {
     "wrong_signals": 0
 }
 
-def update_performance(correct: bool):
+def update_performance(is_strong_signal: bool):
     performance_data["total_signals"] += 1
-    if correct:
+    if is_strong_signal:
         performance_data["correct_signals"] += 1
     else:
         performance_data["wrong_signals"] += 1
@@ -26,7 +26,7 @@ def get_performance_summary() -> str:
     return (
         f"📈 *Performance Overview*\n\n"
         f"Total Signals: {performance_data['total_signals']}\n"
-        f"Correct Signals: {performance_data['correct_signals']}\n"
-        f"Wrong Signals: {performance_data['wrong_signals']}\n"
+        f"Correct (Strong) Signals: {performance_data['correct_signals']}\n"
+        f"Wrong (Weak) Signals: {performance_data['wrong_signals']}\n"
         f"Accuracy: {accuracy:.2f}%\n"
     )
