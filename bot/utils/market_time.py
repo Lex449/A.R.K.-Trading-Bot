@@ -1,40 +1,46 @@
 # bot/utils/market_time.py
 
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 import pytz
 import holidays
 
-# US Feiertage
+# Feiertage USA
 us_holidays = holidays.US()
 
 def is_trading_day() -> bool:
     """
-    Check if today is a US trading day (Monday–Friday and not a public holiday).
+    Checkt, ob heute ein normaler US-Handelstag ist (kein Wochenende, kein Feiertag).
     """
     now = datetime.now(pytz.timezone('America/New_York'))
-    weekday = now.weekday()  # 0 = Monday, 6 = Sunday
+    weekday = now.weekday()  # 0 = Montag (bis 4 = Freitag)
     today_date = now.date()
-    return weekday in [0, 1, 2, 3, 4] and today_date not in us_holidays
+
+    return weekday in range(5) and today_date not in us_holidays
 
 def is_trading_hours() -> bool:
     """
-    Check if current time is within regular US stock market hours.
-    NYSE/Nasdaq: 9:30 AM to 4:00 PM New York time.
+    Checkt, ob jetzt normale US-Handelszeiten sind (NYSE/Nasdaq).
     """
     now = datetime.now(pytz.timezone('America/New_York')).time()
-    market_open = time(9, 30)
-    market_close = time(16, 0)
-    return market_open <= now <= market_close
+    return time(9, 30) <= now <= time(16, 0)
 
-def is_market_opening_soon(minutes: int = 15) -> bool:
+def is_15min_before_market_open() -> bool:
     """
-    Check if the US stock market opens in the next X minutes.
-    Default: 15 minutes.
+    Checkt, ob wir uns 15 Minuten vor Marktöffnung befinden.
+    """
+    now = datetime.now(pytz.timezone('America/New_York')).time()
+    return time(9, 15) <= now < time(9, 30)
+
+def is_15min_before_market_close() -> bool:
+    """
+    Checkt, ob wir uns 15 Minuten vor Marktschluss befinden.
+    """
+    now = datetime.now(pytz.timezone('America/New_York')).time()
+    return time(15, 45) <= now < time(16, 0)
+
+def is_friday_close() -> bool:
+    """
+    Checkt, ob es Freitag nach Handelsschluss ist (für Wochenabschluss-Message).
     """
     now = datetime.now(pytz.timezone('America/New_York'))
-    market_open_today = now.replace(hour=9, minute=30, second=0, microsecond=0)
-
-    if now < market_open_today:
-        delta = (market_open_today - now).total_seconds() / 60
-        return 0 <= delta <= minutes
-    return False
+    return now.weekday() == 4 and now.time() > time(16, 0)
