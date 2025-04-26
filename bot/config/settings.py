@@ -1,66 +1,75 @@
 # bot/config/settings.py
 
 import os
-import logging
 from dotenv import load_dotenv
-from bot.utils.logger import setup_logger
-
-# Setup structured logger
-logger = setup_logger(__name__)
+import logging
 
 # === Load Environment Variables ===
 load_dotenv()
 
-def get_settings() -> dict:
+# === Setup Logging ===
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+def get_settings():
     """
-    Loads and validates environment variables for the bot's configuration.
-    Provides robust error handling and safe defaults.
+    Loads and validates environment variables for A.R.K. Trading Bot.
     """
 
     # === Mandatory Variables ===
     bot_token = os.getenv("BOT_TOKEN")
     if not bot_token:
-        logger.critical("❌ BOT_TOKEN missing in .env. Cannot start the bot.")
-        raise ValueError("❌ BOT_TOKEN is missing. Please add it to your .env file.")
+        logger.error("❌ BOT_TOKEN is missing in .env.")
+        raise ValueError("❌ BOT_TOKEN is missing. Please check your .env file.")
 
     telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
     if not telegram_chat_id:
-        logger.critical("❌ TELEGRAM_CHAT_ID missing in .env. Cannot start the bot.")
-        raise ValueError("❌ TELEGRAM_CHAT_ID is missing. Please add it to your .env file.")
+        logger.error("❌ TELEGRAM_CHAT_ID is missing in .env.")
+        raise ValueError("❌ TELEGRAM_CHAT_ID is missing. Please check your .env file.")
 
     finnhub_api_key = os.getenv("FINNHUB_API_KEY")
     if not finnhub_api_key:
-        logger.critical("❌ FINNHUB_API_KEY missing in .env. Cannot fetch market data.")
-        raise ValueError("❌ FINNHUB_API_KEY is missing. Please add it to your .env file.")
+        logger.error("❌ FINNHUB_API_KEY is missing in .env.")
+        raise ValueError("❌ FINNHUB_API_KEY is missing. Please check your .env file.")
 
-    # === Optional Trading Parameters ===
+    # === Optional Variables ===
     interval = os.getenv("INTERVAL", "1min")
-    allowed_intervals = ["1min", "5min", "15min", "30min", "60min"]
-    if interval not in allowed_intervals:
+    if interval not in ["1min", "5min", "15min", "30min", "60min"]:
         logger.warning(f"⚠️ Invalid INTERVAL '{interval}' found. Defaulting to '1min'.")
         interval = "1min"
 
     auto_signal_symbols = os.getenv("AUTO_SIGNAL_SYMBOLS", "")
-    symbols = [s.strip().upper() for s in auto_signal_symbols.split(",") if s.strip()]
+    if not auto_signal_symbols:
+        logger.warning("⚠️ No symbols defined in AUTO_SIGNAL_SYMBOLS. Defaulting to empty list.")
 
-    if not symbols:
-        logger.warning("⚠️ No AUTO_SIGNAL_SYMBOLS defined. Auto analysis will be inactive.")
+    environment = os.getenv("ENVIRONMENT", "Production").capitalize()
+    if environment not in ["Production", "Development"]:
+        environment = "Production"
 
-    # === Final Assembled Settings ===
+    logger.info(f"✅ Settings loaded successfully. Running in '{environment}' mode.")
+
+    # === Assemble Settings ===
     settings = {
+        # Telegram
         "BOT_TOKEN": bot_token,
         "TELEGRAM_CHAT_ID": telegram_chat_id,
-        "FINNHUB_API_KEY": finnhub_api_key,
 
+        # Trading Parameters
         "RSI_PERIOD": int(os.getenv("RSI_PERIOD", 14)),
         "EMA_SHORT_PERIOD": int(os.getenv("EMA_SHORT_PERIOD", 9)),
         "EMA_LONG_PERIOD": int(os.getenv("EMA_LONG_PERIOD", 21)),
         "INTERVAL": interval,
 
-        "AUTO_SIGNAL_SYMBOLS": symbols,
+        # Auto Signal Settings
+        "AUTO_SIGNAL_SYMBOLS": [s.strip().upper() for s in auto_signal_symbols.split(",") if s.strip()],
         "SIGNAL_CHECK_INTERVAL_SEC": int(os.getenv("SIGNAL_CHECK_INTERVAL_SEC", 60)),
         "MAX_SIGNALS_PER_HOUR": int(os.getenv("MAX_SIGNALS_PER_HOUR", 150)),
+
+        # API Keys
+        "FINNHUB_API_KEY": finnhub_api_key,
+
+        # Environment Info
+        "ENVIRONMENT": environment
     }
 
-    logger.info("✅ Settings loaded successfully.")
     return settings
