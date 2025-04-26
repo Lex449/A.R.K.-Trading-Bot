@@ -1,43 +1,52 @@
-# bot/utils/error_reporter.py
-
 import logging
 import traceback
+import os
 from telegram import Bot
+from datetime import datetime
 
-# Setup logging
+# === Setup Logging ===
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-async def report_error(bot: Bot, chat_id: int, exception: Exception, context_info: str = ""):
-    """
-    Reports an error by sending a detailed, human-readable message to Telegram
-    and logging it server-side.
+# Logfile-Pfad
+LOG_DIR = "logs"
+ERROR_LOG_FILE = os.path.join(LOG_DIR, "error.log")
 
-    Args:
-        bot (Bot): Telegram Bot instance.
-        chat_id (int): Target Telegram Chat ID.
-        exception (Exception): The raised exception.
-        context_info (str): Optional context description.
+# Stelle sicher, dass der Log-Ordner existiert
+os.makedirs(LOG_DIR, exist_ok=True)
+
+async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: str = ""):
     """
+    Sends an error report to Telegram and logs it to a local file.
+    """
+
     try:
-        # Create detailed traceback
-        error_trace = ''.join(traceback.format_exception(None, exception, exception.__traceback__))
+        # Format Error Details
+        error_summary = f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+        if context_info:
+            error_summary += f"Context: {context_info}\n"
+        error_summary += f"Error: {str(error)}\n"
+        error_summary += "Traceback:\n" + "".join(traceback.format_exception(type(error), error, error.__traceback__))
 
-        # Prepare Telegram message
-        error_message = (
+        # Log into File
+        with open(ERROR_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(error_summary + "\n" + "="*80 + "\n")
+
+        # Prepare Short Message for Telegram
+        telegram_message = (
             f"⚠️ *Error Report*\n\n"
             f"*Context:* `{context_info}`\n"
-            f"*Error:* `{str(exception)}`\n\n"
-            f"*Traceback:*\n```{error_trace[-3000:]}```"
+            f"*Error:* `{str(error)}`\n"
+            f"```{''.join(traceback.format_exception_only(type(error), error))}```"
         )
 
-        # Send message to Telegram
-        await bot.send_message(chat_id=chat_id, text=error_message, parse_mode="Markdown")
+        # Shorten if necessary (Telegram max message size)
+        if len(telegram_message) > 4000:
+            telegram_message = telegram_message[:3990] + "`...`"
 
-        # Log full error server-side
-        logger.error(f"[ERROR CONTEXT] {context_info}")
-        logger.error(f"[ERROR] {str(exception)}")
-        logger.error(f"[TRACEBACK]\n{error_trace}")
+        await bot.send_message(chat_id=chat_id, text=telegram_message, parse_mode="Markdown")
 
-    except Exception as reporting_error:
-        logger.critical(f"Error while trying to report an error: {reporting_error}")
+        logger.error(f"[Reported Error] Context: {context_info} | Error: {str(error)}")
+
+    except Exception as e:
+        logger.critical(f"[Error Reporting Failure] {e}")
