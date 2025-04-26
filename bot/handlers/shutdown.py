@@ -10,7 +10,7 @@ from bot.utils.error_reporter import report_error
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handler for /shutdown command.
     Gracefully shuts down the bot after notifying the user.
@@ -30,11 +30,11 @@ async def shutdown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         # Kleine Pause für saubere Nachrichtensendung
         await asyncio.sleep(2)
 
-        # Beende die Application
+        # Beende sauber die Application
         await context.application.stop()
         await context.application.shutdown()
-        logger.info("✅ A.R.K. Bot shutdown successfully.")
+        logger.info("A.R.K. Bot shutdown successfully.")
 
     except Exception as e:
         await report_error(context.bot, chat_id, e, context_info="Shutdown Command Error")
-        logger.error(f"❌ Error during shutdown command: {e}")
+        logger.error(f"Error during shutdown command: {e}")
