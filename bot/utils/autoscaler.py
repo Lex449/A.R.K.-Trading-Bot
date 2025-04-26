@@ -1,31 +1,36 @@
 import os
+import logging
 from telegram import Bot
 
-# Die Standard-Symbole für den Auto-Scaler mit den richtigen TwelveData-Symbolen
+# Setup logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Correct Finnhub-compatible symbols for indices and main assets
 DEFAULT_SYMBOLS = [
-    "SPX",  # SPX500 → SPX
-    "DJI",  # DIA → DJI
-    "IXIC", # QQQ → IXIC
-    "MDY",  # MDY bleibt MDY
-    "VTI",  # VTI bleibt VTI
-    "VOO",  # VOO bleibt VOO
-    "SPY",  # SPY bleibt SPY
-    "XLF",  # XLF bleibt XLF
-    "XLK",  # XLK bleibt XLK
-    "XLE",  # XLE bleibt XLE
-    "AAPL", # AAPL bleibt AAPL
-    "MSFT", # MSFT bleibt MSFT
-    "TSLA", # TSLA bleibt TSLA
-    "NVDA", # NVDA bleibt NVDA
-    "META", # META bleibt META
-    "AMZN", # AMZN bleibt AMZN
-    "GOOGL",# GOOGL bleibt GOOGL
-    "BRK.B",# BRK.B bleibt BRK.B
-    "UNH",  # UNH bleibt UNH
-    "JPM"   # JPM bleibt JPM
+    "^GSPC",  # S&P 500 Index
+    "^DJI",   # Dow Jones Industrial Average
+    "^IXIC",  # NASDAQ Composite
+    "MDY",    # MidCap ETF
+    "VTI",    # Total Market ETF
+    "VOO",    # S&P 500 ETF
+    "SPY",    # S&P 500 ETF
+    "XLF",    # Financial Sector ETF
+    "XLK",    # Technology Sector ETF
+    "XLE",    # Energy Sector ETF
+    "AAPL",   # Apple
+    "MSFT",   # Microsoft
+    "TSLA",   # Tesla
+    "NVDA",   # NVIDIA
+    "META",   # Meta Platforms
+    "AMZN",   # Amazon
+    "GOOGL",  # Alphabet
+    "BRK.B",  # Berkshire Hathaway
+    "UNH",    # UnitedHealth
+    "JPM"     # JPMorgan Chase
 ]
 
-# Die Fallback-Symbole für zusätzliche Skalierung
+# Fallback symbols for additional scaling
 FALLBACK_SYMBOLS = [
     "AAPL", "MSFT", "TSLA", "NVDA", "META",
     "AMZN", "GOOGL", "BRK.B", "UNH", "JPM"
@@ -33,63 +38,58 @@ FALLBACK_SYMBOLS = [
 
 def get_scaled_symbols(current_count: int, max_count: int = 150) -> tuple:
     """
-    Berechnet und gibt eine Liste von Symbolen zurück, basierend auf der aktuellen Anzahl
-    von Symbolen und der maximalen Anzahl, ergänzt mit Fallback-Symbolen, falls notwendig.
+    Calculate and return a list of scaled symbols based on current active symbols
+    and maximum allowed symbols. Adds fallback symbols if necessary.
     """
-    # Berechne die idealen Symbole basierend auf der maximalen Anzahl
-    ideal_count = max_count // 12  # Optimierung basierend auf der maximalen Anzahl von 12 Symbolen
-    additional_needed = max(ideal_count - current_count, 0)  # Berechnet, wie viele Symbole hinzugefügt werden müssen
+    ideal_count = max_count // 12
+    additional_needed = max(ideal_count - current_count, 0)
 
-    # Starte mit den Standard-Symbolen
     final = DEFAULT_SYMBOLS.copy()
     added = []
 
     for sym in FALLBACK_SYMBOLS:
-        # Wenn noch zusätzliche Symbole benötigt werden
         if additional_needed <= 0:
             break
         if sym not in final:
-            final.append(sym)  # Füge das Fallback-Symbol hinzu
-            added.append(sym)  # Liste der hinzugefügten Symbole
-            additional_needed -= 1  # Verringere die Anzahl der benötigten Symbole
+            final.append(sym)
+            added.append(sym)
+            additional_needed -= 1
 
-    return final, added  # Gibt die finale Liste der Symbole und die neu hinzugefügten zurück
+    return final, added
 
 async def run_autoscaler(bot: Bot, chat_id: int):
     """
-    Führt die Auto-Skalierung aus, überprüft, ob weitere Symbole ergänzt werden müssen
-    und sendet ein Update an den Telegram-Chat.
+    Executes the auto-scaler, ensuring enough symbols are monitored.
+    Sends updates via Telegram if changes occur.
     """
-    # Hole die aktuell in der .env definierten Symbole
     env_symbols = os.getenv("AUTO_SIGNAL_SYMBOLS", "")
-    current = [s.strip() for s in env_symbols.split(",") if s.strip()]  # Entferne Leerzeichen und leere Einträge
-    
-    # Berechne die Skalierung basierend auf der aktuellen Anzahl von Symbolen
-    scaled, new_added = get_scaled_symbols(len(current))  # Hol die neuen Symbole und die zu ergänzende Liste
+    current = [s.strip() for s in env_symbols.split(",") if s.strip()]
 
-    # Aktualisiere die Umgebungsvariablen (für die lokale Nutzung)
+    scaled, new_added = get_scaled_symbols(len(current))
+
     os.environ["AUTO_SIGNAL_SYMBOLS"] = ",".join(scaled)
 
-    # Wenn neue Symbole hinzugefügt wurden, sende eine Nachricht
     if new_added:
         added_str = ", ".join(new_added)
         msg = (
-            f"🚀 *Auto-Scaler aktiviert*\n"
-            f"Neue Symbole hinzugefügt:\n`{added_str}`\n\n"
-            f"_Dein Bot ist jetzt besser vorbereitet._"
+            f"🚀 *Auto-Scaler Activated*\n\n"
+            f"*New Symbols Added:*\n`{added_str}`\n\n"
+            f"_Your bot is now better prepared for market opportunities._"
         )
         await bot.send_message(chat_id=chat_id, text=msg, parse_mode="Markdown")
+        logger.info(f"Auto-Scaler added new symbols: {added_str}")
     else:
         await bot.send_message(
             chat_id=chat_id,
-            text="✅ *Auto-Scaler Check abgeschlossen:*\nAlle Symbole optimal.",
+            text="✅ *Auto-Scaler Check Completed:*\nAll symbols are optimally configured.",
             parse_mode="Markdown"
         )
+        logger.info("Auto-Scaler check completed, no new symbols needed.")
 
 def get_scaled_limit(symbols: list, max_total: int = 150) -> int:
     """
-    Berechnet und gibt zurück, wie viele Signale pro Symbol pro Stunde erlaubt sind,
-    basierend auf der maximalen Anzahl von Signalen.
+    Calculates how many signals are allowed per symbol per hour,
+    based on the total allowed signals.
     """
     count = len(symbols)
-    return max(1, max_total // count)  # Berechnet das Maximum der erlaubten Signale pro Stunde
+    return max(1, max_total // count)
