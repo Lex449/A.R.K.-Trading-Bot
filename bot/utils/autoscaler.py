@@ -1,28 +1,31 @@
 # bot/utils/autoscaler.py
 
+"""
+Handles dynamic auto-scaling for signal dispatching (future-ready).
+"""
+
 import logging
 from telegram import Bot
+from bot.utils.logger import setup_logger
 
-# Setup Logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# Setup structured logger
+logger = setup_logger(__name__)
 
 async def run_autoscaler(bot: Bot, chat_id: int) -> None:
     """
-    Executes automated scaling adjustments for signal frequency
-    based on system load or future strategies.
+    Placeholder for future auto-scaling strategy.
+    Adjusts system behavior dynamically depending on load or market conditions.
 
     Args:
-        bot (Bot): The Telegram bot instance.
-        chat_id (int): The chat ID to send system scaling notifications.
+        bot (Bot): Telegram Bot instance.
+        chat_id (int): Target chat for potential scaling notifications.
     """
-
     try:
-        # In Zukunft hier echte Skalierungs-Logik möglich
-        logger.info("🔧 Autoscaler Check: No adjustments needed yet.")
+        # In future: adjust signal frequency based on conditions (CPU, latency, API load, etc.)
+        logger.info("🔧 Autoscaler executed: No scaling adjustments required at this time.")
 
-        # Optionale Benutzer-Info (nur bei späteren echten Skalierungen aktivieren)
-        # await bot.send_message(chat_id=chat_id, text="🔄 Autoscaler executed successfully.")
+        # Optional: Send message to admin when active scaling is triggered
+        # await bot.send_message(chat_id=chat_id, text="🔄 Autoscaler triggered dynamic adjustment.")
 
     except Exception as e:
-        logger.error(f"❌ Autoscaler execution failed: {e}")
+        logger.error(f"❌ Autoscaler execution error: {str(e)}")
