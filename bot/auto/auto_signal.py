@@ -1,63 +1,68 @@
 import os
-import json
 import asyncio
+import logging
 from telegram import Bot
-from telegram.ext import ContextTypes  # Sicherstellen, dass dieser Import vorhanden ist
-from bot.engine.analysis_engine import analyze_symbol, format_symbol  # Stelle sicher, dass format_symbol korrekt verwendet wird
-from bot.utils.language import get_language
-from bot.utils.i18n import get_text
+from bot.engine.analysis_engine import analyze_symbol
 from bot.utils.autoscaler import run_autoscaler
 from bot.config.settings import get_settings
-import logging
 
-# Konfiguration laden
+# Load configuration
 config = get_settings()
-
 logger = logging.getLogger(__name__)
 
 async def auto_signal_loop():
     """
-    Diese Funktion kümmert sich um das automatische Senden von Signalen
-    in regelmäßigen Abständen (z.B. alle 60 Sekunden).
+    Continuously sends trading signals automatically at configured intervals.
     """
-    bot = Bot(token=os.getenv("BOT_TOKEN"))
+    bot = Bot(token=config["BOT_TOKEN"])
     chat_id = int(config["TELEGRAM_CHAT_ID"])
 
-    if bot is None:
-        logger.error("Bot-Instanz konnte nicht abgerufen werden.")
+    if not bot:
+        logger.error("Bot instance could not be initialized.")
         return
 
-    # Lösche den Webhook zu Beginn, um Konflikte zu vermeiden
-    await bot.delete_webhook()
+    try:
+        await bot.delete_webhook()
+    except Exception as e:
+        logger.warning(f"Failed to delete webhook: {str(e)}")
 
     while True:
-        symbols = config["AUTO_SIGNAL_SYMBOLS"]
+        symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
         if not symbols:
-            logger.error("Keine Symbole für Auto-Analyse definiert.")
-            return
+            logger.error("No symbols configured for auto-analysis.")
+            await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
+            continue
 
         for symbol in symbols:
             try:
-                formatted_symbol = format_symbol(symbol)  # Formatierung des Symbols
-                logger.info(f"Starte Analyse für Symbol: {formatted_symbol}")
+                logger.info(f"Analyzing symbol: {symbol}")
 
-                result = await analyze_symbol(formatted_symbol)  # Analyse aufrufen
+                result = await analyze_symbol(symbol)
 
-                if isinstance(result, str):
-                    await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")
-                else:
-                    response = f"Symbol: {formatted_symbol}\n"
-                    response += f"Signal: {result['signal']}\n"
-                    response += f"RSI: {result['rsi']}\n"
-                    response += f"Trend: {result['trend']}\n"
-                    response += f"Pattern: {result['pattern']}\n"
-                    response += f"Stars: {result['stars']}/5"
-                    await bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+                if not result:
+                    await bot.send_message(chat_id=chat_id, text=f"⚠️ No data available for {symbol}.", parse_mode="Markdown")
+                    continue
 
-                await asyncio.sleep(1.5)  # Zeitverzögerung, um API-Limits zu respektieren
+                message = (
+                    f"📈 *Auto Signal*\n\n"
+                    f"*Symbol:* {symbol}\n"
+                    f"*Action:* {result['signal']}\n"
+                    f"*Short-Term Trend:* {result['short_term_trend']}\n"
+                    f"*Mid-Term Trend:* {result['mid_term_trend']}\n"
+                    f"*RSI:* {result['rsi']}\n"
+                    f"*Pattern Detected:* {result['pattern']}\n"
+                    f"*Candlestick Formation:* {result['candlestick']}\n"
+                    f"*Quality Rating:* {result['stars']} ⭐\n"
+                    f"*Suggested Holding:* {result['suggested_holding']}\n\n"
+                    f"🔎 Always manage your risk. No financial advice."
+                )
+
+                await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+                await asyncio.sleep(1.5)  # Telegram rate limit
 
             except Exception as e:
-                logger.error(f"Fehler bei der Analyse von {symbol}: {e}")
-                await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
+                logger.error(f"Error analyzing {symbol}: {str(e)}")
+                await bot.send_message(chat_id=chat_id, text=f"⚠️ Error analyzing {symbol}: {str(e)}", parse_mode="Markdown")
 
-        await asyncio.sleep(60)  # Pause zwischen den Runden
+        logger.info("Auto signal round completed. Waiting for next scan...")
+        await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
