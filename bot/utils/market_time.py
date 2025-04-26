@@ -1,46 +1,70 @@
 # bot/utils/market_time.py
 
+"""
+Handles US trading session detection.
+Optimized for NYSE/Nasdaq operating hours and US public holidays.
+"""
+
 from datetime import datetime, time
 import pytz
 import holidays
+from bot.utils.logger import setup_logger
 
-# Feiertage USA
+# Setup structured logger
+logger = setup_logger(__name__)
+
+# US public holidays
 us_holidays = holidays.US()
 
 def is_trading_day() -> bool:
     """
-    Checkt, ob heute ein normaler US-Handelstag ist (kein Wochenende, kein Feiertag).
+    Checks if today is a valid US trading day (Monday–Friday and not a public holiday).
+
+    Returns:
+        bool: True if it's a trading day, otherwise False.
     """
     now = datetime.now(pytz.timezone('America/New_York'))
-    weekday = now.weekday()  # 0 = Montag (bis 4 = Freitag)
-    today_date = now.date()
+    weekday = now.weekday()  # 0 = Monday, 6 = Sunday
+    today = now.date()
 
-    return weekday in range(5) and today_date not in us_holidays
+    if weekday in [0, 1, 2, 3, 4] and today not in us_holidays:
+        logger.debug(f"Trading Day Check: ✅ {now.strftime('%A %Y-%m-%d')}")
+        return True
+    else:
+        logger.debug(f"Trading Day Check: ❌ {now.strftime('%A %Y-%m-%d')}")
+        return False
 
 def is_trading_hours() -> bool:
     """
-    Checkt, ob jetzt normale US-Handelszeiten sind (NYSE/Nasdaq).
+    Checks if current time is within NYSE/Nasdaq trading hours: 9:30 AM - 4:00 PM New York time.
+
+    Returns:
+        bool: True if market is open, otherwise False.
     """
     now = datetime.now(pytz.timezone('America/New_York')).time()
-    return time(9, 30) <= now <= time(16, 0)
+    market_open = time(9, 30)
+    market_close = time(16, 0)
 
-def is_15min_before_market_open() -> bool:
+    if market_open <= now <= market_close:
+        logger.debug(f"Trading Hours Check: ✅ Now {now}")
+        return True
+    else:
+        logger.debug(f"Trading Hours Check: ❌ Now {now}")
+        return False
+
+def is_pre_market_open_warning() -> bool:
     """
-    Checkt, ob wir uns 15 Minuten vor Marktöffnung befinden.
+    Warns 15 minutes before NYSE opens (09:15 - 09:30 New York time).
+
+    Returns:
+        bool: True if inside warning window.
     """
     now = datetime.now(pytz.timezone('America/New_York')).time()
-    return time(9, 15) <= now < time(9, 30)
+    warning_start = time(9, 15)
+    market_open = time(9, 30)
 
-def is_15min_before_market_close() -> bool:
-    """
-    Checkt, ob wir uns 15 Minuten vor Marktschluss befinden.
-    """
-    now = datetime.now(pytz.timezone('America/New_York')).time()
-    return time(15, 45) <= now < time(16, 0)
-
-def is_friday_close() -> bool:
-    """
-    Checkt, ob es Freitag nach Handelsschluss ist (für Wochenabschluss-Message).
-    """
-    now = datetime.now(pytz.timezone('America/New_York'))
-    return now.weekday() == 4 and now.time() > time(16, 0)
+    if warning_start <= now < market_open:
+        logger.info(f"Pre-Market Warning active: {now}")
+        return True
+    else:
+        return False
