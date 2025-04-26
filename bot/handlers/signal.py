@@ -4,13 +4,12 @@ from telegram.ext import ContextTypes
 from bot.engine.analysis_engine import analyze_symbol
 from bot.config.settings import get_settings
 
-# Load configuration
 config = get_settings()
 
 async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handler for /signal command. 
-    Analyzes configured symbols and sends trading signals to the Telegram chat.
+    Handler for /signal command.
+    Analyzes configured symbols and sends trading signals to Telegram.
     """
     chat_id = update.effective_chat.id
     await context.bot.send_message(chat_id=chat_id, text="🚀 *Scanning for trading opportunities...*", parse_mode="Markdown")
@@ -28,7 +27,6 @@ async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await context.bot.send_message(chat_id=chat_id, text=f"⚠️ No data available for {symbol}.", parse_mode="Markdown")
                 continue
 
-            # Build signal message
             message = (
                 f"📈 *Trading Signal*\n\n"
                 f"*Symbol:* {symbol}\n"
@@ -44,7 +42,7 @@ async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             )
 
             await context.bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
-            await asyncio.sleep(1.5)  # To respect Telegram API limits
+            await asyncio.sleep(1.5)
 
         except Exception as e:
             await context.bot.send_message(chat_id=chat_id, text=f"⚠️ Error analyzing {symbol}: {str(e)}", parse_mode="Markdown")
