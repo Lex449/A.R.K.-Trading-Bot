@@ -13,24 +13,23 @@ logger.setLevel(logging.INFO)
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handler for /status command.
-    Provides a live overview of the trading bot session.
+    Provides a real-time summary of the bot's session performance.
     """
     chat_id = update.effective_chat.id
     user = update.effective_user.first_name or "Trader"
 
     try:
-        # Fetch session report
-        session_summary = get_session_report()
+        # Session-Daten holen
+        session_text = get_session_report()
 
-        # Send session status
         await context.bot.send_message(
             chat_id=chat_id,
-            text=f"🔎 *Session Status for {user}:*\n\n{session_summary}",
+            text=f"📊 *Session Status for {user}:*\n\n{session_text}",
             parse_mode="Markdown"
         )
 
-        logger.info(f"Session status requested by {user} (Chat ID: {chat_id})")
+        logger.info(f"✅ Status command requested successfully by {user} (Chat ID: {chat_id})")
 
     except Exception as e:
         await report_error(context.bot, chat_id, e, context_info="Status Command Error")
-        logger.error(f"Error during status command for {user}: {e}")
+        logger.error(f"❌ Error in /status triggered by {user}: {e}")
