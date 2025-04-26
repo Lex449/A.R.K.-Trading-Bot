@@ -1,8 +1,13 @@
 # bot/utils/language.py
 
+import logging
 from telegram import Update
 
-# Unterstützte Sprachen und ihre Fallbacks
+# Setup logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Supported languages and their fallback mapping
 SUPPORTED_LANGUAGES = {
     "de": "de", "de-de": "de", "de-at": "de", "de-ch": "de",
     "en": "en", "en-us": "en", "en-gb": "en"
@@ -10,22 +15,27 @@ SUPPORTED_LANGUAGES = {
 
 def get_language(update: Update) -> str:
     """
-    Erkennt die Sprache des Nutzers basierend auf Telegram-Spracheinstellung.
-    Unterstützt aktuell: 'de', 'en'.
-    Fallback: 'en'
+    Detects the user's preferred language based on their Telegram settings.
+    Supported languages: 'en', 'de'. Fallback is 'en' if detection fails.
+
+    Args:
+        update (Update): Telegram update containing user info.
+
+    Returns:
+        str: Language code ('en' or 'de').
     """
     try:
         raw_code = update.effective_user.language_code
-        if raw_code is None:
-            print("[LANGUAGE WARNING] Keine Sprache gefunden. Standard zu 'en'.")
+        if not raw_code:
+            logger.warning("No language code found. Defaulting to 'en'.")
             return "en"
 
         lang_code = raw_code.lower().strip()
+        detected_language = SUPPORTED_LANGUAGES.get(lang_code, "en")
 
-        detected = SUPPORTED_LANGUAGES.get(lang_code, "en")  # Default auf Englisch, wenn Sprache nicht gefunden
-        print(f"[LANGUAGE] Detected: '{lang_code}' → Using: '{detected}'")  # Debugging-Ausgabe
-        return detected
+        logger.info(f"Language detected: '{lang_code}' → Using: '{detected_language}'")
+        return detected_language
 
     except Exception as e:
-        print(f"[LANGUAGE ERROR] Fehler bei der Spracherkennung: {e}")  # Genauere Fehlerausgabe
-        return "en"  # Fallback auf Englisch bei Fehlern
+        logger.error(f"Language detection error: {str(e)}")
+        return "en"  # Always fallback to English on errors
