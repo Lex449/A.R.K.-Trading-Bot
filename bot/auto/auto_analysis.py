@@ -1,65 +1,60 @@
-import os
-import json
 import asyncio
 from telegram import Bot
 from telegram.ext import ContextTypes
-from bot.engine.analysis_engine import analyze_symbol, format_symbol  # Sicherstellen, dass format_symbol korrekt importiert wird
+from bot.engine.analysis_engine import analyze_symbol
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.autoscaler import run_autoscaler
 from bot.config.settings import get_settings
 
-# Konfiguration laden
+# Load configuration
 config = get_settings()
 
 async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     """
-    Führt täglich eine kompakte Analyse aller überwachten Indizes durch
-    und sendet die Ergebnisse automatisch an den Telegram-Chat.
+    Executes a compact daily analysis of all monitored symbols
+    and sends the results automatically to the Telegram chat.
     """
     bot: Bot = context.bot
-    chat_id = int(config["TELEGRAM_CHAT_ID"])  # Telegram-Chat-ID aus den Einstellungen
-    lang = "de"  # Standard-Sprache (später optional dynamisch je Gruppe)
+    chat_id = int(config["TELEGRAM_CHAT_ID"])
+    lang = get_language(chat_id) or "en"
 
-    # Startnachricht an den Chat senden
-    await bot.send_message(chat_id=chat_id, text="📊 *Starte tägliche Analyse...*", parse_mode="Markdown")
+    await bot.send_message(chat_id=chat_id, text="📊 *Starting daily market analysis...*", parse_mode="Markdown")
 
-    # Autoscaler starten (wenn konfiguriert)
     try:
-        await run_autoscaler(bot, chat_id)  # Überprüfung des Autoscalers
+        await run_autoscaler(bot, chat_id)
     except Exception as e:
-        await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler beim Autoscaler: {e}")  # Fehlerprotokollierung
+        await bot.send_message(chat_id=chat_id, text=f"⚠️ Autoscaler error: {str(e)}", parse_mode="Markdown")
 
-    # Überprüfen, ob Symbole für die Auto-Analyse definiert wurden
-    symbols = config["AUTO_SIGNAL_SYMBOLS"]
+    symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
     if not symbols:
-        await bot.send_message(chat_id=chat_id, text="❌ Keine Symbole für Auto-Analyse definiert.")  # Fehlermeldung bei leerer Symbol-Liste
+        await bot.send_message(chat_id=chat_id, text="❌ No symbols defined for auto-analysis.", parse_mode="Markdown")
         return
 
-    # Analyse der Symbole
     for symbol in symbols:
         try:
-            # Formatieren des Symbols gemäß TwelveData API
-            formatted_symbol = format_symbol(symbol)
-            # Symbol analysieren und Ergebnis zurückgeben
-            result = await analyze_symbol(formatted_symbol)  # Hier wird die Analyse-Funktion aufgerufen
-            if isinstance(result, str):
-                await bot.send_message(chat_id=chat_id, text=result, parse_mode="Markdown")  # Falls das Ergebnis ein String ist, wird es gesendet
-            else:
-                # Detaillierte Ausgabe für jedes Symbol
-                response = f"Symbol: {symbol}\n"
-                response += f"Signal: {result['signal']}\n"
-                response += f"RSI: {result['rsi']}\n"
-                response += f"Trend: {result['trend']}\n"
-                response += f"Pattern: {result['pattern']}\n"
-                response += f"Stars: {result['stars']}/5"
-                await bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
-            
-            # Kurze Pause zwischen den Nachrichten, um das Telegram API-Limit zu respektieren
-            await asyncio.sleep(1.5)
-        except Exception as e:
-            # Fehler beim Abrufen der Analyse-Daten für das Symbol
-            await bot.send_message(chat_id=chat_id, text=f"⚠️ Fehler bei {symbol}: {e}")
+            result = await analyze_symbol(symbol)
 
-    # Abschließende Nachricht nach der Analyse
-    await bot.send_message(chat_id=chat_id, text="✅ *Tägliche Analyse abgeschlossen!*", parse_mode="Markdown")
+            if not result:
+                await bot.send_message(chat_id=chat_id, text=f"⚠️ No data available for {symbol}.", parse_mode="Markdown")
+                continue
+
+            message = (
+                f"*Symbol:* {symbol}\n"
+                f"*Signal:* {result['signal']}\n"
+                f"*RSI:* {result['rsi']}\n"
+                f"*Short-Term Trend:* {result['short_term_trend']}\n"
+                f"*Mid-Term Trend:* {result['mid_term_trend']}\n"
+                f"*Pattern:* {result['pattern']}\n"
+                f"*Candlestick:* {result['candlestick']}\n"
+                f"*Stars:* {result['stars']} ⭐\n"
+                f"*Suggested Holding:* {result['suggested_holding']}"
+            )
+
+            await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+            await asyncio.sleep(1.5)
+
+        except Exception as e:
+            await bot.send_message(chat_id=chat_id, text=f"⚠️ Error analyzing {symbol}: {str(e)}", parse_mode="Markdown")
+
+    await bot.send_message(chat_id=chat_id, text="✅ *Daily analysis completed successfully!*", parse_mode="Markdown")
