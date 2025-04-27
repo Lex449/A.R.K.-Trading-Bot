@@ -15,9 +15,11 @@ from bot.handlers.commands import start, help_command, analyze_symbol, set_langu
 from bot.handlers.signal import signal_handler
 from bot.handlers.status import status_handler
 from bot.handlers.shutdown import shutdown_handler
+from bot.handlers.test_signal import test_signal
+from bot.handlers.test_analyse import test_analyse
 
 # === Auto Signal Loop ===
-from bot.auto.auto_signal import auto_signal_loop
+from bot.auto.auto_signal_loop import auto_signal_loop
 
 # === Core Utilities ===
 from bot.utils.error_reporter import report_error
@@ -37,9 +39,10 @@ TOKEN = config["BOT_TOKEN"]
 async def start_auto_signals(app):
     """
     Startet den Auto-Signal-Loop separat im Hintergrund.
+    Übergibt den bestehenden Application-Bot, um 409 Conflict zu vermeiden.
     """
     try:
-        await auto_signal_loop()
+        await auto_signal_loop(app.bot)   # << WICHTIG: Bot übergeben!
     except Exception as e:
         await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Auto Signal Loop Error")
 
@@ -57,6 +60,8 @@ async def main():
     app.add_handler(CommandHandler("signal", signal_handler))
     app.add_handler(CommandHandler("status", status_handler))
     app.add_handler(CommandHandler("shutdown", shutdown_handler))
+    app.add_handler(CommandHandler("testsignal", test_signal))
+    app.add_handler(CommandHandler("testanalyse", test_analyse))
 
     # Background Tasks
     asyncio.create_task(start_auto_signals(app))
