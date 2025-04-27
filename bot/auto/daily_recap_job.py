@@ -1,58 +1,48 @@
 """
-A.R.K. Daily Recap Job – Session Summary with Motivation.
-Built for consistency, discipline, and user engagement.
+A.R.K. Daily Recap – Session Summary + Motivation.
+Perfect for disciplined traders who build success daily.
 """
 
-import logging
 from telegram import Bot
-from telegram.ext import ContextTypes
-from bot.utils.session_tracker import get_session_report, reset_session_data
-from bot.utils.error_reporter import report_error
+from bot.utils.session_tracker import get_today_report, reset_today_data
 from bot.utils.logger import setup_logger
+from bot.utils.error_reporter import report_error
 from bot.config.settings import get_settings
 
-# Setup structured logger
+# Setup Logger
 logger = setup_logger(__name__)
-
-# Load configuration
 config = get_settings()
 
-async def daily_recap_job(context: ContextTypes.DEFAULT_TYPE):
+async def daily_recap_job(application, chat_id=None):
     """
-    Sends a daily trading session recap to Telegram.
-    Resets session tracker after completion.
+    Sends daily recap and resets today's tracker.
     """
-    bot: Bot = context.bot
-    chat_id = int(config["TELEGRAM_CHAT_ID"])
-
     try:
-        logger.info("[Daily Recap] Starting daily recap...")
+        bot = application.bot if application else Bot(token=config["BOT_TOKEN"])
+        target_chat_id = chat_id or int(config["TELEGRAM_CHAT_ID"])
 
-        # Retrieve session report
-        session_summary = get_session_report()
+        today_report = get_today_report()
 
-        # Add motivational closure
-        motivation_text = (
-            "\n\n🌟 *Remember:* Every great trader was built by daily discipline.\n"
-            "Stay the course. Tomorrow we level up again. 🚀"
+        motivation = (
+            "\n\n🌟 *Remember:* Consistency beats luck.\n"
+            "Tomorrow we rise sharper and stronger. 🚀"
         )
 
-        # Full compiled message
-        full_message = session_summary + motivation_text
+        message = f"{today_report}{motivation}"
 
         await bot.send_message(
-            chat_id=chat_id,
-            text=full_message,
+            chat_id=target_chat_id,
+            text=message,
             parse_mode="Markdown",
             disable_web_page_preview=True
         )
 
-        logger.info("[Daily Recap] Successfully sent daily session recap.")
+        logger.info(f"✅ Daily Recap sent successfully to {target_chat_id}.")
 
-        # Reset session tracker
-        reset_session_data()
-        logger.info("[Daily Recap] Session tracker reset for next trading day.")
+        # Reset Today Tracker
+        reset_today_data()
+        logger.info("♻️ Today's session data reset successfully.")
 
     except Exception as e:
-        logger.error(f"[Daily Recap] Error while sending daily recap: {str(e)}")
         await report_error(bot, chat_id, e, context_info="Daily Recap Job")
+        logger.error(f"❌ Error during Daily Recap: {e}")
