@@ -1,4 +1,7 @@
-# bot/handlers/status.py
+"""
+A.R.K. Status Command – Ultra Structured Premium Build.
+Delivers real-time session health and trading performance overview.
+"""
 
 import logging
 from telegram import Update
@@ -14,24 +17,31 @@ logger = setup_logger(__name__)
 
 async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handler for /status command.
-    Provides live session statistics: uptime, signal quality, performance metrics.
+    Handles the /status command.
+    Provides live session metrics and trading activity overview.
     """
     chat_id = update.effective_chat.id
-    user = update.effective_user.first_name or "Trader"
-    lang = get_language(chat_id) or "en"
+    user_name = update.effective_user.first_name or "Trader"
+    language = get_language(chat_id) or "en"
 
     try:
-        logger.info(f"/status called by {user} (Chat ID: {chat_id})")
+        logger.info(f"[Status] Command triggered by {user_name} (Chat ID: {chat_id})")
 
-        # Sessiondaten abrufen
-        summary_text = get_session_report()
+        # Retrieve Session Report
+        session_summary = get_session_report()
 
-        await update.message.reply_text(
-            f"🔎 *Session Status for {user}:*\n\n{summary_text}",
-            parse_mode="Markdown"
+        # Personalized Status Message
+        message = (
+            f"🔍 *Session Status – A.R.K. Trading Bot*\n\n"
+            f"👤 *User:* `{user_name}`\n"
+            f"📈 *Session Metrics:*\n\n"
+            f"{session_summary}\n"
+            f"_✅ System running ultra-stable. Powered by precision._"
         )
 
-    except Exception as e:
-        await report_error(context.bot, chat_id, e, context_info="Status Handler Error")
-        logger.error(f"Error during status command: {e}")
+        await update.message.reply_text(message, parse_mode="Markdown")
+        logger.info(f"[Status] Session report sent successfully.")
+
+    except Exception as error:
+        logger.error(f"[Status Handler Error] {error}")
+        await report_error(context.bot, chat_id, error, context_info="Status Handler Failure")
