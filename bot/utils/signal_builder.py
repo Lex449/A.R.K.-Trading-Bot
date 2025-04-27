@@ -1,3 +1,5 @@
+# bot/utils/signal_builder.py
+
 """
 A.R.K. Ultra Premium Signal Builder
 Fusion aus Strategie, Psychologie und Eleganz – gebaut für maximalen Impact.
@@ -8,44 +10,44 @@ def build_signal_message(symbol: str, patterns: list, combined_action: str, avg_
     Baut das ultimative Premium-Trading-Signal für Telegram.
 
     Args:
-        symbol (str): Handelssymbol (z.B. AAPL, TSLA)
+        symbol (str): Handelssymbol (z.B. AAPL, SPY)
         patterns (list): Liste erkannter Pattern-Namen
         combined_action (str): Ultra Long 📈 / Ultra Short 📉 / Neutral ⚪
-        avg_confidence (float): Durchschnittliche Muster-Confidence
+        avg_confidence (float): Durchschnittliche Pattern-Confidence
         indicator_score (float): Gesamtscore aus RSI, EMA, Muster
-        trend_direction (str): Trendrichtung basierend auf EMA (Long/Short/Neutral)
+        trend_direction (str): Trendrichtung (Long/Short/Neutral)
 
     Returns:
-        str: Fertig strukturierte, elegante Nachricht
+        str: Final strukturierte, elegante Premium-Nachricht
     """
     if not patterns:
         return ""
 
-    # === Header Entscheidung basierend auf Qualität ===
+    # === Header basierend auf Qualität ===
     if avg_confidence >= 85 and indicator_score >= 80:
-        header = "🚀 *Super Signal – Maximale Übereinstimmung!*"
+        header = "🚀 *Super Signal – Maximum Alignment!*"
     elif avg_confidence >= 70:
-        header = "⚡ *Strong Signal – Hochbewertetes Setup*"
+        header = "⚡ *Strong Signal – High Potential Setup*"
     else:
-        header = "⚠️ *Moderates Signal – Zusätzliche Bestätigung empfohlen*"
+        header = "⚠️ *Moderate Signal – Additional Confirmation Advised*"
 
-    # === Sterne aus Confidence (1–5) ===
+    # === Sterne dynamisch berechnen ===
     stars = "⭐" * min(5, max(1, int(avg_confidence // 20)))
 
-    # === Muster elegant auflisten ===
+    # === Muster schön listen ===
     patterns_text = "\n".join([f"• {p}" for p in patterns])
 
     # === Final strukturierter Nachrichtentext ===
     message = (
         f"{header}\n\n"
         f"*Symbol:* `{symbol}`\n"
-        f"*Aktion:* {combined_action}\n"
-        f"*Trendstruktur:* {trend_direction}\n"
-        f"*Signal Qualität:* {stars} ({avg_confidence:.1f}%)\n"
-        f"*Indikator Score:* `{indicator_score:.1f}%`\n\n"
-        f"✨ *Gefundene Muster:*\n{patterns_text}\n\n"
-        f"_🧠 Fokus schlägt Geschwindigkeit. Qualität schlägt Quantität._\n"
-        f"_Kein Spam. Kein Stress. Nur echtes Mentoring._"
+        f"*Action:* {combined_action}\n"
+        f"*Trend Direction:* {trend_direction}\n"
+        f"*Signal Quality:* {stars} ({avg_confidence:.1f}%)\n"
+        f"*Indicator Score:* `{indicator_score:.1f}%`\n\n"
+        f"✨ *Detected Patterns:*\n{patterns_text}\n\n"
+        f"_🧠 Focus beats speed. Precision beats quantity._\n"
+        f"_No spam. No stress. Pure mentorship._"
     )
 
     return message
