@@ -1,8 +1,8 @@
 # bot/analytics/performance_tracker.py
 
 """
-Real-time performance tracker for trading signals.
-Ultra-Optimized Version – Bugatti 2.0 Level
+Echtzeit-Performance-Tracker für Trading-Signale.
+Ultra-Masterclass Build – Bugatti meets Pagani Level.
 """
 
 import logging
@@ -15,42 +15,43 @@ logger = setup_logger(__name__)
 performance_data = {
     "total_signals": 0,
     "strong_signals": 0,
-    "weak_signals": 0
+    "weak_signals": 0,
 }
 
 def update_performance(stars: int):
     """
-    Updates the performance statistics based on star rating.
-
+    Aktualisiert die Performance-Daten basierend auf der Sternebewertung des Signals.
+    
     Args:
-        stars (int): Star rating of the trade signal.
+        stars (int): Anzahl der Sterne für das Handelssignal.
     """
     performance_data["total_signals"] += 1
 
     if stars >= 4:
         performance_data["strong_signals"] += 1
-        logger.info(f"Strong signal recorded ({stars} stars).")
+        logger.info(f"[Performance Tracker] Starkes Signal registriert ({stars}⭐).")
     else:
         performance_data["weak_signals"] += 1
-        logger.info(f"Weak signal recorded ({stars} stars).")
+        logger.info(f"[Performance Tracker] Schwaches Signal registriert ({stars}⭐).")
 
 def get_performance_summary() -> str:
     """
-    Generates a real-time summary of trading performance.
+    Erzeugt eine zusammengefasste Echtzeit-Performance-Übersicht.
 
     Returns:
-        str: Formatted performance summary.
+        str: Formatierter Performance-Report.
     """
-    if performance_data["total_signals"] == 0:
-        accuracy = 0
-    else:
-        accuracy = (performance_data["strong_signals"] / performance_data["total_signals"]) * 100
+    total = performance_data["total_signals"]
+    strong = performance_data["strong_signals"]
+    weak = performance_data["weak_signals"]
+
+    accuracy = (strong / total * 100) if total > 0 else 0
 
     return (
         f"📈 *Performance Overview*\n\n"
-        f"*Total Signals:* {performance_data['total_signals']}\n"
-        f"*Strong Signals (4–5⭐):* {performance_data['strong_signals']}\n"
-        f"*Weak Signals (<4⭐):* {performance_data['weak_signals']}\n"
-        f"*Accuracy:* {accuracy:.2f}%\n\n"
-        f"⚡ _Keep managing your risk and stay sharp._"
+        f"*Total Signals:* `{total}`\n"
+        f"*Strong Signals (4–5⭐):* `{strong}`\n"
+        f"*Weak Signals (<4⭐):* `{weak}`\n"
+        f"*Accuracy:* `{accuracy:.2f}%`\n\n"
+        f"⚡ _Stay disciplined. Quality over quantity._"
     )
