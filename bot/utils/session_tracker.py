@@ -1,14 +1,12 @@
-# bot/utils/session_tracker.py
-
 import os
 import json
 import uuid
 from datetime import datetime
 
-# Session File Location
+# === Session File Location ===
 SESSION_FILE = "session_data.json"
 
-# Internal Memory
+# === Internal Memory ===
 _session_data = {}
 
 def initialize_session():
@@ -27,7 +25,7 @@ def initialize_session():
             save_session_data()
 
 def _create_new_session():
-    """Creates a new session template."""
+    """Creates a new session structure."""
     return {
         "session_id": str(uuid.uuid4()),
         "start_time": datetime.utcnow().isoformat(),
@@ -35,23 +33,28 @@ def _create_new_session():
         "strong_signals": 0,
         "moderate_signals": 0,
         "weak_signals": 0,
-        "total_confidence": 0.0,
+        "confidence_sum": 0.0,
+        "scoring_sum": 0.0,
     }
 
 def save_session_data():
-    """Saves the current session to a JSON file."""
+    """Saves the session data to a file."""
     with open(SESSION_FILE, "w", encoding="utf-8") as f:
         json.dump(_session_data, f, indent=4)
 
 def update_session_tracker(stars: int, confidence: float):
     """
-    Updates the session statistics based on the signal quality.
+    Updates the session tracker based on new signal data.
     Args:
-        stars (int): Star rating (1-5)
-        confidence (float): Confidence percentage (0-100)
+        stars (int): Signal rating (1-5 stars)
+        confidence (float): Confidence score (0-100%)
     """
     _session_data["signals_total"] += 1
-    _session_data["total_confidence"] += confidence
+    _session_data["confidence_sum"] += confidence
+
+    # Weighted Scoring: 97.5% Stars + 2.5% Confidence
+    weighted_score = (stars * 0.975) + ((confidence / 100) * 0.025)
+    _session_data["scoring_sum"] += weighted_score
 
     if stars >= 4:
         _session_data["strong_signals"] += 1
@@ -63,7 +66,7 @@ def update_session_tracker(stars: int, confidence: float):
     save_session_data()
 
 def get_session_report() -> str:
-    """Returns a formatted overview of the current session."""
+    """Returns a beautifully formatted session overview."""
     start_time = datetime.fromisoformat(_session_data["start_time"])
     uptime = datetime.utcnow() - start_time
 
@@ -71,9 +74,8 @@ def get_session_report() -> str:
     hours, remainder = divmod(uptime.seconds, 3600)
     minutes, _ = divmod(remainder, 60)
 
-    avg_confidence = 0.0
-    if _session_data["signals_total"] > 0:
-        avg_confidence = _session_data["total_confidence"] / _session_data["signals_total"]
+    avg_confidence = (_session_data["confidence_sum"] / _session_data["signals_total"]) if _session_data["signals_total"] > 0 else 0
+    avg_scoring = (_session_data["scoring_sum"] / _session_data["signals_total"]) if _session_data["signals_total"] > 0 else 0
 
     uptime_str = f"{days}d {hours}h {minutes}min" if days > 0 else f"{hours}h {minutes}min"
 
@@ -86,13 +88,14 @@ def get_session_report() -> str:
         f"*Strong Signals (≥4⭐):* {_session_data['strong_signals']}\n"
         f"*Moderate Signals (3⭐):* {_session_data['moderate_signals']}\n"
         f"*Weak Signals (≤2⭐):* {_session_data['weak_signals']}\n"
-        f"*Average Confidence:* {avg_confidence:.1f}%\n\n"
-        f"🚀 _Session is running ultra stable._"
+        f"*Average Confidence:* {avg_confidence:.1f}%\n"
+        f"*Average Signal Quality:* {avg_scoring:.2f} (normalized)\n\n"
+        f"🚀 _Session running ultra stable and precise._"
     )
     return report
 
 def reset_session_data():
-    """Resets the session statistics."""
+    """Resets the session data."""
     global _session_data
     _session_data = _create_new_session()
     save_session_data()
