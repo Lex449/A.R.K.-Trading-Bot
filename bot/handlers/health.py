@@ -1,6 +1,6 @@
 """
-Health Check Handler für A.R.K. Trading Bot
-Made in Bali. Engineered with German Precision.
+A.R.K. Health Check – Minimalistic Ultra Build.
+Checks if Bot runs stable.
 """
 
 from telegram import Update
@@ -8,9 +8,9 @@ from telegram.ext import ContextTypes
 
 async def health_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Antwortet auf den Health Check Befehl /health mit Statusmeldung.
+    Responds to /health command with bot status.
     """
     try:
-        await update.message.reply_text("✅ A.R.K. System Check: Bot läuft stabil und analysiert!")
+        await update.message.reply_text("✅ *A.R.K. Health Check:* System operational!", parse_mode="Markdown")
     except Exception:
-        await update.message.reply_text("❌ A.R.K. System Check: Fehler erkannt. Bitte prüfen!")
+        await update.message.reply_text("❌ *A.R.K. Health Check:* System error detected!", parse_mode="Markdown")
