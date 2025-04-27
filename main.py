@@ -1,5 +1,3 @@
-# bot/main.py
-
 """
 A.R.K. Bot Main Entry – Ultra-Masterclass Build
 """
@@ -23,11 +21,11 @@ from bot.auto.auto_signal_loop import auto_signal_loop
 
 # === Core Utilities ===
 from bot.utils.error_reporter import report_error
-from bot.utils.logger import setup_logger  # ✅ Hier richtig korrigiert!
+from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
 
 # === Setup Logging ===
-setup_logger()
+setup_logger(__name__)  # FIXED: Übergibt richtigen Namen!
 
 # === Allow nested event loops (Railway / Replit Kompatibilität) ===
 nest_asyncio.apply()
@@ -42,7 +40,7 @@ async def start_auto_signals(app):
     Übergibt den bestehenden Application-Bot, um 409 Conflict zu vermeiden.
     """
     try:
-        await auto_signal_loop(app.bot)
+        await auto_signal_loop(app.bot)   # << WICHTIG: Bot übergeben!
     except Exception as e:
         await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Auto Signal Loop Error")
 
