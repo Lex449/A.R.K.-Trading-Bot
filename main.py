@@ -16,9 +16,9 @@ from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.test_signal import test_signal
 from bot.handlers.test_analyse import test_analyse
 from bot.handlers.error_handler import global_error_handler
-from bot.handlers.set_my_commands import set_bot_commands  # << NEW
+from bot.handlers.set_my_commands import set_bot_commands  # << Schönes Menü!
 
-# === Auto Signal Loop (no new polling!) ===
+# === Auto Signal Loop ===
 from bot.auto.auto_signal_loop import auto_signal_loop
 
 # === Utilities ===
@@ -41,17 +41,20 @@ async def startup_tasks(application):
     Launches background services when Bot starts (no polling conflict).
     """
     try:
-        # === Starte Auto Signal Loop ===
+        # Lösche alten Webhook, damit Polling funktioniert
+        await application.bot.delete_webhook(drop_pending_updates=True)
+
+        # Starte Auto Signal Loop im Hintergrund
         asyncio.create_task(auto_signal_loop(application.bot))
 
-        # === Setze schöne Command-Liste ===
+        # Setze neue /Command Liste
         await set_bot_commands(application)
 
     except Exception as e:
         await report_error(application.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Startup Task Error")
 
 async def main():
-    logging.info("🚀 A.R.K. Trading Bot 2.0 – Stability Mode – Made in Bali. Engineered with German Precision.")
+    logging.info("🚀 A.R.K. Trading Bot 2.0 – Wall Street Stability Mode aktiviert.")
 
     # Initialize Bot Application
     app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
