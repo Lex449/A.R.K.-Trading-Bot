@@ -2,7 +2,7 @@
 
 """
 A.R.K. Auto Signal Loop – Ultra Wall Street Surveillance.
-Bugatti Pur Sport Version. No compromise. Full throttle precision.
+Including Breaking News Detection for Maximum Market Awareness.
 """
 
 import asyncio
@@ -10,6 +10,7 @@ import logging
 from telegram import Bot
 from bot.engine.analysis_engine import analyze_symbol
 from bot.engine.move_alert_engine import detect_move_alert
+from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news
 from bot.utils.ultra_signal_builder import build_ultra_signal
 from bot.utils.session_tracker import update_session_tracker
 from bot.utils.error_reporter import report_error
@@ -26,7 +27,7 @@ config = get_settings()
 async def auto_signal_loop(bot: Bot):
     """
     Runs the nonstop ultra-premium trading surveillance loop.
-    Combines volatility, movement, ATR, and risk/reward detections into Bugatti-class signals.
+    Combines volatility, movement, ATR, risk/reward and breaking news detection.
     """
 
     chat_id = int(config["TELEGRAM_CHAT_ID"])
@@ -41,6 +42,8 @@ async def auto_signal_loop(bot: Bot):
             logger.error("❌ [Auto Signal Loop] No symbols configured. Exiting loop.")
             return
 
+        last_news_check = None
+
         while True:
             # === Check Market State ===
             if not is_trading_day() or not is_trading_hours():
@@ -50,19 +53,19 @@ async def auto_signal_loop(bot: Bot):
 
             logger.info(f"🔎 [Auto Signal Loop] Scanning {len(symbols)} symbols...")
 
+            # === Symbol Analysis ===
             for symbol in symbols:
                 try:
-                    # Analyze Symbol
                     result = await analyze_symbol(symbol)
                     if not result:
                         continue
 
-                    # Move Detection (early move)
+                    # Move Detection
                     move_alert = await detect_move_alert(result.get("df"))
                     if move_alert:
                         await send_move_alert(bot, chat_id, symbol, move_alert, language)
 
-                    # Ultra Signal Build (only if valid pattern + strong confidence)
+                    # Premium Signal Detection
                     valid_patterns = [
                         p for p in result.get("patterns", [])
                         if "⭐" in p and p.count("⭐") >= 3
@@ -94,6 +97,32 @@ async def auto_signal_loop(bot: Bot):
                 except Exception as symbol_error:
                     logger.error(f"❌ [Auto Signal] Error for {symbol}: {symbol_error}")
                     await report_error(bot, chat_id, symbol_error, context_info=f"Auto Signal Symbol: {symbol}")
+
+            # === Breaking News Detection (after each cycle) ===
+            try:
+                now = asyncio.get_event_loop().time()
+
+                # Check news only every 5 minutes to avoid overload
+                if last_news_check is None or (now - last_news_check) >= 300:
+                    breaking_news = await detect_breaking_news()
+
+                    if breaking_news:
+                        news_message = await format_breaking_news(breaking_news, lang=language)
+
+                        if news_message:
+                            await bot.send_message(
+                                chat_id=chat_id,
+                                text=news_message,
+                                parse_mode="Markdown",
+                                disable_web_page_preview=True
+                            )
+                            logger.info("📰 [News Alert] Breaking News sent.")
+
+                    last_news_check = now
+
+            except Exception as news_error:
+                logger.error(f"⚠️ [News Detection] Error: {news_error}")
+                await report_error(bot, chat_id, news_error, context_info="Breaking News Detection")
 
             logger.info("⏳ [Auto Signal Loop] Scan cycle completed. Sleeping before next cycle...")
             await asyncio.sleep(signal_interval_sec)
