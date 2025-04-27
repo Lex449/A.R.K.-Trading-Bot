@@ -1,8 +1,8 @@
 # bot/engine/analysis_engine.py
 
 """
-Ultra Analysis Engine für Trading-Signale auf Basis von Realtime-Daten.
-Kombiniert Pattern-Detection, Trendanalyse, RSI und Confidence-Scoring.
+Ultra Analysis Engine für Trading-Signale – Masterclass Build.
+Kombiniert Candle-Patterns, Trendanalyse, RSI, EMA und Score-System.
 """
 
 import pandas as pd
@@ -10,6 +10,7 @@ import numpy as np
 import os
 import requests
 from bot.engine.pattern_detector import detect_patterns
+from bot.engine.indicator_engine import evaluate_indicators
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 
@@ -23,20 +24,20 @@ FINNHUB_BASE_URL = "https://finnhub.io/api/v1"
 
 async def analyze_symbol(symbol: str) -> dict:
     """
-    Analysiert ein Handelssymbol auf Basis aktueller Candle-Daten.
-    
+    Analysiert ein Symbol (Aktie) mit kombinierter Muster- und Indikatorlogik.
+
     Args:
-        symbol (str): Das Handelssymbol (z.B. US100, SPX500).
+        symbol (str): z.B. "AAPL", "MSFT", "NVDA"
 
     Returns:
-        dict: Analyseergebnis oder None bei Fehler/keinen Mustern.
+        dict: Analyseergebnis oder None.
     """
     try:
-        # Candle-Daten abrufen
+        # --- Candle-Daten abrufen ---
         candles_url = f"{FINNHUB_BASE_URL}/stock/candle"
         params = {
             "symbol": symbol,
-            "resolution": "1",
+            "resolution": "1",  # 1-Minuten-Candles
             "count": 30,
             "token": FINNHUB_API_KEY,
         }
@@ -44,10 +45,9 @@ async def analyze_symbol(symbol: str) -> dict:
         candles_resp = response.json()
 
         if candles_resp.get("s") != "ok":
-            logger.warning(f"[Analysis Engine] Fehlgeschlagener Candle-Request für {symbol}.")
+            logger.warning(f"[Analysis Engine] Candle-Request fehlgeschlagen für {symbol}.")
             return None
 
-        # DataFrame erstellen
         df = pd.DataFrame({
             "t": candles_resp["t"],
             "o": candles_resp["o"],
@@ -61,46 +61,58 @@ async def analyze_symbol(symbol: str) -> dict:
             logger.warning(f"[Analysis Engine] Leere Candle-Daten für {symbol}.")
             return None
 
-        # Mustererkennung
+        # --- Mustererkennung ---
         patterns = detect_patterns(df)
-
         if not patterns:
             logger.info(f"[Analysis Engine] Keine Muster erkannt für {symbol}.")
-            return None  # Kein Pattern = Kein Signal = Kein Spam
+            return None
 
-        # Signalanalyse aufbauen
-        action_count = {"Long": 0, "Short": 0}
-        total_confidence = 0
-        pattern_details = []
+        # --- Indikatoren evaluieren (EMA, RSI) ---
+        indicator_score, trend_direction = evaluate_indicators(df)
 
-        for p in patterns:
-            pattern_details.append(
-                f"Pattern: {p['pattern']}\n"
-                f"Action: {'Long 📈' if p['action'] == 'Long' else 'Short 📉'}\n"
-                f"Confidence: {p['confidence']}%\n"
-                f"Rating: {'⭐' * p['stars']}\n"
-            )
-            action_count[p['action']] += 1
-            total_confidence += p['confidence']
+        # --- Signalstärke berechnen ---
+        pattern_confidences = [p['confidence'] for p in patterns]
+        avg_pattern_confidence = np.mean(pattern_confidences) if pattern_confidences else 0
 
-        # Combined Action bestimmen
-        if action_count["Long"] > action_count["Short"]:
-            combined_action = "Ultra Long 📈"
-        elif action_count["Short"] > action_count["Long"]:
-            combined_action = "Ultra Short 📉"
+        final_score = (avg_pattern_confidence * 0.6) + (indicator_score * 0.4)  # Gewichtung Muster 60%, Indikatoren 40%
+        final_score = round(final_score, 2)
+
+        # --- Sterne Rating (visuell) ---
+        if final_score >= 85:
+            stars = 5
+        elif final_score >= 70:
+            stars = 4
+        elif final_score >= 55:
+            stars = 3
         else:
-            combined_action = "Neutral ⚪"
+            stars = 2  # Nur intern, 3 Sterne Mindestfilter bleibt bestehen
 
-        avg_confidence = round(total_confidence / len(patterns), 2)
+        # --- Combined Action (Long/Short/Neutral) ---
+        action_votes = {"Long": 0, "Short": 0}
+        for p in patterns:
+            action_votes[p["action"]] += 1
 
+        if action_votes["Long"] > action_votes["Short"]:
+            combined_action = "Long 📈"
+        elif action_votes["Short"] > action_votes["Long"]:
+            combined_action = "Short 📉"
+        else:
+            combined_action = trend_direction  # Fallback auf EMA/RSI Trend
+
+        # --- Super Signal ---
+        super_signal = True if final_score >= 85 else False
+
+        # --- Ergebnis liefern ---
         return {
             "symbol": symbol,
-            "patterns": pattern_details,
+            "patterns": [p['pattern'] for p in patterns],
             "combined_action": combined_action,
-            "avg_confidence": avg_confidence,
-            "pattern_count": len(patterns),
+            "avg_confidence": avg_pattern_confidence,
+            "stars": stars,
+            "score": final_score,
+            "super_signal": super_signal,
         }
 
     except Exception as e:
-        logger.error(f"[Analysis Engine] Fehler bei Analyse von {symbol}: {e}")
+        logger.error(f"[Analysis Engine] Fehler bei {symbol}: {e}")
         return None
