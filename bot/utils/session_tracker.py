@@ -1,31 +1,36 @@
+"""
+A.R.K. Session Tracker – Ultra Stable Build.
+Tracks session, daily, and weekly trading performance.
+"""
+
 import os
 import json
 import uuid
 from datetime import datetime
 
-# === Session File Location ===
+# === File Location ===
 SESSION_FILE = "session_data.json"
 
 # === Internal Memory ===
 _session_data = {}
 
 def initialize_session():
-    """Initializes or loads the session data."""
+    """Initializes or loads session data."""
     global _session_data
 
     if not os.path.exists(SESSION_FILE):
         _session_data = _create_new_session()
-        save_session_data()
     else:
         try:
             with open(SESSION_FILE, "r", encoding="utf-8") as f:
                 _session_data = json.load(f)
         except Exception:
             _session_data = _create_new_session()
-            save_session_data()
+
+    save_session_data()
 
 def _create_new_session():
-    """Creates a new session structure."""
+    """Creates a new blank session."""
     return {
         "session_id": str(uuid.uuid4()),
         "start_time": datetime.utcnow().isoformat(),
@@ -35,7 +40,7 @@ def _create_new_session():
     }
 
 def _empty_metrics():
-    """Returns an empty metrics structure."""
+    """Returns a blank metric structure."""
     return {
         "signals_total": 0,
         "strong_signals": 0,
@@ -46,17 +51,12 @@ def _empty_metrics():
     }
 
 def save_session_data():
-    """Saves the session data to a file."""
+    """Saves the current session data to file."""
     with open(SESSION_FILE, "w", encoding="utf-8") as f:
         json.dump(_session_data, f, indent=4)
 
 def update_session_tracker(stars: int, confidence: float):
-    """
-    Updates the session tracker based on new signal data.
-    Args:
-        stars (int): Signal rating (1-5 stars)
-        confidence (float): Confidence score (0-100%)
-    """
+    """Updates session statistics after every signal."""
     for period in ["total", "today", "week"]:
         _session_data[period]["signals_total"] += 1
         _session_data[period]["confidence_sum"] += confidence
@@ -74,29 +74,31 @@ def update_session_tracker(stars: int, confidence: float):
     save_session_data()
 
 def get_session_report() -> str:
-    """Returns a beautifully formatted overall session overview."""
+    """Returns full session overview."""
     return _format_report("total", "📊 *Session Overview*")
 
 def get_today_report() -> str:
-    """Returns today's analysis report."""
+    """Returns today's performance report."""
     return _format_report("today", "🌞 *Today’s Report*")
 
 def get_weekly_report() -> str:
-    """Returns this week's analysis report."""
+    """Returns this week's performance report."""
     return _format_report("week", "📆 *Weekly Report*")
 
 def _format_report(section: str, title: str) -> str:
-    """Helper to format any section report nicely."""
-    start_time = datetime.fromisoformat(_session_data["start_time"])
+    """Formats the session data into a readable message."""
+    start_time = datetime.fromisoformat(_session_data.get("start_time"))
     uptime = datetime.utcnow() - start_time
+
     days = uptime.days
     hours, remainder = divmod(uptime.seconds, 3600)
     minutes, _ = divmod(remainder, 60)
-    uptime_str = f"{days}d {hours}h {minutes}min" if days > 0 else f"{hours}h {minutes}min"
+
+    uptime_str = f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m"
 
     data = _session_data.get(section, _empty_metrics())
-    avg_confidence = (data["confidence_sum"] / data["signals_total"]) if data["signals_total"] > 0 else 0
-    avg_scoring = (data["scoring_sum"] / data["signals_total"]) if data["signals_total"] > 0 else 0
+    avg_confidence = (data["confidence_sum"] / data["signals_total"]) if data["signals_total"] else 0
+    avg_scoring = (data["scoring_sum"] / data["signals_total"]) if data["signals_total"] else 0
 
     report = (
         f"{title}\n\n"
@@ -107,24 +109,24 @@ def _format_report(section: str, title: str) -> str:
         f"*Strong Signals (≥4⭐):* {data['strong_signals']}\n"
         f"*Moderate Signals (3⭐):* {data['moderate_signals']}\n"
         f"*Weak Signals (≤2⭐):* {data['weak_signals']}\n"
-        f"*Average Confidence:* {avg_confidence:.1f}%\n"
-        f"*Average Signal Quality:* {avg_scoring:.2f} (normalized)\n\n"
+        f"*Avg Confidence:* {avg_confidence:.1f}%\n"
+        f"*Avg Signal Score:* {avg_scoring:.2f}\n\n"
         f"🚀 _Relentless progress. Relentless precision._"
     )
     return report
 
 def reset_today_data():
-    """Resets today's counters."""
+    """Resets today's performance data."""
     _session_data["today"] = _empty_metrics()
     save_session_data()
 
 def reset_weekly_data():
-    """Resets weekly counters."""
+    """Resets weekly performance data."""
     _session_data["week"] = _empty_metrics()
     save_session_data()
 
 def reset_full_session():
-    """Fully resets the entire session."""
+    """Resets the entire session."""
     global _session_data
     _session_data = _create_new_session()
     save_session_data()
