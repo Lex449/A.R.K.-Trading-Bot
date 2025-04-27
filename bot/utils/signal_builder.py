@@ -1,53 +1,56 @@
-# bot/utils/signal_builder.py
-
 """
-A.R.K. Ultra Premium Signal Builder
-Fusion aus Strategie, Psychologie und Eleganz – gebaut für maximalen Impact.
+A.R.K. Ultra Premium Signal Builder – Multilingual Master Build.
+Combines strategy, psychology, and clean minimalism for maximum trading impact.
 """
 
-def build_signal_message(symbol: str, patterns: list, combined_action: str, avg_confidence: float, indicator_score: float, trend_direction: str) -> str:
+from bot.utils.i18n import get_text
+from bot.utils.language import get_language
+
+def build_signal_message(symbol: str, patterns: list, combined_action: str, avg_confidence: float, indicator_score: float, trend_direction: str, chat_id: int = None) -> str:
     """
-    Baut das ultimative Premium-Trading-Signal für Telegram.
+    Builds the ultimate premium trading signal message.
 
     Args:
-        symbol (str): Handelssymbol (z.B. AAPL, TSLA)
-        patterns (list): Liste erkannter Pattern-Namen
+        symbol (str): Trading symbol (e.g., AAPL, TSLA)
+        patterns (list): List of detected pattern names
         combined_action (str): Ultra Long 📈 / Ultra Short 📉 / Neutral ⚪
-        avg_confidence (float): Durchschnittliche Muster-Confidence
-        indicator_score (float): Gesamtscore aus RSI, EMA, Muster
-        trend_direction (str): Trendrichtung basierend auf EMA (Long/Short/Neutral)
+        avg_confidence (float): Average confidence of the detected patterns
+        indicator_score (float): Composite score from RSI, EMA, Patterns
+        trend_direction (str): Current trend direction
+        chat_id (int, optional): For localized language fallback
 
     Returns:
-        str: Fertig strukturierte, elegante Nachricht
+        str: Ready-to-send premium structured trading signal message.
     """
     if not patterns:
         return ""
 
-    # === Header Entscheidung basierend auf Qualität ===
-    if avg_confidence >= 85 and indicator_score >= 80:
-        header = "🚀 *Super Signal – Maximale Übereinstimmung!*"
-    elif avg_confidence >= 70:
-        header = "⚡ *Strong Signal – Hochbewertetes Setup*"
-    else:
-        header = "⚠️ *Moderates Signal – Zusätzliche Bestätigung empfohlen*"
+    lang = get_language(chat_id) or "en"
 
-    # === Sterne aus Confidence (1–5) ===
+    # === Header decision based on signal quality ===
+    if avg_confidence >= 85 and indicator_score >= 80:
+        header = get_text("signal_header_super", lang)
+    elif avg_confidence >= 70:
+        header = get_text("signal_header_strong", lang)
+    else:
+        header = get_text("signal_header_moderate", lang)
+
+    # === Stars based on confidence (1–5) ===
     stars = "⭐" * min(5, max(1, int(avg_confidence // 20)))
 
-    # === Muster elegant auflisten ===
+    # === Nicely formatted patterns list ===
     patterns_text = "\n".join([f"• {p}" for p in patterns])
 
-    # === Final strukturierter Nachrichtentext ===
+    # === Build the final message ===
     message = (
         f"{header}\n\n"
-        f"*Symbol:* `{symbol}`\n"
-        f"*Aktion:* {combined_action}\n"
-        f"*Trendstruktur:* {trend_direction}\n"
-        f"*Signal Qualität:* {stars} ({avg_confidence:.1f}%)\n"
-        f"*Indikator Score:* `{indicator_score:.1f}%`\n\n"
-        f"✨ *Gefundene Muster:*\n{patterns_text}\n\n"
-        f"_🧠 Fokus schlägt Geschwindigkeit. Qualität schlägt Quantität._\n"
-        f"_Kein Spam. Kein Stress. Nur echtes Mentoring._"
+        f"*{get_text('symbol', lang)}:* `{symbol}`\n"
+        f"*{get_text('action', lang)}:* {combined_action}\n"
+        f"*{get_text('trend_structure', lang)}:* {trend_direction}\n"
+        f"*{get_text('signal_quality', lang)}:* {stars} ({avg_confidence:.1f}%)\n"
+        f"*{get_text('indicator_score', lang)}:* `{indicator_score:.1f}%`\n\n"
+        f"✨ *{get_text('detected_patterns', lang)}:*\n{patterns_text}\n\n"
+        f"_{get_text('signal_footer', lang)}_"
     )
 
     return message
