@@ -1,6 +1,6 @@
 """
-A.R.K. Auto Signal Loop – Non-Stop Wall Street Surveillance.
-Built for perfection: Signals, Move Alerts, Smart Pause handling.
+A.R.K. Auto Signal Loop – Ultra Wall Street Surveillance.
+Bugatti Pur Sport Version. No compromise.
 """
 
 import asyncio
@@ -23,46 +23,52 @@ config = get_settings()
 
 async def auto_signal_loop(bot: Bot):
     """
-    Continuously monitors the markets and sends trading signals and move alerts.
+    Runs the nonstop trading surveillance loop.
+    Sends signals and move alerts with premium filtering.
     """
+
     chat_id = int(config["TELEGRAM_CHAT_ID"])
-    logger.info("🚀 [Auto Signal] Ultra-Loop started. 24/7 Monitoring initiated...")
+    logger.info("🚀 [Auto Signal Loop] Ultra-Premium Monitoring initialized...")
 
     try:
         symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
         signal_interval_sec = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
 
         if not symbols:
-            logger.error("❌ [Auto Signal] No trading symbols configured.")
+            logger.error("❌ [Auto Signal Loop] No symbols configured. Exiting loop.")
             return
 
         while True:
-            # === Marktzeit prüfen ===
+            # === Check Market State ===
             if not is_trading_day() or not is_trading_hours():
-                logger.info("⏳ [Auto Signal] Market closed or holiday. Sleeping 5 min.")
+                logger.info("⏳ [Auto Signal Loop] Market closed or holiday. Sleeping 5 min.")
                 await asyncio.sleep(300)
                 continue
 
-            logger.info(f"🔎 [Auto Signal] Scanning {len(symbols)} symbols...")
+            logger.info(f"🔎 [Auto Signal Loop] Scanning {len(symbols)} symbols...")
 
             for symbol in symbols:
                 try:
                     # Analyse Symbol
                     result = await analyze_symbol(symbol)
-
                     if not result:
                         continue
 
-                    # Move Detection
+                    # Move Detection (Parallel Detection)
                     move_alert = await detect_move_alert(result.get("df"))
                     if move_alert:
                         await send_move_alert(bot, chat_id, symbol, move_alert)
 
-                    # Signal Detection
-                    valid_patterns = [p for p in result.get("patterns", []) if "⭐" in p and p.count("⭐") >= 3]
+                    # High-Quality Pattern Filtering
+                    valid_patterns = [
+                        p for p in result.get("patterns", [])
+                        if "⭐" in p and p.count("⭐") >= 3
+                    ]
 
-                    if valid_patterns:
+                    # Only send premium signals
+                    if valid_patterns and result.get("avg_confidence", 0) >= 60:
                         update_session_tracker(len(valid_patterns), result.get("avg_confidence", 0))
+
                         signal_message = build_signal_message(
                             symbol=symbol,
                             patterns=valid_patterns,
@@ -72,32 +78,34 @@ async def auto_signal_loop(bot: Bot):
                             trend_direction=result.get("trend_direction", "Neutral ⚪")
                         )
 
-                        await bot.send_message(
-                            chat_id=chat_id,
-                            text=signal_message,
-                            parse_mode="Markdown",
-                            disable_web_page_preview=True
-                        )
-                        logger.info(f"✅ [Auto Signal] Signal sent for {symbol}.")
+                        if signal_message:
+                            await bot.send_message(
+                                chat_id=chat_id,
+                                text=signal_message,
+                                parse_mode="Markdown",
+                                disable_web_page_preview=True
+                            )
+                            logger.info(f"✅ [Auto Signal] Sent trading signal for {symbol}")
 
-                    await asyncio.sleep(1.5)  # Kleine Pause zwischen Symbolen
+                    await asyncio.sleep(1.5)  # Micro Sleep to avoid Telegram Flood limits
 
                 except Exception as symbol_error:
-                    logger.error(f"❌ [Auto Signal] Error with symbol {symbol}: {symbol_error}")
-                    await report_error(bot, chat_id, symbol_error, context_info=f"Auto Signal Error – {symbol}")
+                    logger.error(f"❌ [Auto Signal] Error for {symbol}: {symbol_error}")
+                    await report_error(bot, chat_id, symbol_error, context_info=f"Auto Signal Symbol: {symbol}")
 
-            logger.info("⏳ [Auto Signal] Cycle complete. Sleeping...")
+            logger.info("⏳ [Auto Signal Loop] Scan cycle completed. Sleeping before next cycle...")
             await asyncio.sleep(signal_interval_sec)
 
     except Exception as loop_error:
-        logger.critical(f"🔥 [Auto Signal] Fatal error: {loop_error}")
+        logger.critical(f"🔥 [Auto Signal Loop] Fatal error: {loop_error}")
         await report_error(bot, chat_id, loop_error, context_info="Auto Signal Main Loop Failure")
         await asyncio.sleep(120)
 
 async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict):
     """
-    Sends a market movement alert based on detection.
+    Sends a market movement alert based on detected abnormal moves.
     """
+
     move_type = move_alert["type"]
     move_percent = move_alert["move_percent"]
 
@@ -106,15 +114,20 @@ async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict)
             f"🚨 *Strong Move Alert!*\n\n"
             f"*Symbol:* `{symbol}`\n"
             f"*Movement:* `{move_percent:.2f}%`\n"
-            f"_ARK monitors markets 24/7._"
+            f"_A.R.K. monitors markets 24/7. Prepare wisely._"
         )
     else:
         text = (
-            f"⚠️ *Early Move Detection*\n\n"
+            f"⚠️ *Early Move Warning*\n\n"
             f"*Symbol:* `{symbol}`\n"
             f"*Movement:* `{move_percent:.2f}%`\n"
-            f"_Stay sharp. Stay ready._"
+            f"_Smart traders act when others hesitate._"
         )
 
-    await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+    await bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        parse_mode="Markdown",
+        disable_web_page_preview=True
+    )
     logger.info(f"📈 [Move Alert] {symbol} moved {move_percent:.2f}%")
