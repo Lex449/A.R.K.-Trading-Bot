@@ -1,21 +1,24 @@
 """
-A.R.K. Daily Reset Job – Resets daily session stats.
-Executed once per day at 23:59 WITA (Asia/Makassar).
+A.R.K. Reset Today Job – Daily Session Reset.
+Executed once per day (user timezone controlled).
 """
 
-import logging
 from bot.utils.session_tracker import reset_today_data
 from bot.utils.logger import setup_logger
 
-# Setup Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 
-async def reset_today_job():
+async def reset_today_job(chat_id=None):
     """
-    Performs a clean reset of today's session stats.
+    Resets today's session data.
+    Optional chat_id for logging context.
     """
     try:
         reset_today_data()
-        logger.info("✅ Daily reset executed successfully (Today’s Data).")
+        if chat_id:
+            logger.info(f"♻️ Daily reset executed for user: {chat_id}")
+        else:
+            logger.info("♻️ Daily reset executed globally.")
     except Exception as e:
         logger.error(f"❌ Daily reset failed: {e}")
