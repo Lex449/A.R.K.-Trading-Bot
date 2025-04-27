@@ -1,38 +1,52 @@
 # bot/utils/signal_builder.py
 
 """
-Baut die Premium-Detail-Signale für Telegram-Ausgabe.
-Masterclass Format: Alle Muster, Confidence, Sterne, klare Richtung.
+A.R.K. Ultra Premium Signal Builder
+Fusion der besten Designs – für echte CEO-Gelddruckmaschine.
 """
 
-def build_signal_message(symbol: str, patterns: list, combined_action: str, avg_confidence: float) -> str:
+def build_signal_message(symbol: str, patterns: list, combined_action: str, avg_confidence: float, indicator_score: float, trend_direction: str) -> str:
     """
-    Erzeugt ein strukturiertes Trading-Signal auf Ultra-Niveau.
+    Baut das ultimative Premium-Signal für Telegram.
 
     Args:
-        symbol (str): Das gecheckte Symbol (z.B. US100).
-        patterns (list): Liste erkannter Muster-Strings.
-        combined_action (str): Zusammengefasste Richtung (Ultra Long/Short/Neutral).
-        avg_confidence (float): Durchschnittliche Confidence aller Muster.
+        symbol (str): Handelssymbol (z.B. AAPL, TSLA)
+        patterns (list): Liste erkannter Muster als Strings
+        combined_action (str): Ultra Long 📈 / Ultra Short 📉 / Neutral ⚪
+        avg_confidence (float): Durchschnittliche Pattern-Confidence
+        indicator_score (float): Indikator-Score (RSI/EMA kombi)
+        trend_direction (str): Trendrichtung anhand EMA (Long/Short/Neutral)
 
     Returns:
-        str: Fertig formatierte Signalnachricht.
+        str: Final formatierte Premium-Nachricht
     """
     if not patterns:
         return ""
 
-    # Premium-Format der Musterliste
-    patterns_text = ""
-    for p in patterns:
-        patterns_text += f"• {p}\n"
+    # Signalstärke bewerten
+    if avg_confidence >= 85 and indicator_score >= 80:
+        header = "🚀 *Super Signal – Maximale Übereinstimmung!*"
+    elif avg_confidence >= 70:
+        header = "⚡ *Strong Signal – Hochbewertetes Setup*"
+    else:
+        header = "⚠️ *Moderates Signal – Zusätzliche Bestätigung empfohlen*"
 
+    # Sterne aus Confidence
+    stars = "⭐" * max(1, min(5, int(avg_confidence // 20)))
+
+    # Muster schön auflisten
+    patterns_text = "\n".join([f"• {p}" for p in patterns])
+
+    # Finaler Nachrichtentext
     message = (
-        f"⚡ *Live Trading Signal!*\n\n"
+        f"{header}\n\n"
         f"*Symbol:* `{symbol}`\n"
         f"*Aktion:* {combined_action}\n"
-        f"*Durchschnittliche Confidence:* `{avg_confidence:.1f}%`\n"
-        f"*Muster erkannt:*\n{patterns_text}\n"
-        f"🧠 _Qualität vor Quantität. Diszipliniertes Risikomanagement entscheidet._"
+        f"*Trendrichtung:* {trend_direction}\n"
+        f"*Signal Rating:* {stars} ({avg_confidence:.1f}%)\n"
+        f"*Indikator Score:* {indicator_score:.1f}%\n\n"
+        f"*Erkannte Muster:*\n{patterns_text}\n\n"
+        f"_🧠 Qualität vor Quantität. Diszipliniertes Risikomanagement entscheidet._"
     )
 
     return message
