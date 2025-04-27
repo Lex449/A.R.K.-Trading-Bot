@@ -1,3 +1,5 @@
+# bot/utils/session_tracker.py
+
 import os
 import json
 import uuid
@@ -12,6 +14,7 @@ _session_data = {}
 def initialize_session():
     """Initializes or loads the session data."""
     global _session_data
+
     if not os.path.exists(SESSION_FILE):
         _session_data = _create_new_session()
         save_session_data()
@@ -19,7 +22,7 @@ def initialize_session():
         try:
             with open(SESSION_FILE, "r", encoding="utf-8") as f:
                 _session_data = json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
+        except Exception:
             _session_data = _create_new_session()
             save_session_data()
 
@@ -36,20 +39,16 @@ def _create_new_session():
     }
 
 def save_session_data():
-    """Safely saves the session to a file."""
-    try:
-        with open(SESSION_FILE, "w", encoding="utf-8") as f:
-            json.dump(_session_data, f, indent=4)
-    except Exception as e:
-        print(f"⚠️ Failed to save session data: {e}")
+    """Saves the current session to a JSON file."""
+    with open(SESSION_FILE, "w", encoding="utf-8") as f:
+        json.dump(_session_data, f, indent=4)
 
 def update_session_tracker(stars: int, confidence: float):
     """
     Updates the session statistics based on the signal quality.
-    
     Args:
         stars (int): Star rating (1-5)
-        confidence (float): Confidence score (0-100)
+        confidence (float): Confidence percentage (0-100)
     """
     _session_data["signals_total"] += 1
     _session_data["total_confidence"] += confidence
@@ -64,7 +63,7 @@ def update_session_tracker(stars: int, confidence: float):
     save_session_data()
 
 def get_session_report() -> str:
-    """Returns a beautifully formatted overview of the current session."""
+    """Returns a formatted overview of the current session."""
     start_time = datetime.fromisoformat(_session_data["start_time"])
     uptime = datetime.utcnow() - start_time
 
@@ -72,15 +71,13 @@ def get_session_report() -> str:
     hours, remainder = divmod(uptime.seconds, 3600)
     minutes, _ = divmod(remainder, 60)
 
-    avg_confidence = (
-        _session_data["total_confidence"] / _session_data["signals_total"]
-        if _session_data["signals_total"] > 0
-        else 0.0
-    )
+    avg_confidence = 0.0
+    if _session_data["signals_total"] > 0:
+        avg_confidence = _session_data["total_confidence"] / _session_data["signals_total"]
 
-    uptime_str = f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m"
+    uptime_str = f"{days}d {hours}h {minutes}min" if days > 0 else f"{hours}h {minutes}min"
 
-    return (
+    report = (
         f"📊 *Session Overview*\n\n"
         f"*Session ID:* `{_session_data['session_id']}`\n"
         f"*Start Time:* `{start_time.strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
@@ -89,12 +86,13 @@ def get_session_report() -> str:
         f"*Strong Signals (≥4⭐):* {_session_data['strong_signals']}\n"
         f"*Moderate Signals (3⭐):* {_session_data['moderate_signals']}\n"
         f"*Weak Signals (≤2⭐):* {_session_data['weak_signals']}\n"
-        f"*Avg. Confidence:* {avg_confidence:.1f}%\n\n"
-        f"🚀 _System performance: Ultra stable._"
+        f"*Average Confidence:* {avg_confidence:.1f}%\n\n"
+        f"🚀 _Session is running ultra stable._"
     )
+    return report
 
 def reset_session_data():
-    """Resets all session statistics safely."""
+    """Resets the session statistics."""
     global _session_data
     _session_data = _create_new_session()
     save_session_data()
