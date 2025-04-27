@@ -1,7 +1,8 @@
 # bot/utils/autoscaler.py
 
 """
-Handles dynamic auto-scaling for signal dispatching (future-ready).
+A.R.K. Trading Bot – Autoscaler (Future Ready)
+Aktuell noch inaktiv. Vorbereitet für spätere intelligente Skalierungs-Strategien.
 """
 
 import logging
@@ -13,19 +14,11 @@ logger = setup_logger(__name__)
 
 async def run_autoscaler(bot: Bot, chat_id: int) -> None:
     """
-    Placeholder for future auto-scaling strategy.
-    Adjusts system behavior dynamically depending on load or market conditions.
-
-    Args:
-        bot (Bot): Telegram Bot instance.
-        chat_id (int): Target chat for potential scaling notifications.
+    Placeholder für zukünftige dynamische Skalierung.
+    Derzeit keine aktive Logik implementiert.
     """
     try:
-        # In future: adjust signal frequency based on conditions (CPU, latency, API load, etc.)
-        logger.info("🔧 Autoscaler executed: No scaling adjustments required at this time.")
-
-        # Optional: Send message to admin when active scaling is triggered
-        # await bot.send_message(chat_id=chat_id, text="🔄 Autoscaler triggered dynamic adjustment.")
+        logger.info("🔧 Autoscaler ausgeführt – derzeit inaktiv (Platzhalter für zukünftige Upgrades).")
 
     except Exception as e:
-        logger.error(f"❌ Autoscaler execution error: {str(e)}")
+        logger.error(f"❌ Fehler beim Autoscaler: {str(e)}")
