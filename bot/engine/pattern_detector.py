@@ -39,27 +39,19 @@ PATTERN_DEFINITIONS = {
 }
 
 def detect_candle_patterns(df: pd.DataFrame) -> list:
-    """
-    Erkennt relevante Candlestick-Muster in den letzten Kerzendaten.
-
-    Args:
-        df (pd.DataFrame): Candle-Daten mit 'o', 'h', 'l', 'c'-Spalten.
-
-    Returns:
-        list: Liste erkannter Muster inkl. Richtung, Confidence und Sternebewertung.
-    """
     results = []
-    if df.empty or len(df) < 2:
+    if df.empty or len(df) < 3:
         return results
 
     last = df.iloc[-1]
     prev = df.iloc[-2]
+    prev2 = df.iloc[-3]
 
     body = abs(last['c'] - last['o'])
     candle_range = last['h'] - last['l']
 
     if candle_range == 0:
-        return results  # Schutz vor Division by Zero
+        return results
 
     # === Einzelmustererkennung ===
 
@@ -83,7 +75,97 @@ def detect_candle_patterns(df: pd.DataFrame) -> list:
     if (last['h'] > max(last['c'], last['o']) + body):
         results.append({"pattern": "Shooting Star", **PATTERN_DEFINITIONS["Shooting Star"]})
 
-    # === Zusatz: Momentum-Erkennung über 10 Candles ===
+    # 6. Piercing Line
+    if (
+        prev['o'] > prev['c'] and
+        last['c'] > last['o'] and
+        last['o'] < prev['c'] and
+        last['c'] > (prev['o'] + prev['c']) / 2
+    ):
+        results.append({"pattern": "Piercing Line", **PATTERN_DEFINITIONS["Piercing Line"]})
+
+    # 7. Dark Cloud Cover
+    if (
+        prev['c'] > prev['o'] and
+        last['o'] > last['c'] and
+        last['o'] > prev['c'] and
+        last['c'] < (prev['o'] + prev['c']) / 2
+    ):
+        results.append({"pattern": "Dark Cloud Cover", **PATTERN_DEFINITIONS["Dark Cloud Cover"]})
+
+    # 8. Bullish Harami
+    if (
+        prev['o'] > prev['c'] and
+        last['o'] < last['c'] and
+        last['o'] > prev['c'] and
+        last['c'] < prev['o']
+    ):
+        results.append({"pattern": "Bullish Harami", **PATTERN_DEFINITIONS["Bullish Harami"]})
+
+    # 9. Bearish Harami
+    if (
+        prev['c'] > prev['o'] and
+        last['c'] < last['o'] and
+        last['c'] > prev['o'] and
+        last['o'] < prev['c']
+    ):
+        results.append({"pattern": "Bearish Harami", **PATTERN_DEFINITIONS["Bearish Harami"]})
+
+    # 10. Tweezer Top
+    if (
+        prev['c'] > prev['o'] and
+        last['o'] > last['c'] and
+        abs(prev['h'] - last['h']) < (candle_range * 0.1)
+    ):
+        results.append({"pattern": "Tweezer Top", **PATTERN_DEFINITIONS["Tweezer Top"]})
+
+    # 11. Tweezer Bottom
+    if (
+        prev['o'] > prev['c'] and
+        last['c'] > last['o'] and
+        abs(prev['l'] - last['l']) < (candle_range * 0.1)
+    ):
+        results.append({"pattern": "Tweezer Bottom", **PATTERN_DEFINITIONS["Tweezer Bottom"]})
+
+    # 12. Morning Star
+    if (
+        prev2['c'] < prev2['o'] and
+        abs(prev['c'] - prev['o']) < (prev['h'] - prev['l']) * 0.3 and
+        last['c'] > last['o'] and
+        last['c'] > (prev2['o'] + prev2['c']) / 2
+    ):
+        results.append({"pattern": "Morning Star", **PATTERN_DEFINITIONS["Morning Star"]})
+
+    # 13. Evening Star
+    if (
+        prev2['c'] > prev2['o'] and
+        abs(prev['c'] - prev['o']) < (prev['h'] - prev['l']) * 0.3 and
+        last['c'] < last['o'] and
+        last['c'] < (prev2['o'] + prev2['c']) / 2
+    ):
+        results.append({"pattern": "Evening Star", **PATTERN_DEFINITIONS["Evening Star"]})
+
+    # 14. Three White Soldiers
+    if (
+        prev2['c'] > prev2['o'] and
+        prev['c'] > prev['o'] and
+        last['c'] > last['o'] and
+        prev2['c'] < prev['c'] and
+        prev['c'] < last['c']
+    ):
+        results.append({"pattern": "Three White Soldiers", **PATTERN_DEFINITIONS["Three White Soldiers"]})
+
+    # 15. Three Black Crows
+    if (
+        prev2['c'] < prev2['o'] and
+        prev['c'] < prev['o'] and
+        last['c'] < last['o'] and
+        prev2['c'] > prev['c'] and
+        prev['c'] > last['c']
+    ):
+        results.append({"pattern": "Three Black Crows", **PATTERN_DEFINITIONS["Three Black Crows"]})
+
+    # === Momentum-Erkennung ===
     if len(df) >= 11:
         recent_close = df['c'].iloc[-1]
         close_10min_ago = df['c'].iloc[-11]
