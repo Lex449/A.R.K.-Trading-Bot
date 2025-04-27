@@ -38,7 +38,16 @@ PATTERN_DEFINITIONS = {
     "Strong Bearish Momentum": {"action": "Short", "confidence": 75, "stars": 4},
 }
 
-def detect_candle_patterns(df: pd.DataFrame) -> list:
+def detect_patterns(df: pd.DataFrame) -> list:
+    """
+    Erkennt relevante Candlestick-Muster in den letzten Kerzendaten.
+
+    Args:
+        df (pd.DataFrame): Candle-Daten mit 'o', 'h', 'l', 'c'-Spalten.
+
+    Returns:
+        list: Liste erkannter Muster inkl. Richtung, Confidence und Sternebewertung.
+    """
     results = []
     if df.empty or len(df) < 3:
         return results
