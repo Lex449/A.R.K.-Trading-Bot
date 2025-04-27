@@ -15,6 +15,7 @@ from bot.handlers.status import status_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.test_signal import test_signal
 from bot.handlers.test_analyse import test_analyse
+from bot.handlers.error_handler import global_error_handler  # << NEU: Error-Handler
 
 # === Auto Signal Loop ===
 from bot.auto.auto_signal_loop import auto_signal_loop
@@ -25,7 +26,7 @@ from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
 
 # === Setup Logging ===
-setup_logger(__name__)  # FIXED: Übergibt richtigen Namen!
+setup_logger(__name__)
 
 # === Allow nested event loops (Railway / Replit Kompatibilität) ===
 nest_asyncio.apply()
@@ -40,7 +41,7 @@ async def start_auto_signals(app):
     Übergibt den bestehenden Application-Bot, um 409 Conflict zu vermeiden.
     """
     try:
-        await auto_signal_loop(app.bot)   # << WICHTIG: Bot übergeben!
+        await auto_signal_loop(app.bot)
     except Exception as e:
         await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Auto Signal Loop Error")
 
@@ -50,7 +51,7 @@ async def main():
     # Initialize Bot Application
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # Register Commands
+    # Register Command Handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("analyse", analyze_symbol))
@@ -61,7 +62,10 @@ async def main():
     app.add_handler(CommandHandler("testsignal", test_signal))
     app.add_handler(CommandHandler("testanalyse", test_analyse))
 
-    # Background Tasks
+    # Register Global Error Handler
+    app.add_error_handler(global_error_handler)
+
+    # Start Background Auto Signals
     asyncio.create_task(start_auto_signals(app))
 
     # Start Polling
