@@ -16,6 +16,7 @@ from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.test_signal import test_signal
 from bot.handlers.test_analyse import test_analyse
 from bot.handlers.error_handler import global_error_handler
+from bot.handlers.set_my_commands import set_bot_commands  # << NEW
 
 # === Auto Signal Loop (no new polling!) ===
 from bot.auto.auto_signal_loop import auto_signal_loop
@@ -40,17 +41,22 @@ async def startup_tasks(application):
     Launches background services when Bot starts (no polling conflict).
     """
     try:
+        # === Starte Auto Signal Loop ===
         asyncio.create_task(auto_signal_loop(application.bot))
+
+        # === Setze schöne Command-Liste ===
+        await set_bot_commands(application)
+
     except Exception as e:
         await report_error(application.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Startup Task Error")
 
 async def main():
-    logging.info("🚀 A.R.K. Trading Bot 2.0 – Stability Mode – Made in Bali.")
+    logging.info("🚀 A.R.K. Trading Bot 2.0 – Stability Mode – Made in Bali. Engineered with German Precision.")
 
     # Initialize Bot Application
     app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
 
-    # === Register all command handlers ===
+    # === Register all Command Handlers ===
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("analyse", analyze_symbol))
