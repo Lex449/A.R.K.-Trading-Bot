@@ -23,7 +23,7 @@ from bot.auto.auto_signal_loop import auto_signal_loop
 
 # === Core Utilities ===
 from bot.utils.error_reporter import report_error
-from bot.utils.logging import setup_logger
+from bot.utils.logger import setup_logger  # ✅ Hier richtig korrigiert!
 from bot.config.settings import get_settings
 
 # === Setup Logging ===
@@ -42,7 +42,7 @@ async def start_auto_signals(app):
     Übergibt den bestehenden Application-Bot, um 409 Conflict zu vermeiden.
     """
     try:
-        await auto_signal_loop(app.bot)   # << WICHTIG: Bot übergeben!
+        await auto_signal_loop(app.bot)
     except Exception as e:
         await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Auto Signal Loop Error")
 
