@@ -3,6 +3,7 @@
 """
 Automatisierter Echtzeit-Signal-Loop für Premium Trading Signale.
 Ultra-Masterclass Build – Nur Qualität, keine Masse.
+Optimiert für 1x Bot-Instance – keine 409 Conflicts mehr.
 """
 
 import asyncio
@@ -23,17 +24,14 @@ logger.setLevel(logging.INFO)
 # Load Config
 config = get_settings()
 
-async def auto_signal_loop():
-    bot = Bot(token=config["BOT_TOKEN"])
+async def auto_signal_loop(bot: Bot):
+    """
+    Startet die kontinuierliche Echtzeitanalyse und Signalversand.
+    Erwartet bereits bestehenden Telegram Bot aus ApplicationContext.
+    """
+
     chat_id = int(config["TELEGRAM_CHAT_ID"])
-
-    try:
-        await bot.delete_webhook(drop_pending_updates=True)
-        logger.info("[Auto Signal] Webhook gelöscht (Clear State).")
-    except Exception as e:
-        logger.warning(f"[Auto Signal] Fehler beim Webhook Löschen: {e}")
-
-    logger.info("[Auto Signal] Starte Ultra-Auto-Loop...")
+    logger.info("[Auto Signal] Starte Ultra-Auto-Loop... (kein Webhook Eingriff)")
 
     while True:
         try:
