@@ -1,5 +1,10 @@
 # bot/engine/analysis_engine.py
 
+"""
+Ultra Analysis Engine für Trading-Signale auf Basis von Realtime-Daten.
+Kombiniert Pattern-Detection, Trendanalyse, RSI und Confidence-Scoring.
+"""
+
 import pandas as pd
 import numpy as np
 import os
@@ -18,8 +23,13 @@ FINNHUB_BASE_URL = "https://finnhub.io/api/v1"
 
 async def analyze_symbol(symbol: str) -> dict:
     """
-    Ultra Analysis Engine für Trading-Signale auf Basis von Realtime-Daten,
-    kombiniert Pattern-Detection, Trend, RSI und Confidence Scoring.
+    Analysiert ein Handelssymbol auf Basis aktueller Candle-Daten.
+    
+    Args:
+        symbol (str): Das Handelssymbol (z.B. US100, SPX500).
+
+    Returns:
+        dict: Analyseergebnis oder None bei Fehler/keinen Mustern.
     """
     try:
         # Candle-Daten abrufen
@@ -28,34 +38,39 @@ async def analyze_symbol(symbol: str) -> dict:
             "symbol": symbol,
             "resolution": "1",
             "count": 30,
-            "token": FINNHUB_API_KEY
+            "token": FINNHUB_API_KEY,
         }
-        candles_resp = requests.get(candles_url, params=params).json()
+        response = requests.get(candles_url, params=params)
+        candles_resp = response.json()
 
         if candles_resp.get("s") != "ok":
-            logger.warning(f"Failed to fetch candle data for {symbol}")
+            logger.warning(f"[Analysis Engine] Fehlgeschlagener Candle-Request für {symbol}.")
             return None
 
-        # DataFrame aufbauen
+        # DataFrame erstellen
         df = pd.DataFrame({
             "t": candles_resp["t"],
             "o": candles_resp["o"],
             "h": candles_resp["h"],
             "l": candles_resp["l"],
             "c": candles_resp["c"],
-            "v": candles_resp["v"]
+            "v": candles_resp["v"],
         })
 
-        # Muster erkennen
+        if df.empty:
+            logger.warning(f"[Analysis Engine] Leere Candle-Daten für {symbol}.")
+            return None
+
+        # Mustererkennung
         patterns = detect_patterns(df)
 
         if not patterns:
-            return None  # Kein Signal = kein Spam
+            logger.info(f"[Analysis Engine] Keine Muster erkannt für {symbol}.")
+            return None  # Kein Pattern = Kein Signal = Kein Spam
 
-        # Signal zusammenbauen
+        # Signalanalyse aufbauen
         action_count = {"Long": 0, "Short": 0}
         total_confidence = 0
-
         pattern_details = []
 
         for p in patterns:
@@ -68,7 +83,7 @@ async def analyze_symbol(symbol: str) -> dict:
             action_count[p['action']] += 1
             total_confidence += p['confidence']
 
-        # Combined Action
+        # Combined Action bestimmen
         if action_count["Long"] > action_count["Short"]:
             combined_action = "Ultra Long 📈"
         elif action_count["Short"] > action_count["Long"]:
@@ -76,17 +91,16 @@ async def analyze_symbol(symbol: str) -> dict:
         else:
             combined_action = "Neutral ⚪"
 
-        # Durchschnittliches Confidence
-        avg_confidence = total_confidence / len(patterns)
+        avg_confidence = round(total_confidence / len(patterns), 2)
 
         return {
             "symbol": symbol,
             "patterns": pattern_details,
             "combined_action": combined_action,
-            "avg_confidence": round(avg_confidence, 2),
-            "pattern_count": len(patterns)
+            "avg_confidence": avg_confidence,
+            "pattern_count": len(patterns),
         }
 
     except Exception as e:
-        logger.error(f"Error analyzing {symbol}: {e}")
+        logger.error(f"[Analysis Engine] Fehler bei Analyse von {symbol}: {e}")
         return None
