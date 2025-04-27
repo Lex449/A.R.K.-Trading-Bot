@@ -1,4 +1,7 @@
-# bot/handlers/start.py
+"""
+A.R.K. Start Command – Ultra Structured Premium Build.
+Welcomes user, sets first interaction experience.
+"""
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -12,24 +15,26 @@ logger = setup_logger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handler for /start command.
-    Greets the user and provides initial bot instructions.
+    Handles the /start command.
+    Provides a localized, structured welcome message.
     """
     chat_id = update.effective_chat.id
-    user = update.effective_user.first_name or "Trader"
-    lang = get_language(chat_id) or "en"
+    user_name = update.effective_user.first_name or "Trader"
+    language = get_language(chat_id) or "en"
 
     try:
-        greeting = get_text("start_greeting", lang).format(user=user)
-        help_hint = get_text("start_help_hint", lang)
+        # Load text templates
+        greeting_text = get_text("start_greeting", language).format(user=user_name)
+        help_hint_text = get_text("start_help_hint", language)
 
+        # Send welcome message
         await update.message.reply_text(
-            f"{greeting}\n\n{help_hint}",
+            f"{greeting_text}\n\n{help_hint_text}",
             parse_mode="Markdown"
         )
 
-        logger.info(f"Start command triggered by {user} (Chat ID: {chat_id})")
+        logger.info(f"/start command triggered | User: {user_name} | Chat ID: {chat_id}")
 
-    except Exception as e:
-        await report_error(context.bot, chat_id, e, context_info="Start Command Error")
-        logger.error(f"Error in /start command: {e}")
+    except Exception as error:
+        await report_error(context.bot, chat_id, error, context_info="/start command failure")
+        logger.error(f"/start command error: {error}")
