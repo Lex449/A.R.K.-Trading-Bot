@@ -1,6 +1,6 @@
 """
 A.R.K. Start Command – Ultra Structured Premium Build.
-Welcomes user, sets first interaction experience.
+Welcomes the user with precision and motivation.
 """
 
 from telegram import Update
@@ -23,18 +23,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     language = get_language(chat_id) or "en"
 
     try:
-        # Load text templates
-        greeting_text = get_text("start_greeting", language).format(user=user_name)
-        help_hint_text = get_text("start_help_hint", language)
+        # Load localized welcome and help texts
+        greeting = get_text("start_greeting", language).format(user=user_name)
+        help_hint = get_text("start_help_hint", language)
 
-        # Send welcome message
+        # Compose full welcome message
+        welcome_message = (
+            f"{greeting}\n\n"
+            f"{help_hint}\n\n"
+            f"🚀 _Precision. Discipline. Execution._"
+        )
+
+        # Send welcome
         await update.message.reply_text(
-            f"{greeting_text}\n\n{help_hint_text}",
+            welcome_message,
             parse_mode="Markdown"
         )
 
-        logger.info(f"/start command triggered | User: {user_name} | Chat ID: {chat_id}")
+        logger.info(f"[Start] User '{user_name}' initialized session (Chat ID: {chat_id})")
 
     except Exception as error:
-        await report_error(context.bot, chat_id, error, context_info="/start command failure")
-        logger.error(f"/start command error: {error}")
+        logger.error(f"[Start Command Error] {error}")
+        await report_error(context.bot, chat_id, error, context_info="Start Command Failure")
