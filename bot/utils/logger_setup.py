@@ -1,21 +1,30 @@
+# bot/utils/logger_setup.py
+
 """
-Central logger configuration for the entire bot.
-Applies clean formatting, timestamping, and suppresses unnecessary noise.
+A.R.K. Global Logger Setup – Premium Global Logging Initialization.
+Applies unified formatting, timestamping, and silences noisy libraries cleanly.
 """
 
 import logging
+import os
 
-def setup_logger():
+def setup_global_logger():
     """
-    Configures a global logger for the entire A.R.K. system.
-    Provides uniform log formatting and reduces noise from external libraries.
+    Configures the primary global logger for the entire A.R.K. system.
+    Ensures clean format, stability, and silencing of noisy external libraries.
     """
+    # Create logs/ folder if missing
+    os.makedirs("logs", exist_ok=True)
+
     logging.basicConfig(
         level=logging.INFO,
-        format="\n[%(asctime)s] | %(levelname)s | %(name)s | %(message)s\n",
-        datefmt="%Y-%m-%d %H:%M:%S",
+        format='[%(asctime)s] %(levelname)-8s | %(name)s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
     )
 
-    # Reduce verbosity from noisy third-party libraries
-    for noisy_logger in ["telegram", "httpx", "urllib3", "apscheduler"]:
-        logging.getLogger(noisy_logger).setLevel(logging.WARNING)
+    # Silence overly verbose libraries
+    noisy_libraries = ["telegram", "httpx", "urllib3", "apscheduler", "aiohttp"]
+    for lib in noisy_libraries:
+        logging.getLogger(lib).setLevel(logging.WARNING)
+
+    logging.info("✅ Global logger configured successfully.")
