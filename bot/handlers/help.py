@@ -1,4 +1,7 @@
-# bot/handlers/help.py
+"""
+A.R.K. Help Command – Bilingual Ultra Build.
+Provides users with a clean overview of all available commands.
+"""
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -12,8 +15,8 @@ logger = setup_logger(__name__)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handler for /help command.
-    Sends a detailed list of available commands and their usage.
+    Handles the /help command.
+    Sends an ultra-clean command overview, bilingual, Markdown-optimized.
     """
     chat_id = update.effective_chat.id
     user = update.effective_user.first_name or "Trader"
@@ -27,8 +30,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             parse_mode="Markdown"
         )
 
-        logger.info(f"Help command triggered by {user} (Chat ID: {chat_id})")
+        logger.info(f"[Help] Triggered by {user} ({lang})")
 
     except Exception as e:
         await report_error(context.bot, chat_id, e, context_info="Help Command Error")
-        logger.error(f"Error in /help command: {e}")
+        logger.error(f"[Help Error] {e}")
