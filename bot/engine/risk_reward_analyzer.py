@@ -1,56 +1,57 @@
 """
-A.R.K. Risk-Reward Analyzer – Dynamic Signal Risk Evaluation.
-Evaluates every detected signal based on logical RRR estimation.
+A.R.K. Risk-Reward Analyzer – Smart Trade Evaluation System.
+Estimates realistic reward/risk ratios for better decision-making.
 """
 
 import pandas as pd
 
-async def assess_risk_reward(df: pd.DataFrame) -> dict:
+def estimate_risk_reward(df: pd.DataFrame, combined_action: str) -> dict:
     """
-    Evaluates the risk-reward ratio of the latest detected setup.
+    Estimates Risk/Reward Ratio based on recent volatility and trend direction.
 
     Args:
-        df (pd.DataFrame): Market candlestick data.
+        df (pd.DataFrame): OHLCV DataFrame (latest candles).
+        combined_action (str): Suggested trade direction ("Long" or "Short").
 
     Returns:
-        dict: RRR estimation including recommended stop-loss, take-profit and risk evaluation.
+        dict: Estimated reward, risk, and R/R ratio.
     """
-    if df is None or len(df) < 20:
-        return {"rrr_status": "Insufficient Data", "stop_loss": None, "take_profit": None}
 
-    # === Get last closed candle ===
-    last_candle = df.iloc[-1]
+    if df is None or df.empty or combined_action not in ("Long 📈", "Short 📉"):
+        return None
 
-    # === Define basic risk thresholds ===
-    close_price = last_candle['close']
-    candle_range = last_candle['high'] - last_candle['low']
+    try:
+        recent_closes = df["c"].tail(20)
+        recent_highs = df["h"].tail(20)
+        recent_lows = df["l"].tail(20)
 
-    # === Basic Risk Management Estimations ===
-    stop_loss = round(close_price - (candle_range * 1.5), 2)  # 1.5x last candle range below
-    take_profit = round(close_price + (candle_range * 3), 2)  # 3x last candle range above
+        current_price = recent_closes.iloc[-1]
+        recent_high = recent_highs.max()
+        recent_low = recent_lows.min()
 
-    # === Risk-Reward Ratio Calculation ===
-    risk = close_price - stop_loss
-    reward = take_profit - close_price
+        # Estimate stop-loss and target
+        if combined_action == "Long 📈":
+            stop_loss = recent_low * 0.995  # Tight stop 0.5% below support
+            target = current_price * 1.015   # Modest target 1.5% above entry
+        else:  # Short 📉
+            stop_loss = recent_high * 1.005  # Tight stop 0.5% above resistance
+            target = current_price * 0.985   # Modest target 1.5% below entry
 
-    if risk <= 0:
-        return {"rrr_status": "Invalid Setup", "stop_loss": None, "take_profit": None}
+        risk = abs(current_price - stop_loss)
+        reward = abs(target - current_price)
+        if risk == 0:
+            return None  # Avoid division by zero
 
-    risk_reward_ratio = reward / risk
+        risk_reward_ratio = round(reward / risk, 2)
 
-    # === Categorize RRR ===
-    if risk_reward_ratio >= 3.0:
-        rrr_status = "Excellent ✅"
-    elif risk_reward_ratio >= 2.0:
-        rrr_status = "Good 👍"
-    elif risk_reward_ratio >= 1.5:
-        rrr_status = "Acceptable ⚠️"
-    else:
-        rrr_status = "Risky ❌"
+        return {
+            "current_price": current_price,
+            "stop_loss": round(stop_loss, 2),
+            "target": round(target, 2),
+            "risk": round(risk, 2),
+            "reward": round(reward, 2),
+            "risk_reward_ratio": risk_reward_ratio
+        }
 
-    return {
-        "rrr_status": rrr_status,
-        "stop_loss": stop_loss,
-        "take_profit": take_profit,
-        "risk_reward_ratio": round(risk_reward_ratio, 2),
-    }
+    except Exception:
+        return None
