@@ -1,4 +1,7 @@
-# bot/handlers/analyse.py
+"""
+A.R.K. Ultra Analyse Command – Strategic Intelligence for Every Trader.
+Precision. Clarity. No Noise.
+"""
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -13,8 +16,8 @@ logger = setup_logger(__name__)
 
 async def analyse_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handler for /analyse command.
-    Analyzes a specific financial symbol provided by the user.
+    Handles /analyse command.
+    Delivers premium market analysis for a requested symbol.
     """
     chat_id = update.effective_chat.id
     user = update.effective_user.first_name or "Trader"
@@ -22,35 +25,41 @@ async def analyse_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     try:
         if not context.args:
-            await update.message.reply_text(get_text("analysis_no_symbol", lang))
-            logger.warning(f"/analyse without symbol by {user}")
+            await update.message.reply_text(
+                get_text("analysis_no_symbol", lang),
+                parse_mode="Markdown"
+            )
+            logger.warning(f"[Analyse] No symbol provided by {user} (Chat ID: {chat_id})")
             return
 
         symbol = context.args[0].upper()
         result = await analyze_symbol(symbol)
 
         if not result:
-            await update.message.reply_text(f"⚠️ No data found for `{symbol}`.", parse_mode="Markdown")
-            logger.warning(f"No data for symbol: {symbol}")
+            await update.message.reply_text(
+                f"⚠️ *No data available for* `{symbol}`.",
+                parse_mode="Markdown"
+            )
+            logger.warning(f"[Analyse] No analysis data for {symbol}")
             return
 
         message = (
-            f"📈 *Symbol Analysis*\n\n"
+            f"📊 *A.R.K. Live Analysis*\n\n"
             f"*Symbol:* `{symbol}`\n"
-            f"*Action:* {result['signal']}\n"
-            f"*Short-Term Trend:* {result['short_term_trend']}\n"
-            f"*Mid-Term Trend:* {result['mid_term_trend']}\n"
-            f"*RSI:* {result['rsi']}\n"
-            f"*Pattern:* {result['pattern']}\n"
-            f"*Candlestick:* {result['candlestick']}\n"
-            f"*Rating:* {result['stars']} ⭐\n"
-            f"*Suggested Holding:* {result['suggested_holding']}\n\n"
-            f"⚡ Stay sharp."
+            f"*Signal:* {result.get('combined_action', '-')}\n"
+            f"*Short-Term Trend:* {result.get('short_term_trend', '-')}\n"
+            f"*Mid-Term Trend:* {result.get('mid_term_trend', '-')}\n"
+            f"*RSI (14):* `{result.get('rsi', '-')}%`\n"
+            f"*Pattern:* {result.get('pattern', '-')}\n"
+            f"*Candle Formation:* {result.get('candlestick', '-')}\n"
+            f"*Rating:* {'⭐' * result.get('stars', 0)}\n"
+            f"*Suggested Holding Time:* {result.get('suggested_holding', '-')}\n\n"
+            f"_🧠 Stay focused. Greatness is built one decision at a time._"
         )
 
         await update.message.reply_text(message, parse_mode="Markdown")
-        logger.info(f"Sent analysis for {symbol} to {user}")
+        logger.info(f"[Analyse] Successful analysis for {symbol} sent to {user} (Chat ID: {chat_id})")
 
     except Exception as e:
         await report_error(context.bot, chat_id, e, context_info="Analyse Command Error")
-        logger.error(f"Error in /analyse command: {e}")
+        logger.error(f"[Analyse] Exception: {e}")
