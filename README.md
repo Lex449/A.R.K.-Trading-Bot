@@ -1,72 +1,70 @@
+A.R.K. Trading Bot
 
-
-⸻
-
-Hier ist die korrekt überarbeitete, finale README (Ultra Business Version)
-
-(ALLE Fehler korrigiert, noch einmal minimal feiner gemacht für Branding)
+Erkenne Chancen. Handle smarter.
 
 ⸻
 
-A.R.K. – Made in Bali. Engineered with German Precision.
+Überblick
 
-A.R.K. is not just a trading bot.
-It’s your personal market mentor — scanning, rating, and delivering real-time trade setups every minute, fully automated.
+A.R.K. ist ein moderner Trading-Bot, der hochentwickelte Algorithmen nutzt, um Aktienmärkte in Echtzeit zu analysieren und automatisch präzise Handelssignale zu liefern.
 
-It analyzes the world’s leading assets — from stocks like AAPL, MSFT, NVDA, TSLA to macro movers like META, AMZN, GOOGL, AMD and more — up to 150 signals per minute.
-Every trade setup is evaluated based on RSI, EMA, trend structure, and rated from 1 to 5 stars, so you instantly recognize the quality and timing of each opportunity.
+Der aktuelle Fokus liegt auf Top-Aktien – mit geplanter Erweiterung auf Indizes und Kryptowährungen in zukünftigen Versionen.
 
-You receive clear long or short entry signals, full live market insights, and instant decision-making support — directly to your Telegram inbox.
-
-A.R.K. speaks your language — automatically switching between English and German,
-adapting its style to feel human, motivating, and direct —
-like a real coach, not just another script.
-
-Built-in highlights:
-	•	24/7 global market scanning
-	•	Real-time Telegram alerts
-	•	Risk-aware rating system (1–5 stars)
-	•	Built-in sideways trend filter & trend structure detection
-	•	Dual-language support (English & German)
-	•	Ultra-optimized with Finnhub API
+Made in Bali. Engineered with German Precision.
 
 ⸻
 
-Want to test, collaborate, or be part of the mission?
-
-→ Telegram: @ARKSignalBot
-→ Email: hello@arktradingbot.com
-→ Website: www.arktradingbot.com
-
-⸻
-
-A.R.K. – Made in Bali. Engineered with German Precision.
-
-A.R.K. ist kein gewöhnlicher Trading-Bot.
-Er ist dein persönlicher Mentor — scannt, bewertet und liefert dir blitzschnell erstklassige Handels-Setups – jede Minute, vollautomatisch.
-
-A.R.K. analysiert die größten Aktien und Marktführer — von AAPL, MSFT, NVDA, TSLA bis zu Schwergewichten wie META, AMZN, GOOGL, AMD — mit einer Geschwindigkeit von bis zu 150 Signalen pro Minute.
-Jedes Setup wird anhand von RSI, EMA und Trendstruktur bewertet und mit 1 bis 5 Sternen versehen, sodass du auf einen Blick die Qualität erkennst.
-
-Du erhältst klare Long- oder Short-Entry Signale, inklusive Markteinschätzung und Trendrichtung — direkt in dein Telegram-Postfach.
-
-A.R.K. spricht deine Sprache — automatisch auf Deutsch oder Englisch,
-immer menschlich, motivierend und klar — wie ein Coach, nicht wie ein Bot.
-
-Was A.R.K. einzigartig macht:
-	•	24/7 globale Marktanalyse
-	•	Live-Trading-Signale per Telegram
-	•	Risikobewertung (1–5 Sterne pro Signal)
-	•	Integrierte Trend- und Seitwärtsfilter
-	•	Zweisprachige Unterstützung (Deutsch & Englisch)
-	•	Ultra-Optimierung via Finnhub API
+Kernfunktionen
+	•	Live-Aktienanalyse
+Permanente Überwachung ausgewählter Top-Aktien in Echtzeit.
+	•	Automatische Handelssignale
+Klare Long- oder Short-Signale basierend auf technischer Analyse.
+	•	Signal-Ranking
+Jedes Signal wird transparent mit einem 1–5 Sterne-System bewertet.
+	•	Telegram-Integration
+Schnelle Signale und Updates direkt über einen privaten Telegram-Bot.
+	•	Performance-Optimierung
+Optimiert für aktives Aktien-Trading mit geplanten Erweiterungen.
 
 ⸻
 
-**Neugierig geworden?
+Technologie-Stack
+	•	Programmiersprache: Python
+	•	Datenfeed: Finnhub API
+	•	Hosting: Railway, Vercel
+	•	Benachrichtigungen: Telegram Bot API
+	•	Analysefrequenz: 1m, 5m, 15m, 30m Intervalle
 
-Teste A.R.K., unterstütze die Mission oder werde Teil des Projekts.**
+⸻
 
-→ Telegram: @ARKSignalBot
-→ E-Mail: hello@arktradingbot.com
-→ Website: www.arktradingbot.com
+Ziele
+	•	Phase 1: Stabile Live-Signale für ausgewählte Aktien.
+	•	Phase 2: Erweiterung auf Indizes (z. B. US100, US30, SPX500).
+	•	Phase 3: Erweiterung auf Kryptowährungen (z. B. BTC, ETH).
+	•	Phase 4: Aufbau einer Membership-Plattform mit Account-Management.
+
+⸻
+
+Status
+
+Aktueller Stand:
+	•	Live-Analyse-Engine für Aktien fertiggestellt
+	•	Private Testphase erfolgreich abgeschlossen
+	•	Vorbereitung des Pilot-Launchs im Q2 2025
+
+⸻
+
+Kontakt
+
+Interesse an einer Kooperation oder Nutzung?
+	•	Telegram: @arktradingteam
+	•	E-Mail: hello@arktradingbot.com
+
+⸻
+
+Letzte Anmerkung
+
+A.R.K. steht für mehr als nur automatisierten Handel:
+Es vereint Freiheit, Innovation und präzise Ingenieurskunst in einem einzigen System.
+
+Ein Projekt, geboren auf Bali. Veredelt mit deutscher Ingenieurskunst.
