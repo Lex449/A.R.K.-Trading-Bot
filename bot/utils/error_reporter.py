@@ -1,6 +1,6 @@
 """
-A.R.K. Error Reporter – Premium Fehlerbehandlung.
-Sichert alle Fehler ab: lokal & per Telegram.
+A.R.K. Error Reporter – Maximum Protection Build.
+Saves all errors locally + Telegram instant alert.
 """
 
 import os
@@ -21,17 +21,12 @@ os.makedirs(LOG_DIR, exist_ok=True)
 async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: str = ""):
     """
     Reports critical errors:
-    - Saves full traceback locally
-    - Sends a summarized alert to Telegram
-
-    Args:
-        bot (Bot): Telegram Bot instance
-        chat_id (int): Telegram chat id
-        error (Exception): Caught error
-        context_info (str): Optional context information
+    - Saves full traceback locally (.log)
+    - Sends a summarized alert via Telegram
     """
+
     try:
-        # === Build full error details ===
+        # === Build full error details for local saving ===
         timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
         full_error = (
             f"Timestamp: {timestamp}\n"
@@ -40,24 +35,25 @@ async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: s
             f"Traceback:\n{''.join(traceback.format_exception(type(error), error, error.__traceback__))}"
         )
 
-        # Save full log to file
+        # === Save detailed error to local file ===
         with open(ERROR_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(full_error + "\n" + "="*80 + "\n")
 
         logger.error(f"[Reported Error] {context_info} | {error}")
 
-        # === Build Telegram alert ===
+        # === Build Telegram short alert ===
         short_error = (
-            f"⚠️ *Critical Error*\n\n"
+            f"⚠️ *Critical Bot Error*\n\n"
             f"*Context:* `{context_info}`\n"
             f"*Error:* `{str(error)}`\n"
             f"```{''.join(traceback.format_exception_only(type(error), error)).strip()}```"
         )
 
+        # Telegram size limit handling
         if len(short_error) > 4000:
             short_error = short_error[:3990] + "`...`"
 
         await bot.send_message(chat_id=chat_id, text=short_error, parse_mode="Markdown")
 
-    except Exception as e:
-        logger.critical(f"[Error Reporting Failure] {e}")
+    except Exception as fallback_error:
+        logger.critical(f"[Error Reporting FATAL] {fallback_error}")
