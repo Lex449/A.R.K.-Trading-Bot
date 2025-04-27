@@ -1,5 +1,10 @@
 # bot/engine/risk_manager.py
 
+"""
+Bewertung von Trading-Signalen basierend auf Sternebewertung, Confidence und RSI.
+Ultra-Masterclass Build für maximale Entscheidungsqualität.
+"""
+
 import logging
 
 # Setup Logging
@@ -8,68 +13,77 @@ logger.setLevel(logging.INFO)
 
 async def assess_signal_risk(signal_data: dict) -> tuple:
     """
-    Evaluates a trading signal based on stars, detected patterns, and RSI.
-    Returns a formatted message and a warning flag if caution is needed.
-    """
+    Bewertet ein Trading-Signal basierend auf:
+    - Sternebewertung
+    - Confidence
+    - RSI
+    Gibt ein formatiertes Risiko-Message-Template zurück + Warnflag.
+    
+    Args:
+        signal_data (dict): Signal-Daten mit Sternen, Confidence, Pattern, RSI.
 
+    Returns:
+        tuple: (Risk-Message: str, Warning-Flag: bool)
+    """
     stars = signal_data.get("stars", 0)
     confidence = signal_data.get("confidence", 0)
     pattern = signal_data.get("pattern", "Unknown")
     rsi = signal_data.get("rsi", None)
 
     try:
-        # === Basic Evaluation based on Stars ===
-        if stars >= 5:
-            rating_text = "✅ *Ultra high quality signal (5⭐).* _Ideal technical alignment._"
+        # === Bewertung basierend auf Sternen ===
+        if stars == 5:
+            rating_text = "✅ *Ultra High-Quality Signal (5⭐)* – _Technische Perfektion._"
         elif stars == 4:
-            rating_text = "✅ *Strong quality signal (4⭐).* _Good conditions overall._"
+            rating_text = "✅ *Strong Quality Signal (4⭐)* – _Sehr gute Marktbedingungen._"
         elif stars == 3:
-            rating_text = "⚠️ *Moderate quality signal (3⭐).* _Caution advised. Confirm with extra factors._"
-        elif stars == 2:
-            rating_text = "❗ *Weak quality signal (2⭐).* _High caution required. Check additional indicators._"
+            rating_text = "⚠️ *Moderate Signal (3⭐)* – _Zusatzbestätigung empfohlen._"
         else:
-            rating_text = "❌ *Very low quality signal (1⭐).* _Trade not recommended._"
+            rating_text = "❌ *Low Quality Signal (<3⭐)* – _Nicht handeln empfohlen._"
 
-        # === Confidence Evaluation ===
+        # === Confidence Bewertung ===
+        confidence_text = f"*Confidence:* `{confidence:.1f}%`"
         confidence_warning = ""
         if confidence < 55:
-            confidence_warning = "\n❗ *Low Confidence Alert (<55%).* _Consider avoiding this setup._"
+            confidence_warning = "\n❗ *Low Confidence Warning (<55%).*"
 
-        # === RSI Evaluation ===
-        rsi_warning = ""
+        # === RSI Bewertung ===
+        rsi_text = ""
         if rsi is not None:
             if rsi > 70:
-                rsi_warning = "\n🔴 *RSI Warning:* Market potentially overbought (>70)."
+                rsi_text = "\n🔴 *RSI Overbought Warning (>70)*"
             elif rsi < 30:
-                rsi_warning = "\n🔵 *RSI Warning:* Market potentially oversold (<30)."
+                rsi_text = "\n🔵 *RSI Oversold Opportunity (<30)*"
 
-        # === Suggested Action ===
+        # === Handlungsempfehlung ===
         suggested_action = "Hold ⚪"
         if stars >= 4 and confidence >= 70:
             suggested_action = "Strong Buy 📈"
         elif stars >= 4 and confidence < 70:
-            suggested_action = "Buy 📈 (with Caution)"
+            suggested_action = "Buy 📈 (Caution)"
+        elif stars == 3 and confidence >= 60:
+            suggested_action = "Watchlist 👀"
         elif stars <= 2:
             suggested_action = "Avoid ❌"
 
-        # === Assembling the final Risk Message ===
+        # === Finale Risk Message ===
         final_message = (
             f"⚡ *Risk Analysis*\n\n"
-            f"*Pattern Detected:* {pattern}\n"
-            f"*Confidence Level:* {confidence:.1f}%\n"
+            f"*Pattern Detected:* `{pattern}`\n"
+            f"{confidence_text}\n"
             f"*Rating:* {'⭐' * stars}\n\n"
             f"{rating_text}"
             f"{confidence_warning}"
-            f"{rsi_warning}\n\n"
+            f"{rsi_text}\n\n"
             f"📢 *Suggested Action:* {suggested_action}"
         )
 
-        # === Define if warning should be flagged ===
-        is_warning = True if stars <= 2 or confidence < 60 else False
+        # === Risiko-Flag bestimmen ===
+        is_warning = stars <= 2 or confidence < 55
 
         logger.info(f"[Risk Manager] Pattern: {pattern}, Stars: {stars}, Confidence: {confidence}%")
         return final_message, is_warning
 
     except Exception as e:
         logger.error(f"[Risk Manager Error] {str(e)}")
-        return "⚠️ *Risk analysis error.* _Proceed cautiously._", True
+        return "⚠️ *Risk Analysis Error.* _Proceed cautiously._", True
