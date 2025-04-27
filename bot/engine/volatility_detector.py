@@ -1,49 +1,52 @@
 """
-A.R.K. Volatility Detector – Ultra Dynamic Move Recognition.
-Detects strong price movements + volume surges with ATR smart confirmation.
+A.R.K. Volatility Detector – Detects High Volatility Events in Real-Time.
+Core component for smarter trading signals and risk assessment.
 """
 
 import pandas as pd
+import numpy as np
 
-async def detect_volatility(df: pd.DataFrame) -> dict:
+def detect_volatility_spike(df: pd.DataFrame, threshold: float = 1.8) -> dict:
     """
-    Analyzes the last 30 candles for high volatility movements.
-    
+    Detects significant volatility spikes based on ATR and standard deviation.
+
     Args:
-        df (pd.DataFrame): Candle DataFrame (o, h, l, c, v)
-    
+        df (pd.DataFrame): OHLCV DataFrame.
+        threshold (float): Multiplier for what counts as "high volatility".
+
     Returns:
-        dict or None: Move Alert Data
+        dict or None: Volatility event details or None if no spike detected.
     """
     if df is None or df.empty:
         return None
 
     try:
-        df['range'] = df['h'] - df['l']
-        df['atr'] = df['range'].rolling(window=14).mean()
+        # Calculate True Range
+        df["high_low"] = df["h"] - df["l"]
+        df["high_close"] = np.abs(df["h"] - df["c"].shift())
+        df["low_close"] = np.abs(df["l"] - df["c"].shift())
+        df["true_range"] = df[["high_low", "high_close", "low_close"]].max(axis=1)
 
-        last_close = df['c'].iloc[-1]
-        prev_close = df['c'].iloc[-2]
-        move_percent = ((last_close - prev_close) / prev_close) * 100
+        # Calculate ATR (14 periods)
+        df["atr"] = df["true_range"].rolling(window=14, min_periods=1).mean()
 
-        last_volume = df['v'].iloc[-1]
-        avg_volume = df['v'].rolling(window=20).mean().iloc[-1]
-        volume_spike = ((last_volume - avg_volume) / avg_volume) * 100
+        # Calculate percentage movement per candle
+        df["pct_change"] = df["c"].pct_change().abs() * 100
 
-        atr_last = df['atr'].iloc[-1]
-        volatility_condition = df['range'].iloc[-1] > atr_last * 1.2
+        # Calculate average move size
+        avg_move = df["pct_change"].rolling(window=14, min_periods=1).mean().iloc[-1]
+        current_move = df["pct_change"].iloc[-1]
 
-        if abs(move_percent) >= 1.0 and volatility_condition:
-            trend = "Long 📈" if move_percent > 0 else "Short 📉"
-
+        # Calculate volatility spike
+        if current_move > avg_move * threshold:
             return {
-                "move_percent": move_percent,
-                "volume_spike": volume_spike,
-                "trend": trend,
-                "volatility_validated": True
+                "volatility_spike": True,
+                "current_move": current_move,
+                "average_move": avg_move,
+                "atr": df["atr"].iloc[-1]
             }
-        else:
-            return None
 
-    except Exception:
+        return None
+
+    except Exception as e:
         return None
