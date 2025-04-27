@@ -1,5 +1,3 @@
-# bot/utils/logger_setup.py
-
 """
 Central logger configuration for the entire bot.
 Applies clean formatting, timestamping, and suppresses unnecessary noise.
@@ -18,6 +16,6 @@ def setup_logger():
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # External libraries that are often too noisy – downgrade them to WARNING
+    # Reduce verbosity from noisy third-party libraries
     for noisy_logger in ["telegram", "httpx", "urllib3", "apscheduler"]:
         logging.getLogger(noisy_logger).setLevel(logging.WARNING)
