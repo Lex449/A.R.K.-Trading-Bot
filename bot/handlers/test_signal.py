@@ -1,10 +1,5 @@
 # bot/handlers/test_signal.py
 
-"""
-Manueller Testbefehl für A.R.K. Bot.
-Sendet ein Dummy-Trading-Signal zum Check.
-"""
-
 from telegram import Update
 from telegram.ext import ContextTypes
 
