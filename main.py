@@ -1,5 +1,5 @@
 """
-A.R.K. Bot Main Entry – Ultra-Masterclass Build
+A.R.K. Bot Main Entry – Ultra Stable Wall Street Version
 """
 
 import asyncio
@@ -15,12 +15,12 @@ from bot.handlers.status import status_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.test_signal import test_signal
 from bot.handlers.test_analyse import test_analyse
-from bot.handlers.error_handler import global_error_handler  # << NEU: Error-Handler
+from bot.handlers.error_handler import global_error_handler
 
-# === Auto Signal Loop ===
+# === Auto Signal Loop (no new polling!) ===
 from bot.auto.auto_signal_loop import auto_signal_loop
 
-# === Core Utilities ===
+# === Utilities ===
 from bot.utils.error_reporter import report_error
 from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
@@ -28,30 +28,29 @@ from bot.config.settings import get_settings
 # === Setup Logging ===
 setup_logger(__name__)
 
-# === Allow nested event loops (Railway / Replit Kompatibilität) ===
+# === Allow nested event loops (Railway / Replit Support) ===
 nest_asyncio.apply()
 
 # === Load Config ===
 config = get_settings()
 TOKEN = config["BOT_TOKEN"]
 
-async def start_auto_signals(app):
+async def startup_tasks(application):
     """
-    Startet den Auto-Signal-Loop separat im Hintergrund.
-    Übergibt den bestehenden Application-Bot, um 409 Conflict zu vermeiden.
+    Launches background services when Bot starts (no polling conflict).
     """
     try:
-        await auto_signal_loop(app.bot)
+        asyncio.create_task(auto_signal_loop(application.bot))
     except Exception as e:
-        await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Auto Signal Loop Error")
+        await report_error(application.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Startup Task Error")
 
 async def main():
-    logging.info("🚀 A.R.K. Trading Bot 2.0 – Made in Bali. Engineered with German Precision.")
+    logging.info("🚀 A.R.K. Trading Bot 2.0 – Stability Mode – Made in Bali.")
 
     # Initialize Bot Application
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
 
-    # Register Command Handlers
+    # === Register all command handlers ===
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("analyse", analyze_symbol))
@@ -62,13 +61,10 @@ async def main():
     app.add_handler(CommandHandler("testsignal", test_signal))
     app.add_handler(CommandHandler("testanalyse", test_analyse))
 
-    # Register Global Error Handler
+    # === Global Error Handler ===
     app.add_error_handler(global_error_handler)
 
-    # Start Background Auto Signals
-    asyncio.create_task(start_auto_signals(app))
-
-    # Start Polling
+    # === Start Bot normally ===
     await app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
