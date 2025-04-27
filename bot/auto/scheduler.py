@@ -10,28 +10,29 @@ logger = setup_logger(__name__)
 
 def setup_scheduler(application):
     """
-    Sets up the AsyncIO Scheduler for the bot to run scheduled tasks cleanly.
-    Includes Daily Analysis Jobs and the continuous Auto Signal Loop.
+    Initialisiert den AsyncIO Scheduler für geplante Aufgaben:
+    - Tägliche Analyse-Reports (daily_analysis_job)
+    - Kontinuierlicher Auto Signal Loop (auto_signal_loop)
     """
     scheduler = AsyncIOScheduler()
 
-    # === Scheduled Daily Analysis (every trading day) ===
+    # === Scheduled Daily Analysis ===
     scheduler.add_job(
-        daily_analysis_job,
+        func=daily_analysis_job,
         trigger="cron",
         hour=16,
         minute=0,
-        timezone="Asia/Makassar",  # Bali time (WITA)
+        timezone="Asia/Makassar",  # Bali Zeit (WITA)
         args=[application],
         id="daily_analysis_job",
-        misfire_grace_time=300  # 5 Minuten Puffer falls Job verpasst
+        misfire_grace_time=300  # 5 Minuten Kulanz bei Verpassen
     )
-    logger.info("[Scheduler] Daily Analysis job scheduled for 16:00 WITA.")
+    logger.info("[Scheduler] Daily Analysis Job für 16:00 WITA eingeplant.")
 
-    # === Continuous Auto Signal Loop (infinite task) ===
+    # === Start Continuous Auto Signal Loop ===
     application.create_task(auto_signal_loop())
-    logger.info("[Scheduler] Auto Signal Loop task started.")
+    logger.info("[Scheduler] Auto Signal Loop gestartet.")
 
     # === Start Scheduler ===
     scheduler.start()
-    logger.info("[Scheduler] AsyncIO Scheduler started successfully.")
+    logger.info("[Scheduler] AsyncIO Scheduler erfolgreich gestartet.")
