@@ -1,8 +1,8 @@
 # bot/analytics/win_loss_report.py
 
 """
-Generates win/loss reports for trading session reviews.
-Ultra-Optimized Version – Bugatti 2.0 Level
+Erzeugt Win/Loss-Reports für Session Reviews.
+Ultra-Masterclass Build – Bugatti meets Pagani Level.
 """
 
 from datetime import datetime
@@ -14,19 +14,19 @@ logger = setup_logger(__name__)
 
 def generate_win_loss_report() -> str:
     """
-    Compiles a detailed win/loss performance report.
+    Erstellt einen detaillierten Win/Loss-Performance-Report.
 
     Returns:
-        str: Formatted win/loss report for session overview.
+        str: Formatierter Report für Session-Übersicht.
     """
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     performance = get_performance_summary()
 
-    logger.info(f"Generated Win/Loss report at {now}.")
+    logger.info(f"[Win/Loss Report] Bericht generiert am {timestamp}.")
 
     return (
         f"📊 *Win/Loss Report*\n"
-        f"🕒 *Generated:* `{now}`\n\n"
+        f"🕒 *Generated:* `{timestamp}`\n\n"
         f"{performance}\n"
-        f"🧠 _Stay focused, improve daily._"
+        f"🧠 _Stay sharp. Every trade is a lesson._"
     )
