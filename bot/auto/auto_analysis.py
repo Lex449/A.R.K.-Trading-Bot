@@ -17,33 +17,33 @@ from bot.utils.logger import setup_logger
 # Setup structured logger
 logger = setup_logger(__name__)
 
-# Load config once
+# Load configuration
 config = get_settings()
 
 async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
     """
-    Executes a full daily market analysis on all configured symbols.
-    Filters only actionable signals (buy/sell) and skips "Hold" results.
+    Führt eine tägliche Marktanalyse aller konfigurierten Symbole aus.
+    Sendet nur echte Buy/Sell-Signale – Hold/No Pattern werden übersprungen.
     """
     bot: Bot = context.bot
     chat_id = int(config["TELEGRAM_CHAT_ID"])
     lang = get_language(chat_id) or "en"
 
     try:
-        logger.info("[Auto Analysis] Starting daily analysis.")
-        await bot.send_message(chat_id=chat_id, text="📊 *Starting full daily analysis...*", parse_mode="Markdown")
+        logger.info("[Auto Analysis] Starte tägliche Analyse.")
+        await bot.send_message(chat_id=chat_id, text="📊 *Starte vollständige Tagesanalyse...*", parse_mode="Markdown")
 
-        # Optional autoscaler execution
+        # Optional: Autoscaler Trigger
         try:
             await run_autoscaler(bot, chat_id)
         except Exception as e:
-            logger.warning(f"[Autoscaler Error] {str(e)}")
-            await report_error(bot, chat_id, e, context_info="Autoscaler during daily analysis")
+            logger.warning(f"[Autoscaler Error] {e}")
+            await report_error(bot, chat_id, e, context_info="Autoscaler während täglicher Analyse")
 
         symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
         if not symbols:
-            logger.error("[Auto Analysis] No symbols configured.")
-            await bot.send_message(chat_id=chat_id, text="❌ No symbols defined for analysis.", parse_mode="Markdown")
+            logger.error("[Auto Analysis] Keine Symbole konfiguriert.")
+            await bot.send_message(chat_id=chat_id, text="❌ *Keine Symbole für Analyse definiert.*", parse_mode="Markdown")
             return
 
         for symbol in symbols:
@@ -51,45 +51,50 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
                 result = await analyze_symbol(symbol)
 
                 if not result:
-                    logger.warning(f"[Auto Analysis] No data for {symbol}.")
+                    logger.warning(f"[Auto Analysis] Keine Daten für {symbol}.")
                     continue
 
-                if result['signal'] == "Hold" or result['pattern'] == "No Pattern":
-                    logger.info(f"[Auto Analysis] {symbol} → Hold/No pattern. Skipped.")
+                if result.get('signal') == "Hold" or result.get('pattern') == "No Pattern":
+                    logger.info(f"[Auto Analysis] {symbol} → Hold oder No Pattern. Übersprungen.")
                     continue
 
-                # Risk management and session tracking
-                risk_message, is_warning = await assess_signal_risk(result)
-                update_session_tracker(result["stars"])
+                # Risk Management und Session Tracking
+                risk_message, _ = await assess_signal_risk(result)
+                update_session_tracker(result.get("stars", 0))
 
-                # Construct message
+                # Signal-Nachricht bauen
                 message = (
                     f"📈 *Daily Analysis Signal*\n\n"
                     f"*Symbol:* `{symbol}`\n"
-                    f"*Action:* {result['signal']}\n"
-                    f"*Short-Term Trend:* {result['short_term_trend']}\n"
-                    f"*Mid-Term Trend:* {result['mid_term_trend']}\n"
-                    f"*RSI:* {result['rsi']}\n"
-                    f"*Pattern:* {result['pattern']}\n"
-                    f"*Candlestick:* {result['candlestick']}\n"
-                    f"*Rating:* {result['stars']} ⭐\n"
-                    f"*Suggested Holding:* {result['suggested_holding']}\n\n"
+                    f"*Richtung:* {result['signal']} {'📈' if result['signal'] == 'Buy' else '📉'}\n"
+                    f"*Short-Term Trend:* {result.get('short_term_trend', '-')}\n"
+                    f"*Mid-Term Trend:* {result.get('mid_term_trend', '-')}\n"
+                    f"*RSI:* {result.get('rsi', '-')}\n"
+                    f"*Pattern:* {result.get('pattern', '-')}\n"
+                    f"*Candlestick:* {result.get('candlestick', '-')}\n"
+                    f"*Rating:* {'⭐' * result.get('stars', 0)}\n"
+                    f"*Empfohlene Haltedauer:* {result.get('suggested_holding', '-')}\n\n"
                     f"{risk_message}\n"
-                    f"⚡ _Always manage your risk carefully._"
+                    f"_Hinweis: Risiko immer eigenständig steuern._"
                 )
 
-                await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
-                logger.info(f"[Auto Analysis] Signal sent for {symbol}.")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=message,
+                    parse_mode="Markdown",
+                    disable_web_page_preview=True
+                )
+                logger.info(f"[Auto Analysis] Signal gesendet für {symbol}.")
 
-                await asyncio.sleep(1.5)  # Kleine Pause, um API-Spam zu vermeiden
+                await asyncio.sleep(1.5)  # kleine Pause gegen API-Spam
 
-            except Exception as e:
-                logger.error(f"[Auto Analysis Error] Symbol: {symbol} – {str(e)}")
-                await report_error(bot, chat_id, e, context_info=f"Auto Analysis error for {symbol}")
+            except Exception as symbol_error:
+                logger.error(f"[Auto Analysis] Fehler bei {symbol}: {symbol_error}")
+                await report_error(bot, chat_id, symbol_error, context_info=f"Auto Analysis Error {symbol}")
 
-        await bot.send_message(chat_id=chat_id, text="✅ *Daily analysis completed successfully!*", parse_mode="Markdown")
-        logger.info("[Auto Analysis] Completed successfully.")
+        await bot.send_message(chat_id=chat_id, text="✅ *Tagesanalyse erfolgreich abgeschlossen!*", parse_mode="Markdown")
+        logger.info("[Auto Analysis] Tagesanalyse erfolgreich abgeschlossen.")
 
     except Exception as e:
-        logger.critical(f"[Auto Analysis Fatal Error] {str(e)}")
-        await report_error(bot, chat_id, e, context_info="Fatal daily analysis error")
+        logger.critical(f"[Auto Analysis Fatal Error] {e}")
+        await report_error(bot, chat_id, e, context_info="Fataler Fehler in Daily Analysis")
