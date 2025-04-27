@@ -1,29 +1,27 @@
-# bot/utils/signal_builder.py
-
 """
 A.R.K. Ultra Premium Signal Builder
-Fusion der besten Designs – für echte CEO-Gelddruckmaschine.
+Fusion aus Strategie, Psychologie und Eleganz – gebaut für maximalen Impact.
 """
 
 def build_signal_message(symbol: str, patterns: list, combined_action: str, avg_confidence: float, indicator_score: float, trend_direction: str) -> str:
     """
-    Baut das ultimative Premium-Signal für Telegram.
+    Baut das ultimative Premium-Trading-Signal für Telegram.
 
     Args:
         symbol (str): Handelssymbol (z.B. AAPL, TSLA)
-        patterns (list): Liste erkannter Muster als Strings
+        patterns (list): Liste erkannter Pattern-Namen
         combined_action (str): Ultra Long 📈 / Ultra Short 📉 / Neutral ⚪
-        avg_confidence (float): Durchschnittliche Pattern-Confidence
-        indicator_score (float): Indikator-Score (RSI/EMA kombi)
-        trend_direction (str): Trendrichtung anhand EMA (Long/Short/Neutral)
+        avg_confidence (float): Durchschnittliche Muster-Confidence
+        indicator_score (float): Gesamtscore aus RSI, EMA, Muster
+        trend_direction (str): Trendrichtung basierend auf EMA (Long/Short/Neutral)
 
     Returns:
-        str: Final formatierte Premium-Nachricht
+        str: Fertig strukturierte, elegante Nachricht
     """
     if not patterns:
         return ""
 
-    # Signalstärke bewerten
+    # === Header Entscheidung basierend auf Qualität ===
     if avg_confidence >= 85 and indicator_score >= 80:
         header = "🚀 *Super Signal – Maximale Übereinstimmung!*"
     elif avg_confidence >= 70:
@@ -31,22 +29,23 @@ def build_signal_message(symbol: str, patterns: list, combined_action: str, avg_
     else:
         header = "⚠️ *Moderates Signal – Zusätzliche Bestätigung empfohlen*"
 
-    # Sterne aus Confidence
-    stars = "⭐" * max(1, min(5, int(avg_confidence // 20)))
+    # === Sterne aus Confidence (1–5) ===
+    stars = "⭐" * min(5, max(1, int(avg_confidence // 20)))
 
-    # Muster schön auflisten
+    # === Muster elegant auflisten ===
     patterns_text = "\n".join([f"• {p}" for p in patterns])
 
-    # Finaler Nachrichtentext
+    # === Final strukturierter Nachrichtentext ===
     message = (
         f"{header}\n\n"
         f"*Symbol:* `{symbol}`\n"
         f"*Aktion:* {combined_action}\n"
-        f"*Trendrichtung:* {trend_direction}\n"
-        f"*Signal Rating:* {stars} ({avg_confidence:.1f}%)\n"
-        f"*Indikator Score:* {indicator_score:.1f}%\n\n"
-        f"*Erkannte Muster:*\n{patterns_text}\n\n"
-        f"_🧠 Qualität vor Quantität. Diszipliniertes Risikomanagement entscheidet._"
+        f"*Trendstruktur:* {trend_direction}\n"
+        f"*Signal Qualität:* {stars} ({avg_confidence:.1f}%)\n"
+        f"*Indikator Score:* `{indicator_score:.1f}%`\n\n"
+        f"✨ *Gefundene Muster:*\n{patterns_text}\n\n"
+        f"_🧠 Fokus schlägt Geschwindigkeit. Qualität schlägt Quantität._\n"
+        f"_Kein Spam. Kein Stress. Nur echtes Mentoring._"
     )
 
     return message
