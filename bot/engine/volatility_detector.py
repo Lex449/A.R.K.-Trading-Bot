@@ -1,56 +1,49 @@
 """
-A.R.K. Volatility Detector – Advanced Dynamic Volatility Analysis.
-Combines ATR, Candlestick Behavior, and Trend Confirmation.
-
-Objective: Detect prime trading setups with maximum precision.
+A.R.K. Volatility Detector – Ultra Dynamic Move Recognition.
+Detects strong price movements + volume surges with ATR smart confirmation.
 """
 
 import pandas as pd
-from bot.engine.atr_engine import calculate_atr
 
 async def detect_volatility(df: pd.DataFrame) -> dict:
     """
-    Detects significant volatility spikes and optimal trading setups.
-
+    Analyzes the last 30 candles for high volatility movements.
+    
     Args:
-        df (pd.DataFrame): Market candlestick data.
-
+        df (pd.DataFrame): Candle DataFrame (o, h, l, c, v)
+    
     Returns:
-        dict: Detection result including move info, volatility rating, and trend suggestion.
+        dict or None: Move Alert Data
     """
-    if df is None or len(df) < 20:
-        return {"volatility_spike": False, "atr": 0.0, "trend": "Neutral ⚪", "signal_quality": "Low ⚠️"}
+    if df is None or df.empty:
+        return None
 
-    # === Calculate Core Metrics ===
-    atr_percent = calculate_atr(df)
-    last_candle = df.iloc[-1]
-    previous_candle = df.iloc[-2]
+    try:
+        df['range'] = df['h'] - df['l']
+        df['atr'] = df['range'].rolling(window=14).mean()
 
-    # === Move Detection ===
-    move_percent = ((last_candle['close'] - previous_candle['close']) / previous_candle['close']) * 100
+        last_close = df['c'].iloc[-1]
+        prev_close = df['c'].iloc[-2]
+        move_percent = ((last_close - prev_close) / prev_close) * 100
 
-    # === Trend Identification (Simple EMA Method) ===
-    trend = "Neutral ⚪"
-    if df['close'].rolling(20).mean().iloc[-1] < last_candle['close']:
-        trend = "Long Bias 📈"
-    elif df['close'].rolling(20).mean().iloc[-1] > last_candle['close']:
-        trend = "Short Bias 📉"
+        last_volume = df['v'].iloc[-1]
+        avg_volume = df['v'].rolling(window=20).mean().iloc[-1]
+        volume_spike = ((last_volume - avg_volume) / avg_volume) * 100
 
-    # === Volatility Spike Detection ===
-    volatility_spike = atr_percent > 2.0  # Threshold for real action (can be tuned)
+        atr_last = df['atr'].iloc[-1]
+        volatility_condition = df['range'].iloc[-1] > atr_last * 1.2
 
-    # === Signal Quality Estimation ===
-    if abs(move_percent) > 1.5 and volatility_spike:
-        signal_quality = "Strong 🔥"
-    elif abs(move_percent) > 1.0:
-        signal_quality = "Medium ⚡"
-    else:
-        signal_quality = "Low ⚠️"
+        if abs(move_percent) >= 1.0 and volatility_condition:
+            trend = "Long 📈" if move_percent > 0 else "Short 📉"
 
-    return {
-        "volatility_spike": volatility_spike,
-        "atr": round(atr_percent, 2),
-        "trend": trend,
-        "signal_quality": signal_quality,
-        "last_move_percent": round(move_percent, 2),
-    }
+            return {
+                "move_percent": move_percent,
+                "volume_spike": volume_spike,
+                "trend": trend,
+                "volatility_validated": True
+            }
+        else:
+            return None
+
+    except Exception:
+        return None
