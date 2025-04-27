@@ -1,6 +1,6 @@
 """
-A.R.K. Global Error Handler
-Fängt ALLE nicht abgefangenen Telegram-Fehler elegant ab.
+A.R.K. Global Error Handler – Ultra Stable Core.
+Gracefully catches and reports all unexpected Telegram exceptions.
 """
 
 import logging
@@ -13,19 +13,19 @@ from bot.config.settings import get_settings
 logger = logging.getLogger(__name__)
 config = get_settings()
 
-async def global_error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+async def global_error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handles all unexpected errors gracefully.
+    Catches and reports ALL unhandled errors from the Telegram application.
+    Guarantees maximum bot uptime and smooth crash reporting.
     """
     try:
-        # Capture full exception
         error = context.error
         chat_id = int(config["TELEGRAM_CHAT_ID"])
 
-        logger.error(f"[Global Error] {error}")
+        logger.error(f"⚠️ [Global Error] {error}")
 
-        # Report via Error Reporter
+        # Report the error via Telegram
         await report_error(context.bot, chat_id, error, context_info="Global Bot Error")
 
-    except Exception as e:
-        logger.critical(f"[Critical Global Error] {e}")
+    except Exception as critical_failure:
+        logger.critical(f"🚨 [Critical Failure] Error inside Global Error Handler: {critical_failure}")
