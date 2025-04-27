@@ -39,30 +39,17 @@ async def main():
     app.add_handler(CommandHandler("status", status_handler))
     app.add_handler(CommandHandler("shutdown", shutdown_handler))
 
-    # === Initialize Application ===
-    await app.initialize()
-
-    # === Start Application ===
-    await app.start()
-
-    # === Launch Auto Signal Loop parallel ===
-    async def run_background_tasks():
+    # === Background Auto Signal Task ===
+    async def background_task():
         try:
             await auto_signal_loop()
         except Exception as e:
             await report_error(app.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Auto Signal Loop Error")
 
-    asyncio.create_task(run_background_tasks())
+    asyncio.create_task(background_task())
 
-    # === Run Polling separately ===
-    await app.updater.start_polling()
-
-    # === Wait until shutdown signal ===
-    await app.stop()
-    await app.shutdown()
+    # === Run Application (automatically handles everything) ===
+    await app.run_polling(allowed_updates=None)
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        logging.info("💤 Bot shutdown signal received.")
+    asyncio.run(main())
