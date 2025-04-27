@@ -1,21 +1,24 @@
 """
-A.R.K. Weekly Reset Job – Resets weekly session stats.
-Executed once per week on Monday 00:00 WITA (Asia/Makassar).
+A.R.K. Reset Week Job – Weekly Session Reset.
+Executed once per week (user timezone controlled).
 """
 
-import logging
 from bot.utils.session_tracker import reset_weekly_data
 from bot.utils.logger import setup_logger
 
-# Setup Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 
-async def reset_week_job():
+async def reset_week_job(chat_id=None):
     """
-    Performs a clean reset of weekly session stats.
+    Resets weekly session data.
+    Optional chat_id for logging context.
     """
     try:
         reset_weekly_data()
-        logger.info("✅ Weekly reset executed successfully (Weekly Data).")
+        if chat_id:
+            logger.info(f"♻️ Weekly reset executed for user: {chat_id}")
+        else:
+            logger.info("♻️ Weekly reset executed globally.")
     except Exception as e:
         logger.error(f"❌ Weekly reset failed: {e}")
