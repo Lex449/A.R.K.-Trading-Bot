@@ -1,8 +1,3 @@
-"""
-A.R.K. Ultra Analyse Command – Strategic Intelligence for Every Trader.
-Precision. Clarity. No Noise.
-"""
-
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.engine.analysis_engine import analyze_symbol
@@ -24,6 +19,7 @@ async def analyse_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     lang = get_language(chat_id) or "en"
 
     try:
+        # Check if a symbol is provided
         if not context.args:
             await update.message.reply_text(
                 get_text("analysis_no_symbol", lang),
@@ -32,9 +28,10 @@ async def analyse_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             logger.warning(f"[Analyse] No symbol provided by {user} (Chat ID: {chat_id})")
             return
 
-        symbol = context.args[0].upper()
+        symbol = context.args[0].upper()  # Ensure the symbol is uppercase
         result = await analyze_symbol(symbol)
 
+        # Check if no analysis data is found
         if not result:
             await update.message.reply_text(
                 f"⚠️ *No data available for* `{symbol}`.",
@@ -43,6 +40,7 @@ async def analyse_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             logger.warning(f"[Analyse] No analysis data for {symbol}")
             return
 
+        # Prepare the message to send to the user
         message = (
             f"📊 *A.R.K. Live Analysis*\n\n"
             f"*Symbol:* `{symbol}`\n"
@@ -61,5 +59,6 @@ async def analyse_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         logger.info(f"[Analyse] Successful analysis for {symbol} sent to {user} (Chat ID: {chat_id})")
 
     except Exception as e:
+        # Report error if something goes wrong
         await report_error(context.bot, chat_id, e, context_info="Analyse Command Error")
         logger.error(f"[Analyse] Exception: {e}")
