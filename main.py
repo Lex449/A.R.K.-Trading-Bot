@@ -31,68 +31,67 @@ from bot.utils.error_reporter import report_error
 from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
 
-# === Setup Logger Early ===
+# === Initialize Logger Early ===
 setup_logger(__name__)
 
-# === Allow Nested Event Loops (Railway / Replit Support) ===
+# === Allow Nested Event Loops (Railway / Replit) ===
 nest_asyncio.apply()
 
-# === Load Config ===
+# === Load Configuration ===
 config = get_settings()
 TOKEN = config["BOT_TOKEN"]
 CHAT_ID = int(config["TELEGRAM_CHAT_ID"])
 
 async def startup_tasks(application):
     """
-    Startup Task Launcher – Initializes background loops and schedulers.
+    Launches essential background services at startup.
     """
     try:
+        # Remove existing webhooks to avoid conflicts
         await application.bot.delete_webhook(drop_pending_updates=True)
-        logging.info("✅ Webhook cleared successfully.")
+        logging.info("✅ Webhook removed successfully.")
 
-        # Start Daily Analysis Scheduler
+        # Start Background Schedulers
         start_daily_analysis_scheduler(application, CHAT_ID)
-
-        # Start Heartbeat Scheduler
         start_heartbeat(application, CHAT_ID)
 
-        # Start Auto Signal Loop
+        # Start Auto Signal Detection Loop
         asyncio.create_task(auto_signal_loop())
 
-        # Set /command list
+        # Configure /commands for user interface
         await set_bot_commands(application)
 
-        logging.info("✅ Startup tasks completed.")
+        logging.info("✅ All startup tasks completed successfully.")
 
     except Exception as e:
-        await report_error(application.bot, CHAT_ID, e, context_info="Startup Task Error")
-        logging.error(f"❌ Startup Task Error: {e}")
+        await report_error(application.bot, CHAT_ID, e, context_info="Startup Tasks")
+        logging.error(f"❌ Error during startup tasks: {e}")
 
 async def main():
     """
-    Main Runner for A.R.K. Trading Bot
+    Core Runner for A.R.K. Trading Bot 2.1
     """
-    logging.info("🚀 A.R.K. Trading Bot 2.1 – Wall Street Stability Mode activated.")
+    logging.info("🚀 A.R.K. Trading Bot 2.1 – Wall Street Stability Mode ACTIVATED.")
 
     # Initialize Bot Application
-    app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
+    application = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
 
     # === Register Command Handlers ===
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("analyse", analyze_symbol_handler))
-    app.add_handler(CommandHandler("setlanguage", set_language))
-    app.add_handler(CommandHandler("signal", signal_handler))
-    app.add_handler(CommandHandler("status", status_handler))
-    app.add_handler(CommandHandler("shutdown", shutdown_handler))
-    app.add_handler(CommandHandler("testsignal", test_signal))
-    app.add_handler(CommandHandler("testanalyse", test_analyse))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("analyse", analyze_symbol_handler))
+    application.add_handler(CommandHandler("setlanguage", set_language))
+    application.add_handler(CommandHandler("signal", signal_handler))
+    application.add_handler(CommandHandler("status", status_handler))
+    application.add_handler(CommandHandler("shutdown", shutdown_handler))
+    application.add_handler(CommandHandler("testsignal", test_signal))
+    application.add_handler(CommandHandler("testanalyse", test_analyse))
 
-    # === Global Error Handler ===
-    app.add_error_handler(global_error_handler)
+    # === Attach Global Error Handler ===
+    application.add_error_handler(global_error_handler)
 
-    # === Start Bot Polling ===
-    await app.run_polling(allowed_updates=Update.ALL_TYPES)
+    # === Run Polling (Bot Online) ===
+    await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     asyncio.run(main())
