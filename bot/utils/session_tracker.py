@@ -103,8 +103,8 @@ def track_scan_completed() -> None:
     _session_data["scans_completed"] += 1
     save_session_data()
 
-def get_session_summary() -> dict:
-    """Returns a summarized session report for internal usage."""
+def get_session_stats() -> dict:
+    """Returns the summarized session stats."""
     if not _session_data:
         initialize_session()
 
