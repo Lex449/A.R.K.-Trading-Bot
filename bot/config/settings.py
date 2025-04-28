@@ -1,8 +1,8 @@
 # bot/config/settings.py
 
 """
-A.R.K. Trading Bot – Settings Loader
-Ultra-Masterclass Build: Präzise. Sicher. Sauber.
+A.R.K. Trading Bot – Settings Loader (ULTRA Masterclass Build)
+Supercharged für Skalierung, Fehlerprävention und dynamisches Handling.
 """
 
 import os
@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 def get_settings():
     """
-    Lädt und validiert alle .env-Variablen für den Betrieb des A.R.K. Bots.
+    Lädt und validiert ALLE .env-Variablen für den stabilen Betrieb des A.R.K. Trading Bots.
     """
 
     # === Telegram Essentials ===
@@ -32,39 +32,46 @@ def get_settings():
         logger.error("❌ TELEGRAM_CHAT_ID fehlt in der .env Datei.")
         raise ValueError("❌ TELEGRAM_CHAT_ID fehlt. Bitte .env überprüfen.")
 
-    # === API Access ===
+    # === API Keys ===
     finnhub_api_key = os.getenv("FINNHUB_API_KEY")
     if not finnhub_api_key:
         logger.error("❌ FINNHUB_API_KEY fehlt in der .env Datei.")
         raise ValueError("❌ FINNHUB_API_KEY fehlt. Bitte .env überprüfen.")
 
     # === Trading Settings ===
-    interval = os.getenv("INTERVAL", "1min")
-    if interval not in ["1min", "5min", "15min", "30min", "60min"]:
-        logger.warning(f"⚠️ Ungültiges INTERVAL '{interval}' erkannt. Setze auf '1min'.")
-        interval = "1min"
+    interval = os.getenv("INTERVAL", "5min").lower()
+    valid_intervals = ["1min", "5min", "15min", "30min", "60min"]
+    if interval not in valid_intervals:
+        logger.warning(f"⚠️ Ungültiges INTERVAL '{interval}' erkannt. Setze auf '5min'.")
+        interval = "5min"
 
     auto_signal_symbols = os.getenv("AUTO_SIGNAL_SYMBOLS", "")
     symbols_list = [s.strip().upper() for s in auto_signal_symbols.split(",") if s.strip()]
     if not symbols_list:
         logger.warning("⚠️ Keine AUTO_SIGNAL_SYMBOLS definiert. Standard: Leere Liste.")
 
-    # === Environment ===
-    environment = os.getenv("ENVIRONMENT", "Production").capitalize()
-    if environment not in ["Production", "Development"]:
-        logger.warning(f"⚠️ Ungültige ENVIRONMENT '{environment}' erkannt. Setze auf 'Production'.")
-        environment = "Production"
+    # === News Handling ===
+    news_filter_enabled = os.getenv("NEWS_FILTER_ENABLED", "True").lower() == "true"
+    backup_news_enabled = os.getenv("BACKUP_NEWS_ENABLED", "True").lower() == "true"
 
-    # === Language Support ===
-    bot_language = os.getenv("BOT_LANGUAGE", "en")
+    # === Bot Language ===
+    bot_language = os.getenv("BOT_LANGUAGE", "en").lower()
     if bot_language not in ["en", "de"]:
         bot_language = "en"
 
-    # === News Filter Settings ===
-    news_filter_enabled = os.getenv("NEWS_FILTER_ENABLED", "True") == "True"
-    backup_news_enabled = os.getenv("BACKUP_NEWS_ENABLED", "True") == "True"
+    # === Environment Type ===
+    environment = os.getenv("ENVIRONMENT", "Production").capitalize()
+    if environment not in ["Production", "Development"]:
+        logger.warning(f"⚠️ Ungültiges ENVIRONMENT '{environment}' erkannt. Setze auf 'Production'.")
+        environment = "Production"
 
-    logger.info(f"✅ Settings erfolgreich geladen. Environment: {environment}")
+    # === Signal Controls ===
+    signal_check_interval_sec = int(os.getenv("SIGNAL_CHECK_INTERVAL_SEC", 60))
+    max_signals_per_hour = int(os.getenv("MAX_SIGNALS_PER_HOUR", 150))
+    signal_confidence_threshold = int(os.getenv("SIGNAL_CONFIDENCE_THRESHOLD", 55))
+    move_alert_threshold = float(os.getenv("MOVE_ALERT_THRESHOLD", 2.0))
+
+    logger.info(f"✅ Settings erfolgreich geladen für Environment: {environment}")
 
     # === Final Settings Paket ===
     settings = {
@@ -72,27 +79,29 @@ def get_settings():
         "BOT_TOKEN": bot_token,
         "TELEGRAM_CHAT_ID": telegram_chat_id,
 
+        # API
+        "FINNHUB_API_KEY": finnhub_api_key,
+
         # Trading
+        "INTERVAL": interval,
+        "AUTO_SIGNAL_SYMBOLS": symbols_list,
         "RSI_PERIOD": int(os.getenv("RSI_PERIOD", 14)),
         "EMA_SHORT_PERIOD": int(os.getenv("EMA_SHORT_PERIOD", 9)),
         "EMA_LONG_PERIOD": int(os.getenv("EMA_LONG_PERIOD", 21)),
-        "INTERVAL": interval,
 
-        # Auto Signal
-        "AUTO_SIGNAL_SYMBOLS": symbols_list,
-        "SIGNAL_CHECK_INTERVAL_SEC": int(os.getenv("SIGNAL_CHECK_INTERVAL_SEC", 60)),
-        "MAX_SIGNALS_PER_HOUR": int(os.getenv("MAX_SIGNALS_PER_HOUR", 150)),
-
-        # API
-        "FINNHUB_API_KEY": finnhub_api_key,
+        # Signal Control
+        "SIGNAL_CHECK_INTERVAL_SEC": signal_check_interval_sec,
+        "MAX_SIGNALS_PER_HOUR": max_signals_per_hour,
+        "SIGNAL_CONFIDENCE_THRESHOLD": signal_confidence_threshold,
+        "MOVE_ALERT_THRESHOLD": move_alert_threshold,
 
         # News
         "NEWS_FILTER_ENABLED": news_filter_enabled,
         "BACKUP_NEWS_ENABLED": backup_news_enabled,
 
-        # Deployment Info
-        "ENVIRONMENT": environment,
+        # Bot Setup
         "BOT_LANGUAGE": bot_language,
+        "ENVIRONMENT": environment,
     }
 
     return settings
