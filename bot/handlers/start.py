@@ -34,14 +34,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             f"🚀 _Precision. Discipline. Execution._"
         )
 
-        # Send welcome
+        # Send welcome message to the user
         await update.message.reply_text(
             welcome_message,
             parse_mode="Markdown"
         )
 
+        # Log user session start
         logger.info(f"[Start] User '{user_name}' initialized session (Chat ID: {chat_id})")
 
     except Exception as error:
+        # Log error if occurs and send error report
         logger.error(f"[Start Command Error] {error}")
         await report_error(context.bot, chat_id, error, context_info="Start Command Failure")
