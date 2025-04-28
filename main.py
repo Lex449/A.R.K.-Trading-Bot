@@ -1,5 +1,5 @@
 """
-A.R.K. Bot Main Entry – Ultra Stable Wall Street Version 2.2
+A.R.K. Bot Main Entry – Ultra Stable Wall Street Version 2.5
 Made in Bali. Engineered with German Precision.
 """
 
@@ -9,23 +9,17 @@ import nest_asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler
 
-# === Command Handlers ===
+# === Handlers ===
 from bot.handlers.commands import start, help_command, analyze_symbol_handler, set_language
 from bot.handlers.signal import signal_handler
 from bot.handlers.status import status_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.test_signal import test_signal
 from bot.handlers.test_analyse import test_analyse
-from bot.handlers.global_error_handler import global_error_handler  # ✅ Hier richtige Datei!
+from bot.handlers.global_error_handler import global_error_handler
+from bot.handlers.set_my_commands import set_bot_commands
 
-# === KI Engine Systems ===
-from bot.engine.confidence_tuning import tune_confidence
-from bot.utils.session_tracker import get_session_stats
-
-# === Auto Signal Loop ===
-from bot.auto.auto_signal_loop import auto_signal_loop
-
-# === Scheduler Systems ===
+# === Scheduler & Auto Systems ===
 from bot.auto.daily_scheduler import start_daily_analysis_scheduler
 from bot.auto.heartbeat_scheduler import start_heartbeat
 from bot.auto.watchdog_scheduler import start_watchdog
@@ -35,69 +29,65 @@ from bot.utils.error_reporter import report_error
 from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
 
-# === Initialize Logger Early ===
+# Setup logger immediately
 setup_logger(__name__)
 
-# === Allow Nested Event Loops (Railway / Replit) ===
+# Allow nested event loops (important for Railway / Replit)
 nest_asyncio.apply()
 
-# === Load Configuration ===
+# Load settings
 config = get_settings()
 TOKEN = config["BOT_TOKEN"]
 CHAT_ID = int(config["TELEGRAM_CHAT_ID"])
 
 async def startup_tasks(application):
     """
-    Launches essential background services at startup.
+    Startup Task Launcher – Initializes background loops and schedulers.
     """
     try:
-        # Remove existing webhooks to avoid conflicts
+        # Clear any existing webhooks
         await application.bot.delete_webhook(drop_pending_updates=True)
-        logging.info("✅ Webhook removed successfully.")
+        logging.info("✅ Webhook cleared successfully.")
 
-        # Start Background Schedulers
+        # Schedule tasks
         start_daily_analysis_scheduler(application, CHAT_ID)
         start_heartbeat(application, CHAT_ID)
         start_watchdog(application, CHAT_ID)
 
-        # Start Auto Signal Detection Loop
-        asyncio.create_task(auto_signal_loop())
-
-        # Configure /commands for user interface
+        # Set bot commands
         await set_bot_commands(application)
 
-        logging.info("✅ All startup tasks completed successfully.")
+        logging.info("✅ All startup tasks completed.")
 
     except Exception as e:
-        await report_error(application.bot, CHAT_ID, e, context_info="Startup Tasks")
+        await report_error(application.bot, CHAT_ID, e, context_info="Startup Task Error")
         logging.error(f"❌ Error during startup tasks: {e}")
 
 async def main():
     """
-    Core Runner for A.R.K. Trading Bot 2.2
+    Main entry for running the A.R.K. Bot.
     """
-    logging.info("🚀 A.R.K. Trading Bot 2.2 – Wall Street Hyper Stability Mode ACTIVATED.")
+    logging.info("🚀 A.R.K. Trading Bot 2.5 – Full Ultra Stability Activated.")
 
-    # Initialize Bot Application
-    application = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
+    # Initialize bot application
+    app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
 
-    # === Register Command Handlers ===
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("analyse", analyze_symbol_handler))
-    application.add_handler(CommandHandler("setlanguage", set_language))
-    application.add_handler(CommandHandler("signal", signal_handler))
-    application.add_handler(CommandHandler("status", status_handler))
-    application.add_handler(CommandHandler("shutdown", shutdown_handler))
-    application.add_handler(CommandHandler("testsignal", test_signal))
-    application.add_handler(CommandHandler("testanalyse", test_analyse))
+    # Register command handlers
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("analyse", analyze_symbol_handler))
+    app.add_handler(CommandHandler("setlanguage", set_language))
+    app.add_handler(CommandHandler("signal", signal_handler))
+    app.add_handler(CommandHandler("status", status_handler))
+    app.add_handler(CommandHandler("shutdown", shutdown_handler))
+    app.add_handler(CommandHandler("testsignal", test_signal))
+    app.add_handler(CommandHandler("testanalyse", test_analyse))
 
-    # === Attach Global Error Handler ===
-    application.add_error_handler(global_error_handler)
+    # Set global error handler
+    app.add_error_handler(global_error_handler)
 
-    # === Run Polling (Bot Online) ===
-    await application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # Start polling
+    await app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())
