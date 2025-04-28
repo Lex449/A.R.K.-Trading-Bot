@@ -5,9 +5,12 @@ Candle Patterns, ATR Volatility, Risk-Reward Profile – Modular und Ultra Stabi
 
 import pandas as pd
 from bot.engine.pattern_detector import detect_patterns
-from bot.engine.volatility_detector import detect_volatility
+from bot.engine.volatility_detector import VolatilityDetector  # <-- Richtig importieren
 from bot.engine.risk_reward_analyzer import assess_risk_reward
 from bot.engine.data_loader import fetch_market_data
+
+# Instantiate VolatilityDetector once
+volatility_detector = VolatilityDetector()
 
 async def analyze_symbol(symbol: str) -> dict:
     """
@@ -29,7 +32,7 @@ async def analyze_symbol(symbol: str) -> dict:
     patterns = detect_patterns(df)
 
     # === 3. Volatilitätsanalyse ===
-    volatility_info = await detect_volatility(df)
+    volatility_info = volatility_detector.detect_volatility_spike(df)  # <-- Korrekte Nutzung der Instanz
 
     # === 4. Risiko-Rendite-Bewertung ===
     risk_reward_info = await assess_risk_reward(df)
@@ -59,7 +62,7 @@ def determine_action(patterns: list, volatility_info: dict) -> str:
     strong_patterns = [p for p in patterns if "Bullish" in p]
     weak_patterns = [p for p in patterns if "Bearish" in p]
 
-    volatility_strength = volatility_info.get("atr_percent", 0)
+    volatility_strength = volatility_info.get("current_move_percent", 0) if volatility_info else 0
 
     if strong_patterns and volatility_strength >= 1.5:
         return "Ultra Long 📈"
