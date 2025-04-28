@@ -1,17 +1,17 @@
 """
-A.R.K. Risk-Reward Analyzer – Strategic Trade Optimizer.
-Calculates dynamic risk-reward profiles for precision trading.
+A.R.K. Risk-Reward Analyzer – Ultra Strategic Build.
+Precision-engineered for smarter trades, tighter stops, and dynamic targets.
 """
 
 import pandas as pd
 from bot.utils.logger import setup_logger
 
-# Logger Setup
+# Setup Logger
 logger = setup_logger(__name__)
 
 class RiskRewardAnalyzer:
     """
-    Calculates optimized risk-reward setups based on current market structure.
+    Calculates dynamic Risk/Reward setups based on current volatility and momentum.
     """
 
     def __init__(self, language: str = "en"):
@@ -19,20 +19,20 @@ class RiskRewardAnalyzer:
 
     def estimate(self, df: pd.DataFrame, combined_action: str) -> dict:
         """
-        Estimates the risk/reward metrics for a given trade action.
+        Smartly estimates the risk/reward profile based on latest price behavior.
 
         Args:
-            df (pd.DataFrame): OHLCV market data.
+            df (pd.DataFrame): OHLCV data.
             combined_action (str): "Long 📈" or "Short 📉".
 
         Returns:
-            dict or None: Risk/Reward profile or None on failure.
+            dict or None
         """
-        try:
-            if df is None or df.empty or combined_action not in ("Long 📈", "Short 📉"):
-                logger.warning("[RiskRewardAnalyzer] Invalid input for estimation.")
-                return None
+        if df is None or df.empty or combined_action not in ("Long 📈", "Short 📉"):
+            logger.warning("⚠️ [RiskReward] Invalid input detected.")
+            return None
 
+        try:
             highs = df["h"].tail(20)
             lows = df["l"].tail(20)
             closes = df["c"].tail(20)
@@ -41,18 +41,20 @@ class RiskRewardAnalyzer:
             highest_high = highs.max()
             lowest_low = lows.min()
 
+            volatility = (highs.max() - lows.min()) / closes.mean()
+
             if combined_action == "Long 📈":
-                stop_loss = lowest_low * 0.995
-                target = current_price * 1.015
-            else:
-                stop_loss = highest_high * 1.005
-                target = current_price * 0.985
+                stop_loss = lowest_low * 0.996  # Tighter for high precision
+                target = current_price * (1.012 if volatility > 0.02 else 1.015)
+            else:  # Short 📉
+                stop_loss = highest_high * 1.004
+                target = current_price * (0.988 if volatility > 0.02 else 0.985)
 
             risk = abs(current_price - stop_loss)
             reward = abs(target - current_price)
 
             if risk == 0:
-                logger.warning("[RiskRewardAnalyzer] Zero risk scenario detected.")
+                logger.warning("⚠️ [RiskReward] Zero risk detected, skipping.")
                 return None
 
             risk_reward_ratio = round(reward / risk, 2)
@@ -67,5 +69,5 @@ class RiskRewardAnalyzer:
             }
 
         except Exception as e:
-            logger.error(f"[RiskRewardAnalyzer] Error estimating risk/reward: {e}")
+            logger.error(f"❌ [RiskReward] Critical failure: {e}")
             return None
