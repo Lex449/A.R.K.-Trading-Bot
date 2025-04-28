@@ -45,14 +45,16 @@ async def startup_tasks(application):
     Startup Task Launcher – Initializes background loops and schedulers.
     """
     try:
+        chat_id = int(config["TELEGRAM_CHAT_ID"])  # Hol den chat_id aus den Config-Einstellungen
+
         # Clear any existing webhooks
         await application.bot.delete_webhook(drop_pending_updates=True)
         logging.info("✅ Webhook cleared successfully.")
 
         # Schedule tasks
-        start_daily_analysis_scheduler(application, CHAT_ID)
-        start_heartbeat(application, CHAT_ID)
-        await super_watchdog(application)  # Starten des Super Watchdog
+        start_daily_analysis_scheduler(application, chat_id)
+        start_heartbeat(application, chat_id)
+        await super_watchdog(application, chat_id)  # Übergebe den chat_id hier
 
         # Set bot commands
         await set_bot_commands(application)
@@ -60,7 +62,7 @@ async def startup_tasks(application):
         logging.info("✅ All startup tasks completed.")
 
     except Exception as e:
-        await report_error(application.bot, CHAT_ID, e, context_info="Startup Task Error")
+        await report_error(application.bot, chat_id, e, context_info="Startup Task Error")
         logging.error(f"❌ Error during startup tasks: {e}")
 
 async def main():
