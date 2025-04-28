@@ -1,7 +1,3 @@
-"""
-A.R.K. Core Command Handlers – Strategic, Elegant, Ultra Reliable.
-"""
-
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
