@@ -1,58 +1,59 @@
 """
-A.R.K. Move Alert Manager – Premium Layer für Move- und Volatilitätsmeldungen.
-Sorgt für smartes Filtern, keine Überflutung, nur echte Chancen.
+A.R.K. Move Alert Manager – Premium Signal Layer für Bewegungs- und Volatilitätsmeldungen.
+Maximale Signalqualität – null Spam, nur echte Trading-Chancen.
 """
 
 import logging
 from telegram import Bot
 from bot.utils.logger import setup_logger
 
-# Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 
 async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict, volatility_info: dict = None):
     """
-    Sends a detailed, filtered move alert to Telegram based on detected moves and volatility events.
+    Sends a filtered and detailed move alert to Telegram based on detected movement and volatility.
 
     Args:
         bot (Bot): Telegram bot instance.
         chat_id (int): Target chat ID.
         symbol (str): Trading symbol (e.g., AAPL).
-        move_alert (dict): Detected move event (type, move_percent).
-        volatility_info (dict or None): Detected volatility spike details.
+        move_alert (dict): Move detection result (type: "full" or "warning", move_percent).
+        volatility_info (dict or None): Volatility spike data (optional).
     """
 
     try:
-        move_type = move_alert["type"]
-        move_percent = move_alert["move_percent"]
+        move_type = move_alert.get("type", "warning")
+        move_percent = move_alert.get("move_percent", 0.0)
 
-        # === Build Main Text ===
+        # === Build Header based on Move Type ===
         if move_type == "full":
-            headline = "🚨 *Strong Move Alert!*"
+            headline = "🚨 *Strong Move Detected!*"
             emoji = "📈" if move_percent > 0 else "📉"
         else:
-            headline = "⚠️ *Early Move Detection*"
+            headline = "⚠️ *Early Move Warning*"
             emoji = "⚡"
 
+        # === Build Message ===
         message = (
             f"{headline}\n\n"
             f"*Symbol:* `{symbol}`\n"
             f"*Move:* `{move_percent:.2f}%` {emoji}\n"
         )
 
-        # === Add Volatility Info if detected ===
+        # === Optional Volatility Spike Info ===
         if volatility_info:
-            current_move = volatility_info.get("current_move", 0)
-            average_move = volatility_info.get("average_move", 0)
-            atr_value = volatility_info.get("atr", 0)
+            current_move = volatility_info.get("current_move_percent", 0.0)
+            average_move = volatility_info.get("average_move_percent", 0.0)
+            atr_value = volatility_info.get("current_atr", 0.0)
 
             message += (
                 f"*Volatility Spike:* `{current_move:.2f}%` (Avg: `{average_move:.2f}%`)\n"
-                f"*ATR:* `{atr_value:.2f}`\n"
+                f"*ATR (14):* `{atr_value:.2f}`\n"
             )
 
-        # === Motivation Footer ===
-        message += "\n_Stay alert. Precision beats noise._"
+        # === Motivational Footer ===
+        message += "\n_Stay sharp. Great moves don't wait._"
 
         # === Send Message ===
         await bot.send_message(
@@ -61,7 +62,7 @@ async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict,
             parse_mode="Markdown",
             disable_web_page_preview=True
         )
-        logger.info(f"📈 Move alert sent for {symbol}: {move_percent:.2f}%")
+        logger.info(f"✅ Move alert sent for {symbol}: {move_percent:.2f}%")
 
     except Exception as e:
-        logger.error(f"❌ Error while sending move alert: {e}")
+        logger.error(f"❌ [Move Alert Manager] Error while sending move alert: {e}")
