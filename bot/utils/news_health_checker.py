@@ -6,7 +6,6 @@ Ensures real-time switching between Finnhub and Yahoo Finance News feeds.
 """
 
 import aiohttp
-import asyncio
 import logging
 
 # Setup logger
@@ -29,20 +28,20 @@ async def check_finnhub_health() -> bool:
             async with session.get("https://finnhub.io/api/v1/news?category=general", timeout=5) as response:
                 if response.status == 200:
                     if not _finnhub_available:
-                        logger.info("✅ Finnhub primary news source restored.")
+                        logger.info("✅ Finnhub news source restored.")
                     _finnhub_available = True
                     return True
                 else:
-                    logger.warning("⚠️ Finnhub news service responded with non-200 status.")
+                    logger.warning("⚠️ Finnhub news API responded with non-200 status.")
                     _finnhub_available = False
                     return False
     except Exception:
-        logger.error("❌ Finnhub news service unreachable. Switching to Yahoo backup.")
+        logger.error("❌ Finnhub news API unreachable. Switching to Yahoo Backup.")
         _finnhub_available = False
         return False
 
 def use_finnhub() -> bool:
     """
-    Returns whether Finnhub should be used as primary news source.
+    Returns whether Finnhub should be used as the primary news source.
     """
     return _finnhub_available
