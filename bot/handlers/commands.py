@@ -1,3 +1,7 @@
+"""
+A.R.K. Command Handlers – Strategic, Elegant, Ultra Reliable.
+"""
+
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -80,13 +84,10 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
             f"📊 *A.R.K. Symbol Analysis*\n\n"
             f"*Symbol:* `{symbol}`\n"
             f"*Signal:* {result.get('combined_action', '-')}\n"
-            f"*Short-Term Trend:* {result.get('short_term_trend', '-')}\n"
-            f"*Mid-Term Trend:* {result.get('mid_term_trend', '-')}\n"
-            f"*RSI (14):* `{result.get('rsi', '-')}%`\n"
-            f"*Pattern:* {result.get('pattern', '-')}\n"
-            f"*Candle Formation:* {result.get('candlestick', '-')}\n"
-            f"*Rating:* {'⭐' * result.get('stars', 0)}\n"
-            f"*Suggested Holding:* {result.get('suggested_holding', '-')}\n\n"
+            f"*Confidence:* `{result.get('avg_confidence', 0):.1f}%`\n"
+            f"*Detected Patterns:* `{len(result.get('patterns', []))}`\n"
+            f"*Risk/Reward:* `{result.get('risk_reward_info', {}).get('r_r_ratio', '-')}`\n"
+            f"*Volatility (Move %):* `{result.get('volatility_info', {}).get('current_move_percent', '-')}`\n\n"
             f"_🧠 Stay strategic. Trade smart._"
         )
 
