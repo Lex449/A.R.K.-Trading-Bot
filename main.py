@@ -1,3 +1,5 @@
+# main.py
+
 """
 A.R.K. Bot Main Entry – Ultra Stable Wall Street Version 2.1
 Made in Bali. Engineered with German Precision.
@@ -21,7 +23,7 @@ from bot.handlers.set_my_commands import set_bot_commands
 
 # === KI Engine Systems ===
 from bot.engine.confidence_tuning import tune_confidence
-from bot.utils.session_tracker import get_session_stats
+from bot.utils.session_tracker import get_session_stats  # Angepasst: Importiert get_session_stats()
 
 # === Auto Signal Loop ===
 from bot.auto.auto_signal_loop import auto_signal_loop
@@ -85,7 +87,7 @@ async def main():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("analyse", analyze_symbol_handler))
     application.add_handler(CommandHandler("setlanguage", set_language))
-    application.add_handler(CommandHandler("signal", signal_handler))
+    application.add_handler(CommandHandler("signal", signal_handler))  # Signal Handling integriert
     application.add_handler(CommandHandler("status", status_handler))
     application.add_handler(CommandHandler("shutdown", shutdown_handler))
     application.add_handler(CommandHandler("testsignal", test_signal))
