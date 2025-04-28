@@ -1,75 +1,70 @@
-# bot/engine/risk_manager.py
-
 """
-Bewertung von Trading-Signalen basierend auf Sternebewertung, Confidence und RSI.
-Ultra-Masterclass Build für maximale Entscheidungsqualität.
+A.R.K. Risk Manager – Ultra Premium Signal Risk Analyzer.
+Evaluates signals based on Stars, Confidence, and RSI impact.
+
+Built for: Precision Decision-Making & Signal Filtering.
 """
 
 import logging
 
-# Setup Logging
+# Setup structured logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 async def assess_signal_risk(signal_data: dict) -> tuple:
     """
-    Bewertet ein Trading-Signal basierend auf:
-    - Sternebewertung
-    - Confidence
-    - RSI
-    Gibt ein formatiertes Risiko-Message-Template zurück + Warnflag.
+    Evaluates a trading signal based on:
+    - Star Rating
+    - Confidence %
+    - RSI value (if available)
     
-    Args:
-        signal_data (dict): Signal-Daten mit Sternen, Confidence, Pattern, RSI.
-
     Returns:
-        tuple: (Risk-Message: str, Warning-Flag: bool)
+        tuple: (Risk Analysis Message: str, Is High Risk: bool)
     """
     stars = signal_data.get("stars", 0)
-    confidence = signal_data.get("confidence", 0)
-    pattern = signal_data.get("pattern", "Unknown")
-    rsi = signal_data.get("rsi", None)
+    confidence = signal_data.get("confidence", 0.0)
+    pattern = signal_data.get("pattern", "Unknown Pattern")
+    rsi = signal_data.get("rsi")
 
     try:
-        # === Bewertung basierend auf Sternen ===
+        # === Star-Based Assessment ===
         if stars == 5:
-            rating_text = "✅ *Ultra High-Quality Signal (5⭐)* – _Technische Perfektion._"
+            rating_text = "✅ *Ultra High-Quality Signal (5⭐)* – _Technical Excellence._"
         elif stars == 4:
-            rating_text = "✅ *Strong Quality Signal (4⭐)* – _Sehr gute Marktbedingungen._"
+            rating_text = "✅ *Strong Signal (4⭐)* – _High probability setup._"
         elif stars == 3:
-            rating_text = "⚠️ *Moderate Signal (3⭐)* – _Zusatzbestätigung empfohlen._"
+            rating_text = "⚠️ *Moderate Signal (3⭐)* – _Requires confirmation._"
         else:
-            rating_text = "❌ *Low Quality Signal (<3⭐)* – _Nicht handeln empfohlen._"
+            rating_text = "❌ *Weak Signal (<3⭐)* – _Not recommended._"
 
-        # === Confidence Bewertung ===
+        # === Confidence Check ===
         confidence_text = f"*Confidence:* `{confidence:.1f}%`"
         confidence_warning = ""
         if confidence < 55:
             confidence_warning = "\n❗ *Low Confidence Warning (<55%).*"
 
-        # === RSI Bewertung ===
+        # === RSI Interpretation ===
         rsi_text = ""
-        if rsi is not None:
+        if isinstance(rsi, (int, float)):
             if rsi > 70:
-                rsi_text = "\n🔴 *RSI Overbought Warning (>70)*"
+                rsi_text = "\n🔴 *Overbought Zone (>70 RSI)*"
             elif rsi < 30:
-                rsi_text = "\n🔵 *RSI Oversold Opportunity (<30)*"
+                rsi_text = "\n🔵 *Oversold Zone (<30 RSI)*"
 
-        # === Handlungsempfehlung ===
-        suggested_action = "Hold ⚪"
+        # === Action Recommendation ===
         if stars >= 4 and confidence >= 70:
-            suggested_action = "Strong Buy 📈"
-        elif stars >= 4 and confidence < 70:
-            suggested_action = "Buy 📈 (Caution)"
+            suggested_action = "📈 *Strong Buy Signal*"
+        elif stars >= 4 and confidence >= 60:
+            suggested_action = "📈 *Buy Signal (Caution)*"
         elif stars == 3 and confidence >= 60:
-            suggested_action = "Watchlist 👀"
-        elif stars <= 2:
-            suggested_action = "Avoid ❌"
+            suggested_action = "👀 *Add to Watchlist*"
+        else:
+            suggested_action = "❌ *Avoid Trade*"
 
-        # === Finale Risk Message ===
+        # === Assemble Final Risk Message ===
         final_message = (
             f"⚡ *Risk Analysis*\n\n"
-            f"*Pattern Detected:* `{pattern}`\n"
+            f"*Pattern:* `{pattern}`\n"
             f"{confidence_text}\n"
             f"*Rating:* {'⭐' * stars}\n\n"
             f"{rating_text}"
@@ -78,12 +73,13 @@ async def assess_signal_risk(signal_data: dict) -> tuple:
             f"📢 *Suggested Action:* {suggested_action}"
         )
 
-        # === Risiko-Flag bestimmen ===
-        is_warning = stars <= 2 or confidence < 55
+        # === High-Risk Flagging Logic ===
+        is_warning = stars < 3 or confidence < 55
 
-        logger.info(f"[Risk Manager] Pattern: {pattern}, Stars: {stars}, Confidence: {confidence}%")
+        logger.info(f"[Risk Manager] Signal Risk Evaluated: Pattern={pattern}, Stars={stars}, Confidence={confidence}%")
+
         return final_message, is_warning
 
     except Exception as e:
-        logger.error(f"[Risk Manager Error] {str(e)}")
-        return "⚠️ *Risk Analysis Error.* _Proceed cautiously._", True
+        logger.error(f"[Risk Manager Error] {e}")
+        return "⚠️ *Risk Analysis Error.* _Trade with extreme caution._", True
