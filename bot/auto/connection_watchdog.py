@@ -23,7 +23,7 @@ async def check_connection(bot: Bot, chat_id: int):
     If failed, reports and optionally triggers recovery.
     """
     try:
-        await bot.get_me()
+        await bot.get_me()  # Verifies connection with the Telegram Bot API
         logger.info("✅ [Watchdog] Telegram Bot connection verified successfully.")
 
     except Exception as e:
