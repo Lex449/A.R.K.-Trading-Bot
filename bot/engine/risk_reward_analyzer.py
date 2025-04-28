@@ -1,37 +1,47 @@
 """
-A.R.K. Risk-Reward Analyzer – Smart Trade Evaluation System.
-Ultra Masterclass Build – Precision meets Practicality.
+A.R.K. Risk-Reward Analyzer – Strategic Trade Optimizer.
+Calculates dynamic risk-reward profiles for precision trading.
 """
 
 import pandas as pd
+from bot.utils.logger import setup_logger
+
+# Logger Setup
+logger = setup_logger(__name__)
 
 class RiskRewardAnalyzer:
+    """
+    Calculates optimized risk-reward setups based on current market structure.
+    """
+
     def __init__(self, language: str = "en"):
         self.language = language.lower()
 
-    def _error_message(self, error_type: str) -> str:
-        messages = {
-            "invalid_input": {
-                "en": "Invalid DataFrame or action provided to Risk-Reward Analyzer.",
-                "de": "Ungültiges DataFrame oder Aktion an Risk-Reward Analyzer übergeben."
-            }
-        }
-        return messages.get(error_type, {}).get(self.language, "Unknown error.")
-
     def estimate(self, df: pd.DataFrame, combined_action: str) -> dict:
-        if df is None or df.empty or combined_action not in ("Ultra Long 📈", "Ultra Short 📉"):
-            raise ValueError(self._error_message("invalid_input"))
+        """
+        Estimates the risk/reward metrics for a given trade action.
 
+        Args:
+            df (pd.DataFrame): OHLCV market data.
+            combined_action (str): "Long 📈" or "Short 📉".
+
+        Returns:
+            dict or None: Risk/Reward profile or None on failure.
+        """
         try:
-            recent_highs = df["h"].tail(20)
-            recent_lows = df["l"].tail(20)
-            recent_closes = df["c"].tail(20)
+            if df is None or df.empty or combined_action not in ("Long 📈", "Short 📉"):
+                logger.warning("[RiskRewardAnalyzer] Invalid input for estimation.")
+                return None
 
-            current_price = recent_closes.iloc[-1]
-            highest_high = recent_highs.max()
-            lowest_low = recent_lows.min()
+            highs = df["h"].tail(20)
+            lows = df["l"].tail(20)
+            closes = df["c"].tail(20)
 
-            if combined_action == "Ultra Long 📈":
+            current_price = closes.iloc[-1]
+            highest_high = highs.max()
+            lowest_low = lows.min()
+
+            if combined_action == "Long 📈":
                 stop_loss = lowest_low * 0.995
                 target = current_price * 1.015
             else:
@@ -42,6 +52,7 @@ class RiskRewardAnalyzer:
             reward = abs(target - current_price)
 
             if risk == 0:
+                logger.warning("[RiskRewardAnalyzer] Zero risk scenario detected.")
                 return None
 
             risk_reward_ratio = round(reward / risk, 2)
@@ -55,5 +66,6 @@ class RiskRewardAnalyzer:
                 "risk_reward_ratio": risk_reward_ratio
             }
 
-        except Exception:
+        except Exception as e:
+            logger.error(f"[RiskRewardAnalyzer] Error estimating risk/reward: {e}")
             return None
