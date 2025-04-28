@@ -32,11 +32,11 @@ async def auto_signal_loop():
     symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
     lang = config.get("BOT_LANGUAGE", "en")
 
-    max_api_calls = 140
-    signal_interval = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
-    boost_interval = 20
-    boost_mode_active = False
-    boost_end_time = None
+    max_api_calls = 140  # Maximale API-Aufrufe pro Minute
+    signal_interval = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)  # Zeit zwischen den Signalen
+    boost_interval = 20  # Boost-Intervall für die Verstärkung
+    boost_mode_active = False  # Boost-Mode standardmäßig deaktiviert
+    boost_end_time = None  # Zeit, bis Boost endet
 
     calls = 0
     start_minute = time.time()
@@ -47,7 +47,7 @@ async def auto_signal_loop():
 
     logger.info("🚀 [AutoSignal] Ultra Monitoring Activated.")
 
-    last_news_check = None
+    last_news_check = None  # Initialisiere den News-Check-Timer
 
     try:
         while True:
@@ -56,24 +56,27 @@ async def auto_signal_loop():
 
             now = time.time()
 
+            # Reset API-Aufrufe alle 60 Sekunden
             if now - start_minute >= 60:
                 calls = 0
                 start_minute = now
 
+            # Überprüfen, ob es ein Handelstag und innerhalb der Handelszeiten ist
             if not is_trading_day() or not is_trading_hours():
                 logger.info("⏳ [Market] Closed. Sleeping 5 min.")
-                await asyncio.sleep(300)
+                await asyncio.sleep(300)  # 5 Minuten warten, wenn der Markt geschlossen ist
                 continue
 
-            await check_finnhub_health()
+            await check_finnhub_health()  # Überprüfen der Gesundheitsstatus von Finnhub
 
             logger.info(f"🔍 [Scan] Scanning {len(symbols)} symbols...")
 
             for symbol in symbols:
                 try:
+                    # API-Aufruf-Limit überprüfen
                     if calls >= max_api_calls:
                         logger.warning("⚠️ [API] Max API calls hit. Cooling down...")
-                        await asyncio.sleep(10)
+                        await asyncio.sleep(10)  # Pause von 10 Sekunden
                         calls = 0
                         start_minute = time.time()
 
@@ -81,22 +84,26 @@ async def auto_signal_loop():
                     calls += 1
 
                     if not result:
-                        continue
+                        continue  # Falls keine Ergebnisse zurückgegeben werden, überspringen
 
+                    # Marktbewegung prüfen
                     move_alert = await detect_move_alert(result.get("df"))
                     if move_alert:
                         await send_move_alert(bot, chat_id, symbol, move_alert, lang)
 
+                        # Boost-Modus aktivieren, wenn die Marktbewegung mehr als 2.5% beträgt
                         if move_alert.get("move_percent", 0) >= 2.5:
                             boost_mode_active = True
-                            boost_end_time = now + 300
+                            boost_end_time = now + 300  # Boost läuft für 5 Minuten
                             logger.info(f"⚡ [BOOST] Boost activated by move in {symbol}")
 
+                    # Gültige Muster filtern
                     valid_patterns = [
                         p for p in result.get("patterns", [])
                         if "⭐" in p and p.count("⭐") >= 3
                     ]
 
+                    # Vertrauen anpassen und das Signal senden, wenn alle Bedingungen erfüllt sind
                     raw_confidence = result.get("avg_confidence", 0)
                     confidence = adjust_confidence(raw_confidence)
 
@@ -121,7 +128,7 @@ async def auto_signal_loop():
                             )
                             logger.info(f"✅ [Signal] Signal sent for {symbol} | Confidence {confidence:.1f}%")
 
-                    await asyncio.sleep(1.1)
+                    await asyncio.sleep(1.1)  # Kurze Pause, um API-Rate-Limits einzuhalten
 
                 except Exception as e_symbol:
                     logger.error(f"❌ [AutoSignal] Error for {symbol}: {e_symbol}")
@@ -143,7 +150,7 @@ async def auto_signal_loop():
                             logger.info("📰 [News] Breaking News sent.")
 
                             boost_mode_active = True
-                            boost_end_time = time.time() + 300
+                            boost_end_time = time.time() + 300  # Boost für 5 Minuten aktivieren
 
                     last_news_check = now
 
@@ -159,12 +166,12 @@ async def auto_signal_loop():
                 logger.info("⚡ [BOOST] Boost Mode ended.")
 
             logger.info(f"⏳ [AutoSignal] Cycle complete. Sleeping {sleep_interval}s...")
-            await asyncio.sleep(sleep_interval)
+            await asyncio.sleep(sleep_interval)  # Pause zwischen den Schleifen, abhängig vom Boost-Modus
 
     except Exception as e_loop:
         logger.critical(f"🔥 [AutoSignalLoop] Fatal crash: {e_loop}")
         await report_error(bot, chat_id, e_loop, context_info="Fatal Crash in AutoSignalLoop")
-        await asyncio.sleep(120)
+        await asyncio.sleep(120)  # Pause für 2 Minuten bei schwerwiegendem Fehler
 
 async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict, lang: str = "en"):
     move_type = move_alert.get("type", "early")
