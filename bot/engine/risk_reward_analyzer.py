@@ -1,10 +1,6 @@
-# bot/engine/risk_reward_analyzer.py
-
 """
 A.R.K. Risk-Reward Analyzer – Smart Trade Evaluation System.
-Estimates realistic reward/risk ratios for better decision-making.
-
-Engineered for: Smarter Entries, Safer Trades, Dynamic Risk Management.
+Estimates realistic reward/risk ratios for smarter entries and safer trades.
 """
 
 import pandas as pd
@@ -12,27 +8,27 @@ import pandas as pd
 class RiskRewardAnalyzer:
     """
     A.R.K. Risk-Reward Analyzer
-    Bewertet mögliche Trades basierend auf aktueller Marktvolatilität und Trendrichtung.
+    Dynamically calculates realistic Risk/Reward setups for trades.
     """
 
     def __init__(self, language: str = "en"):
         """
-        Initialisiert den Risk/Reward Analyzer.
+        Initializes the Risk/Reward Analyzer.
 
         Args:
-            language (str): Sprache für Fehlerbehandlung ("en" oder "de").
+            language (str): Language ("en" or "de") for localized error messages.
         """
         self.language = language.lower()
 
     def _error_message(self, error_type: str) -> str:
         """
-        Liefert lokalisierte Fehlernachrichten.
+        Returns localized error messages.
 
         Args:
-            error_type (str): Typ des Fehlers.
+            error_type (str): Type of the error.
 
         Returns:
-            str: Fehlermeldung in der ausgewählten Sprache.
+            str: Localized error message.
         """
         messages = {
             "invalid_input": {
@@ -44,39 +40,37 @@ class RiskRewardAnalyzer:
 
     def estimate(self, df: pd.DataFrame, combined_action: str) -> dict:
         """
-        Schätzt das Risiko/Ertrags-Verhältnis basierend auf den letzten Kursbewegungen.
+        Estimates the Risk/Reward based on the latest price action.
 
         Args:
-            df (pd.DataFrame): OHLCV DataFrame mit Spalten ['h', 'l', 'c'].
-            combined_action (str): Erwartete Trade-Richtung ("Long 📈" oder "Short 📉").
+            df (pd.DataFrame): OHLCV DataFrame with columns ['h', 'l', 'c'].
+            combined_action (str): Expected trade direction ("Long 📈" or "Short 📉").
 
         Returns:
-            dict or None: Enthält Preis, Stop-Loss, Target, Risiko, Ertrag, RRR.
+            dict or None: Risk-Reward data or None if not applicable.
         """
         if df is None or df.empty or combined_action not in ("Long 📈", "Short 📉"):
             raise ValueError(self._error_message("invalid_input"))
 
         try:
-            # Nur die letzten 20 Kerzen verwenden
-            recent_closes = df['c'].tail(20)
-            recent_highs = df['h'].tail(20)
-            recent_lows = df['l'].tail(20)
+            recent_closes = df["c"].tail(20)
+            recent_highs = df["h"].tail(20)
+            recent_lows = df["l"].tail(20)
 
             current_price = recent_closes.iloc[-1]
             recent_high = recent_highs.max()
             recent_low = recent_lows.min()
 
             if combined_action == "Long 📈":
-                stop_loss = recent_low * 0.995  # 0.5% unter letztem Support
-                target = current_price * 1.015  # 1.5% über Entry
+                stop_loss = recent_low * 0.995  # 0.5% under recent low
+                target = current_price * 1.015  # 1.5% above current price
             else:  # Short 📉
-                stop_loss = recent_high * 1.005  # 0.5% über letztem Widerstand
-                target = current_price * 0.985  # 1.5% unter Entry
+                stop_loss = recent_high * 1.005  # 0.5% above recent high
+                target = current_price * 0.985  # 1.5% below current price
 
             risk = abs(current_price - stop_loss)
             reward = abs(target - current_price)
 
-            # Division durch Null vermeiden
             if risk == 0:
                 return None
 
