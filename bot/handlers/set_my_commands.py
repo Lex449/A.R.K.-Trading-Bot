@@ -1,33 +1,44 @@
+"""
+A.R.K. Bot Commands Setter – Strategic Command Management.
+Dynamically adjusts the command list based on language preference.
+"""
+
 from telegram import BotCommand
 from bot.utils.language import get_language
+from bot.utils.logger import setup_logger
+
+# Setup structured logger
+logger = setup_logger(__name__)
 
 async def set_bot_commands(application):
     """
-    Dynamically sets the bot's command list based on user language preference.
+    Dynamically sets the bot's command list based on user's or admin's language preference.
+    Clean fallback logic for maximum resilience.
     """
-    lang = "en"  # Default language fallback
+    lang = "en"  # Default language
 
     try:
-        # Attempt to retrieve the admin's language
-        chat_id = application.bot.id  # Fallback to bot ID if needed
+        # Attempt to get preferred language
+        chat_id = application.bot.id  # Bot ID fallback
         lang = get_language(chat_id) or "en"
     except Exception as e:
-        # If an error occurs, fall back to English
-        pass
+        logger.warning(f"[SetBotCommands] Could not detect language, using default EN. ({e})")
 
-    # Define the command list based on language
+    # === Define Commands ===
+    commands = []
+
     if lang == "de":
         commands = [
             BotCommand("start", "Starte den Bot"),
             BotCommand("help", "Zeige Hilfe und Befehle"),
-            BotCommand("analyse", "Analysiere ein Symbol (z. B. /analyse AAPL)"),
+            BotCommand("analyse", "Analysiere ein Symbol (z.B. /analyse AAPL)"),
             BotCommand("signal", "Hole aktuelle Handelssignale"),
             BotCommand("status", "Zeige Sitzungsstatistiken"),
-            BotCommand("shutdown", "Bot stoppen"),
-            BotCommand("testsignal", "Test-Signal senden"),
-            BotCommand("testanalyse", "Test-Analyse senden"),
-            BotCommand("ping", "Überprüfe Reaktionszeit"),
-            BotCommand("health", "Systemzustand prüfen"),
+            BotCommand("shutdown", "Bot beenden"),
+            BotCommand("testsignal", "Test-Handelssignal senden"),
+            BotCommand("testanalyse", "Test-Analyse ausführen"),
+            BotCommand("ping", "Antwortzeit prüfen"),
+            BotCommand("health", "Systemgesundheit prüfen"),
         ]
     else:
         commands = [
@@ -43,5 +54,9 @@ async def set_bot_commands(application):
             BotCommand("health", "Check system health"),
         ]
 
-    # Set the bot's commands
-    await application.bot.set_my_commands(commands)
+    try:
+        # Set commands at Telegram level
+        await application.bot.set_my_commands(commands)
+        logger.info(f"✅ [SetBotCommands] Commands successfully updated (Language: {lang}).")
+    except Exception as e:
+        logger.error(f"❌ [SetBotCommands] Failed to update commands: {e}")
