@@ -13,6 +13,7 @@ _last_heartbeat = time.time()
 def refresh_watchdog():
     """
     Refreshes the global heartbeat timestamp.
+    This function updates the last known heartbeat time to the current time.
     """
     global _last_heartbeat
     _last_heartbeat = time.time()
@@ -20,5 +21,6 @@ def refresh_watchdog():
 def get_last_heartbeat():
     """
     Returns the last heartbeat timestamp.
+    This function is used to monitor the time since the last known heartbeat.
     """
     return _last_heartbeat
