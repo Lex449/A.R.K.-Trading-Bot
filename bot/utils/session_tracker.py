@@ -1,3 +1,5 @@
+# bot/utils/session_tracker.py
+
 """
 A.R.K. Session Tracker – Ultra Stable Build.
 Tracks session, daily, and weekly trading performance.
@@ -7,6 +9,11 @@ import os
 import json
 import uuid
 from datetime import datetime
+from json import JSONDecodeError
+from bot.utils.logger import setup_logger
+
+# Setup structured logger
+logger = setup_logger(__name__)
 
 # === File Location ===
 SESSION_FILE = "session_data.json"
@@ -14,22 +21,24 @@ SESSION_FILE = "session_data.json"
 # === Internal Memory ===
 _session_data = {}
 
-def initialize_session():
+def initialize_session() -> None:
     """Initializes or loads session data."""
     global _session_data
 
     if not os.path.exists(SESSION_FILE):
         _session_data = _create_new_session()
+        logger.info("📂 [Session Tracker] New session file created.")
     else:
         try:
             with open(SESSION_FILE, "r", encoding="utf-8") as f:
                 _session_data = json.load(f)
-        except Exception:
+        except (JSONDecodeError, Exception) as error:
+            logger.warning(f"⚠️ [Session Tracker] Corrupted session file detected: {error}")
             _session_data = _create_new_session()
 
     save_session_data()
 
-def _create_new_session():
+def _create_new_session() -> dict:
     """Creates a new blank session."""
     return {
         "session_id": str(uuid.uuid4()),
@@ -39,7 +48,7 @@ def _create_new_session():
         "week": _empty_metrics(),
     }
 
-def _empty_metrics():
+def _empty_metrics() -> dict:
     """Returns a blank metric structure."""
     return {
         "signals_total": 0,
@@ -47,15 +56,15 @@ def _empty_metrics():
         "moderate_signals": 0,
         "weak_signals": 0,
         "confidence_sum": 0.0,
-        "scoring_sum": 0.0
+        "scoring_sum": 0.0,
     }
 
-def save_session_data():
+def save_session_data() -> None:
     """Saves the current session data to file."""
     with open(SESSION_FILE, "w", encoding="utf-8") as f:
         json.dump(_session_data, f, indent=4)
 
-def update_session_tracker(stars: int, confidence: float):
+def update_session_tracker(stars: int, confidence: float) -> None:
     """Updates session statistics after every signal."""
     for period in ["total", "today", "week"]:
         _session_data[period]["signals_total"] += 1
@@ -109,23 +118,23 @@ def _format_report(section: str, title: str) -> str:
         f"*Strong Signals (≥4⭐):* {data['strong_signals']}\n"
         f"*Moderate Signals (3⭐):* {data['moderate_signals']}\n"
         f"*Weak Signals (≤2⭐):* {data['weak_signals']}\n"
-        f"*Avg Confidence:* {avg_confidence:.1f}%\n"
-        f"*Avg Signal Score:* {avg_scoring:.2f}\n\n"
+        f"*Avg Confidence:* `{avg_confidence:.1f}%`\n"
+        f"*Avg Signal Score:* `{avg_scoring:.2f}`\n\n"
         f"🚀 _Relentless progress. Relentless precision._"
     )
     return report
 
-def reset_today_data():
+def reset_today_data() -> None:
     """Resets today's performance data."""
     _session_data["today"] = _empty_metrics()
     save_session_data()
 
-def reset_weekly_data():
+def reset_weekly_data() -> None:
     """Resets weekly performance data."""
     _session_data["week"] = _empty_metrics()
     save_session_data()
 
-def reset_full_session():
+def reset_full_session() -> None:
     """Resets the entire session."""
     global _session_data
     _session_data = _create_new_session()
