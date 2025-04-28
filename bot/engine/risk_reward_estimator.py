@@ -7,17 +7,17 @@ import pandas as pd
 
 def estimate_risk_reward(df: pd.DataFrame, entry_price: float, direction: str) -> dict:
     """
-    Estimates risk and reward levels based on recent volatility and structure.
+    Estimates risk and reward levels based on recent volatility and price structure.
 
     Args:
-        df (pd.DataFrame): OHLCV DataFrame.
-        entry_price (float): Intended entry price.
-        direction (str): "long" or "short".
+        df (pd.DataFrame): OHLCV DataFrame with 'h', 'l' columns.
+        entry_price (float): Intended entry price for the trade.
+        direction (str): "long" or "short" indicating trade direction.
 
     Returns:
-        dict: risk, reward, and risk-reward ratio.
+        dict: Risk value, Reward value, Risk-Reward ratio.
     """
-    if df is None or df.empty:
+    if df is None or df.empty or entry_price <= 0:
         return {"risk": None, "reward": None, "rr_ratio": None}
 
     try:
@@ -39,8 +39,8 @@ def estimate_risk_reward(df: pd.DataFrame, entry_price: float, direction: str) -
         rr_ratio = round(reward / risk, 2)
 
         return {
-            "risk": round(risk, 2),
-            "reward": round(reward, 2),
+            "risk": round(risk, 4),
+            "reward": round(reward, 4),
             "rr_ratio": rr_ratio
         }
 
