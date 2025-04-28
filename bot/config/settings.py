@@ -1,5 +1,3 @@
-# bot/config/settings.py
-
 """
 A.R.K. Trading Bot – Ultra Diamond Settings Loader
 Fault-Tolerant, API-Optimized, Fully Scalable.
@@ -66,6 +64,10 @@ def get_settings() -> dict:
     signal_check_interval_sec = int(os.getenv("SIGNAL_CHECK_INTERVAL_SEC", 60))
     max_signals_per_hour = int(os.getenv("MAX_SIGNALS_PER_HOUR", 150))
 
+    # === Deep Learning Confidence Control ===
+    confidence_adjustment_enabled = os.getenv("CONFIDENCE_ADJUSTMENT_ENABLED", "False").lower() == "true"
+    confidence_scaling_factor = float(os.getenv("CONFIDENCE_SCALING_FACTOR", 1.0))
+
     logger.info(f"✅ Settings loaded successfully. Environment: {environment}")
 
     return {
@@ -94,4 +96,8 @@ def get_settings() -> dict:
         # Environment
         "ENVIRONMENT": environment,
         "BOT_LANGUAGE": bot_language,
+
+        # Deep Learning Confidence
+        "CONFIDENCE_ADJUSTMENT_ENABLED": confidence_adjustment_enabled,
+        "CONFIDENCE_SCALING_FACTOR": confidence_scaling_factor,
     }
