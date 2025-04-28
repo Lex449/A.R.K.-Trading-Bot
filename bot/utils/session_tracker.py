@@ -1,7 +1,7 @@
 # bot/utils/session_tracker.py
 
 """
-A.R.K. Session Tracker – Ultra Stable Build.
+A.R.K. Session Tracker – Ultra Stable Build (Multilingual Edition).
 Tracks session, daily, and weekly trading performance.
 """
 
@@ -11,6 +11,8 @@ import uuid
 from datetime import datetime
 from json import JSONDecodeError
 from bot.utils.logger import setup_logger
+from bot.utils.i18n import get_text
+from bot.utils.language import get_language
 
 # Setup structured logger
 logger = setup_logger(__name__)
@@ -82,17 +84,17 @@ def update_session_tracker(stars: int, confidence: float) -> None:
 
     save_session_data()
 
-def get_session_report() -> str:
+def get_session_report(chat_id: int = None) -> str:
     """Returns full session overview."""
-    return _format_report("total", "📊 *Session Overview*")
+    return _format_report("total", get_text("session_title_total", get_language(chat_id)))
 
-def get_today_report() -> str:
+def get_today_report(chat_id: int = None) -> str:
     """Returns today's performance report."""
-    return _format_report("today", "🌞 *Today’s Report*")
+    return _format_report("today", get_text("session_title_today", get_language(chat_id)))
 
-def get_weekly_report() -> str:
+def get_weekly_report(chat_id: int = None) -> str:
     """Returns this week's performance report."""
-    return _format_report("week", "📆 *Weekly Report*")
+    return _format_report("week", get_text("session_title_week", get_language(chat_id)))
 
 def _format_report(section: str, title: str) -> str:
     """Formats the session data into a readable message."""
@@ -109,18 +111,20 @@ def _format_report(section: str, title: str) -> str:
     avg_confidence = (data["confidence_sum"] / data["signals_total"]) if data["signals_total"] else 0
     avg_scoring = (data["scoring_sum"] / data["signals_total"]) if data["signals_total"] else 0
 
+    lang = get_language()
+
     report = (
         f"{title}\n\n"
-        f"*Session ID:* `{_session_data['session_id']}`\n"
-        f"*Start Time:* `{start_time.strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
-        f"*Uptime:* {uptime_str}\n\n"
-        f"*Total Signals:* {data['signals_total']}\n"
-        f"*Strong Signals (≥4⭐):* {data['strong_signals']}\n"
-        f"*Moderate Signals (3⭐):* {data['moderate_signals']}\n"
-        f"*Weak Signals (≤2⭐):* {data['weak_signals']}\n"
-        f"*Avg Confidence:* `{avg_confidence:.1f}%`\n"
-        f"*Avg Signal Score:* `{avg_scoring:.2f}`\n\n"
-        f"🚀 _Relentless progress. Relentless precision._"
+        f"*{get_text('session_id', lang)}:* `{_session_data['session_id']}`\n"
+        f"*{get_text('start_time', lang)}:* `{start_time.strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
+        f"*{get_text('uptime', lang)}:* {uptime_str}\n\n"
+        f"*{get_text('total_signals', lang)}:* {data['signals_total']}\n"
+        f"*{get_text('strong_signals', lang)}:* {data['strong_signals']}\n"
+        f"*{get_text('moderate_signals', lang)}:* {data['moderate_signals']}\n"
+        f"*{get_text('weak_signals', lang)}:* {data['weak_signals']}\n"
+        f"*{get_text('avg_confidence', lang)}:* `{avg_confidence:.1f}%`\n"
+        f"*{get_text('avg_score', lang)}:* `{avg_scoring:.2f}`\n\n"
+        f"🚀 _{get_text('relentless_footer', lang)}_"
     )
     return report
 
