@@ -35,7 +35,9 @@ translations = {
         "weak_signals": "Weak Signals (≤2⭐)",
         "avg_confidence": "Avg Confidence",
         "avg_score": "Avg Signal Score",
-        "relentless_footer": "Relentless progress. Relentless precision."
+        "relentless_footer": "Relentless progress. Relentless precision.",
+        "signal_ultra_premium": "Ultra Premium Signal Detected",
+        "signal_footer": "Smart trading starts with smart signals."
     },
     "de": {
         "start": "👋 Hallo {user}! Willkommen bei *A.R.K. Trading Bot 2.0*.\n\nNutze /help, um alle verfügbaren Befehle anzuzeigen und smarter zu traden.",
@@ -61,7 +63,9 @@ translations = {
         "weak_signals": "Schwache Signale (≤2⭐)",
         "avg_confidence": "Durchschnittliches Vertrauen",
         "avg_score": "Durchschnittliche Bewertung",
-        "relentless_footer": "Unaufhaltsamer Fortschritt. Unaufhaltsame Präzision."
+        "relentless_footer": "Unaufhaltsamer Fortschritt. Unaufhaltsame Präzision.",
+        "signal_ultra_premium": "Ultra Premium Signal erkannt",
+        "signal_footer": "Smartes Trading beginnt mit smarten Signalen."
     }
 }
 
