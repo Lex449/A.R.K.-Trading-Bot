@@ -1,12 +1,16 @@
 """
-A.R.K. News Alert Engine – Breaking News Detector with Backup Source.
-Fetches and analyzes market news from Finnhub or Yahoo Finance if needed.
+A.R.K. News Alert Engine – Ultra Premium Breaking News Detection.
+Finnhub First, Yahoo Finance Backup. Optimized for Speed, Relevance, and Multilingual Alerts.
 """
 
 import aiohttp
 from datetime import datetime
 from bot.config.settings import get_settings
 from bot.utils.news_health_checker import use_finnhub
+from bot.utils.logger import setup_logger
+
+# Setup Logger
+logger = setup_logger(__name__)
 
 # Load configuration
 config = get_settings()
@@ -30,21 +34,25 @@ async def fetch_finnhub_news() -> list:
         async with aiohttp.ClientSession() as session:
             async with session.get(FINNHUB_ENDPOINT, timeout=10) as response:
                 if response.status == 200:
-                    return await response.json()
-    except Exception:
-        pass
+                    news = await response.json()
+                    logger.info("[News Engine] Finnhub news fetched successfully.")
+                    return news
+    except Exception as e:
+        logger.warning(f"[News Engine] Error fetching Finnhub news: {e}")
     return []
 
 async def fetch_yahoo_news(symbol: str) -> str:
-    """Fetches RSS feed headlines from Yahoo Finance for a specific symbol."""
+    """Fetches RSS feed headlines from Yahoo Finance."""
     try:
         async with aiohttp.ClientSession() as session:
             url = YAHOO_ENDPOINT_TEMPLATE.format(symbol=symbol)
             async with session.get(url, timeout=10) as response:
                 if response.status == 200:
-                    return await response.text()
-    except Exception:
-        pass
+                    rss = await response.text()
+                    logger.info(f"[News Engine] Yahoo news fetched for {symbol}.")
+                    return rss
+    except Exception as e:
+        logger.warning(f"[News Engine] Error fetching Yahoo news for {symbol}: {e}")
     return ""
 
 async def detect_breaking_news() -> list:
@@ -58,14 +66,14 @@ async def detect_breaking_news() -> list:
             try:
                 published_time = datetime.utcfromtimestamp(article.get("datetime", 0))
                 age_minutes = (now - published_time).total_seconds() / 60
-                if age_minutes > 15:
+                if age_minutes > 20:
                     continue
 
                 headline = article.get("headline", "").lower()
                 if any(keyword in headline for keyword in IMPORTANT_KEYWORDS):
                     breaking_news.append({
                         "headline": article.get("headline", ""),
-                        "source": article.get("source", "unknown"),
+                        "source": article.get("source", "Unknown"),
                         "url": article.get("url", "")
                     })
             except Exception:
@@ -75,7 +83,7 @@ async def detect_breaking_news() -> list:
             raw_rss = await fetch_yahoo_news(symbol)
             if any(keyword in raw_rss.lower() for keyword in IMPORTANT_KEYWORDS):
                 breaking_news.append({
-                    "headline": f"Potential Breaking News detected for {symbol}",
+                    "headline": f"Important event detected for {symbol}",
                     "source": "Yahoo Finance RSS",
                     "url": f"https://finance.yahoo.com/quote/{symbol}"
                 })
@@ -83,7 +91,7 @@ async def detect_breaking_news() -> list:
     return breaking_news
 
 async def format_breaking_news(news_list: list, lang: str = "en") -> str:
-    """Formats the breaking news headlines into a single alert message."""
+    """Formats the breaking news headlines into a single message."""
     if not news_list:
         return ""
 
@@ -97,11 +105,12 @@ async def format_breaking_news(news_list: list, lang: str = "en") -> str:
     parts = [header]
 
     for news in news_list:
-        headline = news.get("headline", "")
+        headline = news.get("headline", "No headline available")
         source = news.get("source", "Unknown")
-        url = news.get("url", "")
+        url = news.get("url", "#")
 
-        parts.append(f"• *{headline}*\nSource: {source}\n[Details]({url})")
+        parts.append(f"• *{headline}*\nSource: `{source}`\n[Details]({url})")
 
     parts.append(footer)
+
     return "\n\n".join(parts)
