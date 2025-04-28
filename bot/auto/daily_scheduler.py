@@ -1,47 +1,57 @@
+# bot/auto/daily_scheduler.py
+
 """
-A.R.K. Daily Scheduler – Hyper Precision Timing System
-Automatically triggers the Daily Market Analysis at optimal times.
+A.R.K. Dynamic Daily Scheduler – User-Based Timezone Precision
+Schedules Daily Analysis exactly at the user's market open time.
 """
 
 import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from bot.auto.daily_analysis_job import daily_analysis_job
+from bot.utils.user_timezone_manager import get_user_timezone
 from bot.utils.logger import setup_logger
 
-# Logger Setup
+# Setup Logger
 logger = setup_logger(__name__)
 
-# Global Scheduler Instance
+# Global Scheduler
 daily_scheduler = AsyncIOScheduler()
 
-def start_daily_analysis_scheduler(application):
+def start_daily_analysis_scheduler(application, chat_id: int):
     """
-    Starts the Daily Market Analysis once per day at market open.
+    Schedules the Daily Analysis for a specific user based on their timezone.
     """
-
     try:
-        # Trigger exakt zur Markteröffnung
-        trigger = CronTrigger(hour=15, minute=0, timezone="Asia/Singapore")  # 15:00 Bali-Zeit = 09:00 CET Frankfurt
+        # Get user's timezone
+        user_timezone = get_user_timezone(chat_id)
+        if not user_timezone:
+            logger.warning(f"⚠️ [Scheduler] No timezone set for chat ID {chat_id}. Using UTC as fallback.")
+            user_timezone = "UTC"
 
-        # Sicherheit: Bestehende Jobs entfernen
-        daily_scheduler.remove_all_jobs()
+        # Define market open time (adjust if needed per user)
+        trigger = CronTrigger(hour=9, minute=0, timezone=user_timezone)
 
-        # Daily Job registrieren
+        # Remove existing job if exists
+        try:
+            daily_scheduler.remove_job(job_id=f"daily_analysis_{chat_id}")
+        except Exception:
+            pass  # Ignore if job doesn't exist yet
+
+        # Add new job
         daily_scheduler.add_job(
             daily_analysis_job,
             trigger=trigger,
             args=[application],
-            id="daily_market_analysis",
+            id=f"daily_analysis_{chat_id}",
             replace_existing=True,
-            name="Daily Market Analysis"
+            name=f"Daily Analysis for {chat_id}"
         )
 
-        # Scheduler starten
         if not daily_scheduler.running:
             daily_scheduler.start()
 
-        logger.info("✅ [DailyScheduler] Daily Market Analysis Job scheduled successfully at 15:00 WITA.")
+        logger.info(f"✅ [Scheduler] Daily Analysis scheduled for {chat_id} at 9:00 {user_timezone}.")
 
     except Exception as e:
-        logger.error(f"❌ [DailyScheduler Error] Failed to start daily scheduler: {e}")
+        logger.error(f"❌ [Scheduler Error] Failed to start Daily Analysis for {chat_id}: {e}")
