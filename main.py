@@ -52,7 +52,7 @@ async def startup_tasks(application):
         # Schedule tasks
         start_daily_analysis_scheduler(application, CHAT_ID)
         start_heartbeat(application, CHAT_ID)
-        start_watchdog(application, CHAT_ID)
+        start_watchdog(application, CHAT_ID)  # Watchdog needs to be started for continuous monitoring
 
         # Set bot commands
         await set_bot_commands(application)
@@ -87,7 +87,11 @@ async def main():
     app.add_error_handler(global_error_handler)
 
     # Start polling
-    await app.run_polling(allowed_updates=Update.ALL_TYPES)
+    try:
+        await app.run_polling(allowed_updates=Update.ALL_TYPES)
+    except Exception as e:
+        logging.critical(f"❌ [Main] Bot failed with error: {e}")
+        await report_error(app.bot, CHAT_ID, e, context_info="Main Polling Error")
 
 if __name__ == "__main__":
     asyncio.run(main())
