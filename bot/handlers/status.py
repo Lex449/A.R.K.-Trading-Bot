@@ -1,9 +1,3 @@
-"""
-A.R.K. Status Command – Ultra Structured Premium Build.
-Delivers real-time session health and trading performance overview.
-"""
-
-import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.utils.session_tracker import get_session_report
@@ -30,7 +24,7 @@ async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         # Retrieve Session Report
         session_summary = get_session_report()
 
-        # Personalized Status Message
+        # Build Personalized Status Message
         message = (
             f"🔍 *Session Status – A.R.K. Trading Bot*\n\n"
             f"👤 *User:* `{user_name}`\n"
@@ -39,6 +33,7 @@ async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             f"_✅ System running ultra-stable. Powered by precision._"
         )
 
+        # Send message with the session report
         await update.message.reply_text(message, parse_mode="Markdown")
         logger.info(f"[Status] Session report sent successfully.")
 
