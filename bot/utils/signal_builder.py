@@ -1,3 +1,5 @@
+# bot/utils/ultra_signal_builder.py
+
 """
 A.R.K. Ultra Premium Signal Builder – Multilingual Master Build.
 Combines strategy, psychology, and clean minimalism for maximum trading impact.
@@ -6,7 +8,15 @@ Combines strategy, psychology, and clean minimalism for maximum trading impact.
 from bot.utils.i18n import get_text
 from bot.utils.language import get_language
 
-def build_signal_message(symbol: str, patterns: list, combined_action: str, avg_confidence: float, indicator_score: float, trend_direction: str, chat_id: int = None) -> str:
+def build_signal_message(
+    symbol: str,
+    patterns: list,
+    combined_action: str,
+    avg_confidence: float,
+    indicator_score: float,
+    trend_direction: str,
+    chat_id: int = None
+) -> str:
     """
     Builds the ultimate premium trading signal message.
 
