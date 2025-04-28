@@ -1,7 +1,7 @@
 """
 A.R.K. Ultra Daily Analysis Job
 – Motivierende tägliche Marktanalyse auf CEO-Niveau.
-– Präzisions-Upgrade 2025: Fokus auf Top-Signale & Lernvorsprung.
+– Präzisions-Upgrade 2025: Fokus auf Top-Signale & Deep Confidence Learning.
 """
 
 import asyncio
@@ -9,10 +9,11 @@ import logging
 from telegram import Bot
 from telegram.ext import ContextTypes
 from bot.engine.analysis_engine import analyze_symbol
+from bot.engine.deep_confidence_engine import adjust_confidence  # << NEU eingebaut
 from bot.utils.error_reporter import report_error
-from bot.config.settings import get_settings
-from bot.utils.logger import setup_logger
 from bot.utils.session_tracker import update_session_tracker
+from bot.utils.logger import setup_logger
+from bot.config.settings import get_settings
 
 # Setup Logger
 logger = setup_logger(__name__)
@@ -61,21 +62,25 @@ async def daily_analysis_job(context: ContextTypes.DEFAULT_TYPE):
                     continue
 
                 combined_action = result.get("combined_action", "Neutral ⚪")
-                avg_confidence = result.get("avg_confidence", 0)
+
+                # === Deep Confidence Adjustment ===
+                raw_confidence = result.get("avg_confidence", 0)
+                confidence = adjust_confidence(raw_confidence)
 
                 # Nur starke Chancen aufnehmen
-                if combined_action not in ["Neutral ⚪", "Hold"] and avg_confidence >= 58:
+                if combined_action not in ["Neutral ⚪", "Hold"] and confidence >= 58:
                     hits.append(
-                        f"➔ `{symbol}`: {combined_action} – {avg_confidence:.1f}% Confidence"
+                        f"➔ `{symbol}`: {combined_action} – {confidence:.1f}% Confidence"
                     )
-                    update_session_tracker(
-                        stars=4 if avg_confidence >= 65 else 3,
-                        confidence=avg_confidence
-                    )
+
+                    # Update Session Tracker
+                    stars = 5 if confidence >= 70 else 4 if confidence >= 65 else 3
+                    update_session_tracker(stars=stars, confidence=confidence)
+
                 else:
                     misses.append(symbol)
 
-                await asyncio.sleep(1.2)  # Telegram Limit respektieren
+                await asyncio.sleep(1.2)  # Respect Telegram Rate Limit
 
             except Exception as symbol_error:
                 logger.error(f"[Daily Analysis] Error for {symbol}: {symbol_error}")
