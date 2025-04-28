@@ -6,42 +6,48 @@ Ensures real-time switching between Finnhub and Yahoo Finance News feeds.
 """
 
 import aiohttp
-import logging
+from bot.utils.logger import setup_logger
 
-# Setup logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# Setup structured logger
+logger = setup_logger(__name__)
 
 # Global State
 _finnhub_available = True
 
-async def check_finnhub_health() -> bool:
+async def check_finnhub_health(timeout_sec: int = 5) -> bool:
     """
     Checks if Finnhub News API is available.
+
+    Args:
+        timeout_sec (int): Timeout for health check request.
 
     Returns:
         bool: True if Finnhub is healthy, False otherwise.
     """
     global _finnhub_available
+
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://finnhub.io/api/v1/news?category=general", timeout=5) as response:
+            async with session.get("https://finnhub.io/api/v1/news?category=general", timeout=timeout_sec) as response:
                 if response.status == 200:
                     if not _finnhub_available:
-                        logger.info("✅ Finnhub news source restored.")
+                        logger.info("✅ [News Health] Finnhub news source restored.")
                     _finnhub_available = True
                     return True
                 else:
-                    logger.warning("⚠️ Finnhub news API responded with non-200 status.")
+                    logger.warning(f"⚠️ [News Health] Finnhub returned status {response.status}.")
                     _finnhub_available = False
                     return False
-    except Exception:
-        logger.error("❌ Finnhub news API unreachable. Switching to Yahoo Backup.")
+    except Exception as error:
+        logger.error(f"❌ [News Health] Finnhub unreachable: {error}")
         _finnhub_available = False
         return False
 
 def use_finnhub() -> bool:
     """
     Returns whether Finnhub should be used as the primary news source.
+
+    Returns:
+        bool: True if Finnhub is healthy, False otherwise.
     """
     return _finnhub_available
