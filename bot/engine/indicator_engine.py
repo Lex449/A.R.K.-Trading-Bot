@@ -1,6 +1,8 @@
 """
-A.R.K. Indicator Engine – Ultra Masterclass Build.
-Calculates EMA-based trend and RSI-based momentum for premium trading signals.
+A.R.K. Indicator Engine – Ultra Precision 3.0
+Calculates EMAs, RSI momentum, and dynamic trend detection for elite trading decisions.
+
+Built for: Scalability, Fault Tolerance, and Strategic Signal Scoring.
 """
 
 import pandas as pd
@@ -8,16 +10,17 @@ import numpy as np
 
 def evaluate_indicators(df: pd.DataFrame) -> tuple:
     """
-    Calculates EMA, RSI, and trend direction based on candle data.
+    Evaluates market momentum based on EMA crossovers and RSI levels.
 
     Args:
-        df (pd.DataFrame): Candle data with columns ['o', 'h', 'l', 'c'].
+        df (pd.DataFrame): DataFrame with 'o', 'h', 'l', 'c' columns (candlestick data).
 
     Returns:
-        tuple: (Indicator Score 0–100, Trend Direction ["Long 📈", "Short 📉", "Neutral ⚪"])
+        tuple: (Indicator Score [0–100], Trend Direction: "Long 📈", "Short 📉", "Neutral ⚪")
     """
+
     if df is None or df.empty or len(df) < 20:
-        return 50.0, "Neutral ⚪"  # Neutral base score if insufficient data
+        return 50.0, "Neutral ⚪"  # Default if not enough data
 
     try:
         # === Calculate EMAs ===
@@ -38,36 +41,34 @@ def evaluate_indicators(df: pd.DataFrame) -> tuple:
 
         # === Calculate RSI ===
         delta = df["c"].diff()
-        gain = np.where(delta > 0, delta, 0)
-        loss = np.where(delta < 0, -delta, 0)
+        gain = np.maximum(delta, 0)
+        loss = np.abs(np.minimum(delta, 0))
 
-        avg_gain = pd.Series(gain).rolling(window=14, min_periods=1).mean().iloc[-1]
-        avg_loss = pd.Series(loss).rolling(window=14, min_periods=1).mean().iloc[-1]
+        avg_gain = pd.Series(gain).rolling(window=14, min_periods=14).mean().iloc[-1]
+        avg_loss = pd.Series(loss).rolling(window=14, min_periods=14).mean().iloc[-1]
 
-        if avg_loss == 0:
-            rsi = 100.0
-        else:
-            rs = avg_gain / avg_loss
-            rsi = 100 - (100 / (1 + rs))
+        rsi = 100.0 if avg_loss == 0 else 100 - (100 / (1 + (avg_gain / avg_loss)))
 
-        # === Calculate Indicator Score ===
+        # === Base Score ===
         indicator_score = 50.0
 
-        # EMA Weight
+        # === EMA Influence ===
         if trend == "Long 📈":
             indicator_score += 20
         elif trend == "Short 📉":
             indicator_score -= 20
 
-        # RSI Weight
+        # === RSI Influence ===
         if rsi > 70:
-            indicator_score -= 10  # Overbought → Potential Short Risk
+            indicator_score -= 10  # Overbought → Higher reversal risk
         elif rsi < 30:
-            indicator_score += 10  # Oversold → Potential Long Chance
+            indicator_score += 10  # Oversold → Higher bounce chance
 
-        indicator_score = max(0, min(100, indicator_score))  # Bound between 0–100
+        # === Finalize Score ===
+        indicator_score = round(max(0, min(100, indicator_score)), 2)
 
-        return round(indicator_score, 2), trend
+        return indicator_score, trend
 
     except Exception:
+        # Safe fallback
         return 50.0, "Neutral ⚪"
