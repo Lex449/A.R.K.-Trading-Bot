@@ -16,7 +16,7 @@ from bot.handlers.status import status_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.test_signal import test_signal
 from bot.handlers.test_analyse import test_analyse
-from bot.handlers.error_handler import global_error_handler
+from bot.handlers.global_error_handler import global_error_handler  # <-- FIX: richtiger Import
 from bot.handlers.set_my_commands import set_bot_commands
 
 # === Auto Signal Loop ===
