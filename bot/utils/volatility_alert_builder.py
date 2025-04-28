@@ -1,5 +1,3 @@
-# bot/utils/volatility_alert_builder.py
-
 """
 A.R.K. Volatility Alert Builder – Multilingual Ultra Precision Notifications.
 """
@@ -12,27 +10,31 @@ def build_volatility_alert(symbol: str, move_data: dict, lang: str = "en") -> st
 
     Args:
         symbol (str): Trading symbol (e.g., AAPL)
-        move_data (dict): Movement data containing "move_percent", "volume_spike", "trend"
-        lang (str): "en" (default) or "de"
+        move_data (dict): Movement data containing keys: "move_percent", "volume_spike", "trend"
+        lang (str): Language code ("en" or "de", default: "en")
 
     Returns:
         str: Structured volatility alert message.
     """
-    try:
-        move_percent = move_data["move_percent"]
-        volume_spike = move_data["volume_spike"]
-        trend = move_data["trend"]
-    except KeyError as e:
-        # Critical fallback if move_data is incomplete
-        raise ValueError(f"[Volatility Alert Builder] Missing key in move_data: {e}")
+    required_keys = ["move_percent", "volume_spike", "trend"]
 
-    # === Build Message Dynamically via i18n ===
+    # === Validate input cleanly ===
+    if not all(key in move_data for key in required_keys):
+        missing = [key for key in required_keys if key not in move_data]
+        raise ValueError(f"[Volatility Alert Builder] Missing keys in move_data: {missing}")
+
+    move_percent = move_data["move_percent"]
+    volume_spike = move_data["volume_spike"]
+    trend = move_data["trend"]
+
+    # === Fetch Multilingual Labels ===
     header = get_text("volatility_alert_header", lang)
     move_label = get_text("volatility_alert_move", lang)
     volume_label = get_text("volatility_alert_volume", lang)
     trend_label = get_text("volatility_alert_trend", lang)
     footer = get_text("volatility_alert_footer", lang)
 
+    # === Compose final message ===
     message = (
         f"{header}\n\n"
         f"*Symbol:* `{symbol}`\n"
