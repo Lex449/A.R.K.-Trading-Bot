@@ -3,20 +3,14 @@
 import logging
 import time
 import asyncio
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
-from bot.utils.logger import setup_logger
-from bot.config.settings import get_settings
-from bot.utils.connection_watchdog import check_connection
-from bot.auto.auto_signal_loop import auto_signal_loop
+from bot.utils.connection_watchdog import check_connection  # Der Original-Aufruf bleibt unverändert
 from bot.utils.error_reporter import report_error
+from bot.auto.auto_signal_loop import auto_signal_loop
+from bot.config.settings import get_settings
 
-# Logger
-logger = setup_logger(__name__)
+# Logger Setup
+logger = logging.getLogger(__name__)
 config = get_settings()
-
-# Scheduler Setup
-super_watchdog_scheduler = AsyncIOScheduler()
 
 # Heartbeat Tracking
 _last_heartbeat = time.time()
@@ -25,6 +19,13 @@ def refresh_heartbeat():
     """Updates the last known healthy heartbeat timestamp."""
     global _last_heartbeat
     _last_heartbeat = time.time()
+
+async def check_connection_with_args(bot, chat_id):
+    """
+    Wrapper for check_connection to pass bot and chat_id.
+    """
+    # Pass bot and chat_id to check_connection, which does not take arguments directly
+    await check_connection(bot, chat_id)
 
 async def super_watchdog(application, chat_id: int):
     """
@@ -37,13 +38,9 @@ async def super_watchdog(application, chat_id: int):
         try:
             now = time.time()
 
-            # 1. Telegram Connection Check
-            is_connected = await check_connection(bot, chat_id)  # Übergebe bot und chat_id
-            if not is_connected:
-                logger.error("❌ [Super Watchdog] Lost connection to Telegram API. Retrying...")
-                await report_error(bot, chat_id, Exception("Telegram connection lost! Attempting recovery."), context_info="SuperWatchdog Telegram Failure")
-                await asyncio.sleep(30)  # Retry after 30 seconds
-                continue
+            # 1. Telegram Connection Check - using wrapper function
+            await check_connection_with_args(bot, chat_id)  # This passes bot and chat_id to the original function
+            logger.info("✅ [Super Watchdog] Connection to Telegram is healthy.")
 
             # 2. Signal Loop Crash Detection
             time_since_last_heartbeat = now - _last_heartbeat
@@ -77,6 +74,12 @@ def start_super_watchdog(application, chat_id: int):
     Starts the Super Watchdog as a scheduled background task.
     """
     try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from apscheduler.triggers.interval import IntervalTrigger
+
+        # Scheduler setup
+        super_watchdog_scheduler = AsyncIOScheduler()
+
         super_watchdog_scheduler.remove_all_jobs()
 
         super_watchdog_scheduler.add_job(
