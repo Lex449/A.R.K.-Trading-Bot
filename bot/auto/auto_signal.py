@@ -1,5 +1,3 @@
-# bot/auto/auto_signal.py
-
 import asyncio
 import logging
 from telegram import Bot
@@ -19,31 +17,31 @@ config = get_settings()
 
 async def auto_signal_loop():
     """
-    Analysiert fortlaufend konfigurierte Symbole
-    und sendet automatisch Trading-Signale während gültiger Handelszeiten.
+    Continuously analyzes configured symbols
+    and sends trading signals during valid trading hours.
     """
     bot = Bot(token=config["BOT_TOKEN"])
     chat_id = int(config["TELEGRAM_CHAT_ID"])
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)
-        logger.info("[Auto Signal] Webhook gelöscht (falls vorhanden).")
+        logger.info("[Auto Signal] Webhook deleted (if present).")
     except Exception as e:
-        logger.warning(f"[Auto Signal] Fehler beim Löschen des Webhooks: {e}")
+        logger.warning(f"[Auto Signal] Error deleting webhook: {e}")
 
-    logger.info("[Auto Signal] Starte Haupt-Signal-Loop.")
+    logger.info("[Auto Signal] Starting main signal loop.")
 
     while True:
         try:
             # Market Timing Check
             if not is_trading_day() or not is_trading_hours():
-                logger.info("[Auto Signal] Markt geschlossen. Pause 5 Minuten.")
+                logger.info("[Auto Signal] Market closed. Pausing for 5 minutes.")
                 await asyncio.sleep(300)
                 continue
 
             symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
             if not symbols:
-                logger.error("[Auto Signal] Keine Symbole konfiguriert! Pause 1 Minute.")
+                logger.error("[Auto Signal] No symbols configured! Pausing for 1 minute.")
                 await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
                 continue
 
@@ -52,11 +50,11 @@ async def auto_signal_loop():
                     result = await analyze_symbol(symbol)
 
                     if not result:
-                        logger.warning(f"[Auto Signal] Keine Daten für {symbol}. Übersprungen.")
+                        logger.warning(f"[Auto Signal] No data for {symbol}. Skipping.")
                         continue
 
                     if result.get('signal') == "Hold" or result.get('pattern') == "No Pattern":
-                        logger.info(f"[Auto Signal] {symbol} → Hold oder kein Pattern erkannt. Übersprungen.")
+                        logger.info(f"[Auto Signal] {symbol} → Hold or no pattern recognized. Skipping.")
                         continue
 
                     # Risk Assessment
@@ -69,16 +67,16 @@ async def auto_signal_loop():
                     message = (
                         f"⚡ *Auto Trading Signal*\n\n"
                         f"*Symbol:* `{symbol}`\n"
-                        f"*Richtung:* {result['signal']} {'📈' if result['signal'] == 'Buy' else '📉'}\n"
+                        f"*Direction:* {result['signal']} {'📈' if result['signal'] == 'Buy' else '📉'}\n"
                         f"*Short-Term Trend:* {result.get('short_term_trend', '-')}\n"
                         f"*Mid-Term Trend:* {result.get('mid_term_trend', '-')}\n"
                         f"*RSI:* {result.get('rsi', '-')}\n"
                         f"*Pattern:* {result.get('pattern', '-')}\n"
                         f"*Candlestick:* {result.get('candlestick', '-')}\n"
-                        f"*Qualitätsrating:* {'⭐' * result.get('stars', 0)}\n"
-                        f"*Empfohlene Haltedauer:* {result.get('suggested_holding', '-')}\n\n"
+                        f"*Quality Rating:* {'⭐' * result.get('stars', 0)}\n"
+                        f"*Suggested Holding Duration:* {result.get('suggested_holding', '-')}\n\n"
                         f"{risk_message}\n"
-                        f"_Hinweis: Eigenverantwortung beim Handeln._"
+                        f"_Note: Act responsibly when trading._"
                     )
 
                     await bot.send_message(
@@ -87,17 +85,17 @@ async def auto_signal_loop():
                         parse_mode="Markdown",
                         disable_web_page_preview=True
                     )
-                    logger.info(f"[Auto Signal] Signal gesendet für {symbol}.")
+                    logger.info(f"[Auto Signal] Signal sent for {symbol}.")
                     await asyncio.sleep(1.5)
 
                 except Exception as symbol_error:
-                    logger.error(f"[Auto Signal] Fehler bei {symbol}: {symbol_error}")
-                    await report_error(bot, chat_id, symbol_error, context_info=f"AutoSignal für {symbol}")
+                    logger.error(f"[Auto Signal] Error for {symbol}: {symbol_error}")
+                    await report_error(bot, chat_id, symbol_error, context_info=f"AutoSignal for {symbol}")
 
-            logger.info("[Auto Signal] Zyklus abgeschlossen. Pause bis nächste Prüfung.")
+            logger.info("[Auto Signal] Cycle completed. Pausing until next check.")
             await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
 
         except Exception as loop_error:
-            logger.critical(f"[Auto Signal Loop] Schwerer Fehler: {loop_error}")
-            await report_error(bot, chat_id, loop_error, context_info="Fataler Fehler in auto_signal_loop")
+            logger.critical(f"[Auto Signal Loop] Critical error: {loop_error}")
+            await report_error(bot, chat_id, loop_error, context_info="Fatal error in auto_signal_loop")
             await asyncio.sleep(300)
