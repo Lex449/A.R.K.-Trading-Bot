@@ -22,7 +22,6 @@ from bot.handlers.set_my_commands import set_bot_commands
 # === Scheduler & Auto Systems ===
 from bot.auto.daily_scheduler import start_daily_analysis_scheduler
 from bot.auto.heartbeat_scheduler import start_heartbeat
-from bot.auto.watchdog_scheduler import super_watchdog  # Importiere super_watchdog
 
 # === Utilities ===
 from bot.utils.error_reporter import report_error
@@ -54,7 +53,6 @@ async def startup_tasks(application):
         # Schedule tasks
         start_daily_analysis_scheduler(application, chat_id)
         start_heartbeat(application, chat_id)
-        await super_watchdog(application, chat_id)  # Übergebe den chat_id hier
 
         # Set bot commands
         await set_bot_commands(application)
