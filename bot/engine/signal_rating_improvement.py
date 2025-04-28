@@ -1,50 +1,64 @@
 """
-A.R.K. Signal Rating Improvement – Scoring and Quality Control System.
-Rates trading signals dynamically based on pattern quality, volatility, and momentum.
+A.R.K. Signal Rater – Ultra Precision 3.0
+Scores signals dynamically based on pattern strength, volatility conditions, and early trend detection.
+
+Designed for: Flawless Signal Quality Control, Risk-Adaptive Trading, Professional Scalability.
 """
 
-def rate_signal(patterns: list, volatility_info: dict, trend_info: dict = None) -> int:
+def rate_signal(patterns: list, volatility_info: dict = None, trend_info: dict = None) -> int:
     """
-    Calculates a dynamic signal rating between 0 and 100.
+    Dynamically calculates a premium signal rating between 0 and 100.
 
     Args:
-        patterns (list): Detected patterns.
-        volatility_info (dict): Volatility analysis result.
-        trend_info (dict, optional): Early trend detection result.
+        patterns (list): List of detected patterns.
+        volatility_info (dict, optional): Volatility detection output.
+        trend_info (dict, optional): Early trend detection output.
 
     Returns:
-        int: Signal rating score.
+        int: Signal quality score (0–100).
     """
-    if not patterns:
+    if not patterns or not isinstance(patterns, list):
         return 0
 
     try:
         score = 0
 
-        # === Pattern Strength ===
+        # === 1. Pattern Strength Weighting ===
         for p in patterns:
-            if "⭐⭐⭐⭐⭐" in p:
+            stars = p.count("⭐")
+            if stars >= 5:
                 score += 30
-            elif "⭐⭐⭐⭐" in p:
+            elif stars == 4:
                 score += 20
-            elif "⭐⭐⭐" in p:
+            elif stars == 3:
                 score += 10
+            elif stars == 2:
+                score += 5
 
-        # === Volatility Bonus ===
+        # === 2. Volatility Bonus (High Risk-Reward Phase) ===
         if volatility_info and volatility_info.get("volatility_spike"):
             score += 20
 
-        # === Trend Bonus ===
+        # === 3. Trend Alignment Bonus ===
         if trend_info:
-            if trend_info.get("early_trend") == "bullish":
+            early_trend = trend_info.get("early_trend", "").lower()
+            if early_trend in ["bullish", "bearish"]:
                 score += 15
-            elif trend_info.get("early_trend") == "bearish":
-                score += 15
 
-        # === Score Capping ===
-        score = min(score, 100)
+        # === 4. Dynamic Score Adjustment Rules ===
+        if score >= 70:
+            score += 5  # Small elite bonus for ultra-strong setups
+        elif score < 30:
+            score = max(score - 5, 0)  # Penalty for weak setups
 
-        return score
+        # === 5. Score Capping and Finalization ===
+        final_score = min(max(score, 0), 100)
 
-    except Exception:
+        return final_score
+
+    except Exception as e:
+        # Failsafe fallback
+        from bot.utils.logger import setup_logger
+        logger = setup_logger(__name__)
+        logger.error(f"❌ [Signal Rater Error] {e}")
         return 0
