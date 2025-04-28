@@ -1,3 +1,8 @@
+"""
+A.R.K. Internationalization (i18n) Module – Ultra Multilingual Premium Build.
+Handles multilingual text output for clean, scalable and human-like interaction.
+"""
+
 import logging
 from bot.utils.logger import setup_logger
 
@@ -8,11 +13,16 @@ logger = setup_logger(__name__)
 translations = {
     "en": {
         "start": "👋 Hello {user}! Welcome to *A.R.K. Trading Bot 2.0*.\n\nUse /help to view available commands and start trading smarter.",
+        "start_help_hint": "ℹ️ Tip: Use /help anytime to see what I can do for you.",
         "help": "ℹ️ *Available Commands:*\n\n/start – Start the bot\n/help – Command overview\n/analyse [symbol] – Analyze a symbol (e.g., /analyse AAPL)\n/setlanguage [en/de] – Change language\n/signal – Get current trading signals\n/status – Show session statistics\n/shutdown – Stop the bot",
         "analysis_no_symbol": "❌ Please provide a valid symbol. Example: `/analyse AAPL`",
         "set_language": "✅ Language updated successfully. All future messages will be sent in your selected language.",
         "shutdown": "🛑 Bot is shutting down. Stay tuned for the next session!",
-        # Session Tracker Additions
+        "fetching_data_primary": "Fetching market data from primary source (Finnhub)...",
+        "fetching_data_backup": "Primary source failed. Switching to backup (Yahoo Finance)...",
+        "error_primary_source": "Error fetching from Finnhub.",
+        "error_backup_source": "Error fetching from Yahoo Finance.",
+        "analysis_completed": "✅ Analysis completed successfully!",
         "session_title_total": "📊 *Session Overview*",
         "session_title_today": "🌞 *Today’s Report*",
         "session_title_week": "📆 *Weekly Report*",
@@ -29,11 +39,16 @@ translations = {
     },
     "de": {
         "start": "👋 Hallo {user}! Willkommen bei *A.R.K. Trading Bot 2.0*.\n\nNutze /help, um alle verfügbaren Befehle anzuzeigen und smarter zu traden.",
+        "start_help_hint": "ℹ️ Tipp: Mit /help kannst du jederzeit alle Funktionen abrufen.",
         "help": "ℹ️ *Verfügbare Befehle:*\n\n/start – Bot starten\n/help – Befehlsübersicht\n/analyse [Symbol] – Ein Symbol analysieren (z.B. /analyse AAPL)\n/setlanguage [de/en] – Sprache ändern\n/signal – Aktuelle Handelssignale abrufen\n/status – Session-Statistik anzeigen\n/shutdown – Bot stoppen",
         "analysis_no_symbol": "❌ Bitte gib ein gültiges Symbol an. Beispiel: `/analyse AAPL`",
         "set_language": "✅ Sprache erfolgreich aktualisiert. Alle weiteren Nachrichten folgen in der gewählten Sprache.",
         "shutdown": "🛑 Der Bot wird beendet. Bis zum nächsten Einsatz!",
-        # Session Tracker Additions
+        "fetching_data_primary": "Marktdaten werden von der Primärquelle (Finnhub) abgerufen...",
+        "fetching_data_backup": "Primärquelle fehlgeschlagen. Wechsel zur Backup-Quelle (Yahoo Finance)...",
+        "error_primary_source": "Fehler beim Abrufen von Finnhub.",
+        "error_backup_source": "Fehler beim Abrufen von Yahoo Finance.",
+        "analysis_completed": "✅ Analyse erfolgreich abgeschlossen!",
         "session_title_total": "📊 *Session Übersicht*",
         "session_title_today": "🌞 *Bericht Heute*",
         "session_title_week": "📆 *Wochenbericht*",
