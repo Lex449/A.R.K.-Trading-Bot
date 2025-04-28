@@ -1,8 +1,3 @@
-"""
-A.R.K. Signal Command – Premium Ultra Build.
-Detects real trading opportunities across configured symbols.
-"""
-
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.engine.analysis_engine import analyze_symbol
@@ -19,27 +14,27 @@ logger = setup_logger(__name__)
 async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handles the /signal command.
-    Sends live trading signals based on configured symbol list.
+    Sends live trading signals based on the configured symbol list.
     """
     chat_id = update.effective_chat.id
     user_name = update.effective_user.first_name or "Trader"
     language = get_language(chat_id) or "en"
 
     try:
-        # Welcome Message
+        # Send welcome message to user
         await update.message.reply_text(get_text("signal_start", language))
         logger.info(f"[Signal] Command triggered by {user_name} (Chat ID: {chat_id})")
 
-        # Load symbols
+        # Retrieve configured symbols for analysis
         symbols = context.bot_data.get("symbols", [])
         if not symbols:
             await update.message.reply_text(get_text("signal_no_symbols", language))
             logger.warning(f"[Signal] No symbols configured (User: {user_name})")
             return
 
-        signal_count = 0
+        signal_count = 0  # Keep track of valid signals
 
-        # Analyze each symbol
+        # Process each symbol in the list
         for symbol in symbols:
             result = await analyze_symbol(symbol)
 
@@ -47,15 +42,16 @@ async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 logger.info(f"[Signal] No analysis result for {symbol}. Skipping.")
                 continue
 
+            # Skip signals that are "Hold" or have no valid pattern
             if result.get('signal') == "Hold" or result.get('pattern') == "No Pattern":
                 logger.info(f"[Signal] {symbol} – Hold/No Pattern. Skipping.")
                 continue
 
-            # Risk Management & Tracking
+            # Perform risk management and track signal data
             risk_message, _ = await assess_signal_risk(result)
             update_session_tracker(result.get("stars", 0))
 
-            # Build Signal Message
+            # Construct the signal message
             signal_message = (
                 f"📈 *Trading Signal*\n\n"
                 f"*Symbol:* `{symbol}`\n"
@@ -71,11 +67,13 @@ async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 f"_⚡ Precision before quantity. Stay sharp._"
             )
 
+            # Send the message to the user
             await update.message.reply_text(signal_message, parse_mode="Markdown")
             logger.info(f"[Signal] Signal sent for {symbol}")
 
             signal_count += 1
 
+        # If no valid signals were found, inform the user
         if signal_count == 0:
             await update.message.reply_text(get_text("signal_no_valid", language))
             logger.info(f"[Signal] No actionable signals found (User: {user_name})")
