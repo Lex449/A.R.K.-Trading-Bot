@@ -38,7 +38,7 @@ async def super_watchdog(application, chat_id: int):
             now = time.time()
 
             # 1. Telegram Connection Check
-            is_connected = await check_connection(bot, chat_id)
+            is_connected = await check_connection(bot, chat_id)  # Übergebe bot und chat_id
             if not is_connected:
                 logger.error("❌ [Super Watchdog] Lost connection to Telegram API. Retrying...")
                 await report_error(bot, chat_id, Exception("Telegram connection lost! Attempting recovery."), context_info="SuperWatchdog Telegram Failure")
