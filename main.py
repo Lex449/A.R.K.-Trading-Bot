@@ -1,5 +1,3 @@
-# main.py
-
 """
 A.R.K. Bot Main Entry – Ultra Stable Wall Street Version 2.1
 Made in Bali. Engineered with German Precision.
@@ -23,7 +21,7 @@ from bot.handlers.set_my_commands import set_bot_commands
 
 # === KI Engine Systems ===
 from bot.engine.confidence_tuning import tune_confidence
-from bot.utils.session_tracker import get_session_stats  # Angepasst: Importiert get_session_stats()
+from bot.utils.session_tracker import get_session_stats
 
 # === Auto Signal Loop ===
 from bot.auto.auto_signal_loop import auto_signal_loop
@@ -41,7 +39,7 @@ from bot.config.settings import get_settings
 setup_logger(__name__)
 
 # === Allow Nested Event Loops (Railway / Replit) ===
-nest_asyncio.apply()
+nest_asyncio.apply()  # Apply nest_asyncio to handle nested event loops.
 
 # === Load Configuration ===
 config = get_settings()
@@ -100,4 +98,6 @@ async def main():
     await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # We no longer use asyncio.run(), instead using the event loop directly.
+    loop = asyncio.get_event_loop()  # Get the event loop directly
+    loop.run_until_complete(main())  # Run the async main function using the event loop
