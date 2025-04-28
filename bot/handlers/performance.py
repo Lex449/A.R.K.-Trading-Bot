@@ -26,11 +26,13 @@ async def performance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     lang = get_language(chat_id) or "en"
 
     try:
+        # Retrieve the performance summary and send the response
         summary = get_performance_summary(lang)
         await update.message.reply_text(summary, parse_mode="Markdown")
-        logger.info(f"[Performance] Report sent to {user}")
+        logger.info(f"[Performance] Report sent to {user} (Chat ID: {chat_id})")
 
     except Exception as e:
+        # Handle any errors during the performance command
         await report_error(context.bot, chat_id, e, context_info="Performance Command Error")
         logger.error(f"[Performance Error] {e}")
 
@@ -44,10 +46,12 @@ async def winloss(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     lang = get_language(chat_id) or "en"
 
     try:
+        # Generate the win/loss report and send it
         report = generate_win_loss_report(lang)
         await update.message.reply_text(report, parse_mode="Markdown")
-        logger.info(f"[WinLoss] Report sent to {user}")
+        logger.info(f"[WinLoss] Report sent to {user} (Chat ID: {chat_id})")
 
     except Exception as e:
+        # Handle any errors during the win/loss command
         await report_error(context.bot, chat_id, e, context_info="WinLoss Command Error")
         logger.error(f"[WinLoss Error] {e}")
