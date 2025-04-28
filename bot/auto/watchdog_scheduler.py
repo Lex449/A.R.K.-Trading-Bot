@@ -1,7 +1,4 @@
-"""
-A.R.K. Super Watchdog Scheduler – Ultra Maximum Resilience 2025
-Auto-Recovery | Dynamic Heartbeat | Telegram Health Monitoring
-"""
+# bot/auto/watchdog_scheduler.py
 
 import logging
 import time
@@ -18,7 +15,7 @@ from bot.utils.error_reporter import report_error
 logger = setup_logger(__name__)
 config = get_settings()
 
-# Scheduler
+# Scheduler Setup
 super_watchdog_scheduler = AsyncIOScheduler()
 
 # Heartbeat Tracking
@@ -45,7 +42,7 @@ async def super_watchdog(application, chat_id: int):
             if not is_connected:
                 logger.error("❌ [Super Watchdog] Lost connection to Telegram API. Retrying...")
                 await report_error(bot, chat_id, Exception("Telegram connection lost! Attempting recovery."), context_info="SuperWatchdog Telegram Failure")
-                await asyncio.sleep(30)
+                await asyncio.sleep(30)  # Retry after 30 seconds
                 continue
 
             # 2. Signal Loop Crash Detection
@@ -55,11 +52,11 @@ async def super_watchdog(application, chat_id: int):
                 await report_error(bot, chat_id, Exception("Auto-Signal Loop stalled, restarting..."), context_info="SuperWatchdog Loop Restart")
 
                 # Restart Auto-Signal Loop
-                asyncio.create_task(auto_signal_loop())
-                refresh_heartbeat()
+                asyncio.create_task(auto_signal_loop())  # Restart the auto-signal loop
+                refresh_heartbeat()  # Reset the heartbeat
 
-            # 3. Optional Status Ping (alle 6 Stunden)
-            if now % (6 * 3600) < 30:  # Alle 6h ein Statusping
+            # 3. Optional Status Ping (every 6 hours)
+            if now % (6 * 3600) < 30:  # Every 6 hours, send a status ping
                 await bot.send_message(
                     chat_id=chat_id,
                     text="✅ *Status Ping:* A.R.K. Bot läuft stabil.",
@@ -68,12 +65,12 @@ async def super_watchdog(application, chat_id: int):
                 )
                 logger.info("✅ [Super Watchdog] Status ping sent.")
 
-            await asyncio.sleep(30)
+            await asyncio.sleep(30)  # Check every 30 seconds
 
         except Exception as e:
             logger.critical(f"🔥 [Super Watchdog] Fatal Error: {e}")
             await report_error(bot, chat_id, e, context_info="SuperWatchdog Fatal Error")
-            await asyncio.sleep(30)
+            await asyncio.sleep(30)  # Wait and retry after error
 
 def start_super_watchdog(application, chat_id: int):
     """
@@ -84,7 +81,7 @@ def start_super_watchdog(application, chat_id: int):
 
         super_watchdog_scheduler.add_job(
             super_watchdog,
-            trigger=IntervalTrigger(seconds=30),
+            trigger=IntervalTrigger(seconds=30),  # Run every 30 seconds
             args=[application, chat_id],
             id=f"super_watchdog_{chat_id}",
             replace_existing=True,
