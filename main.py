@@ -19,6 +19,10 @@ from bot.handlers.test_analyse import test_analyse
 from bot.handlers.global_error_handler import global_error_handler
 from bot.handlers.set_my_commands import set_bot_commands
 
+# === KI Engine Systems ===
+from bot.engine.confidence_tuning import tune_confidence
+from bot.utils.session_tracker import get_session_stats
+
 # === Auto Signal Loop ===
 from bot.auto.auto_signal_loop import auto_signal_loop
 
