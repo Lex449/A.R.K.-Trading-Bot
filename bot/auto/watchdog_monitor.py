@@ -11,7 +11,7 @@ import time
 from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
 from bot.config.settings import get_settings
-from bot.auto.watchdog_state import get_last_heartbeat  # <<< neu!
+from bot.auto.watchdog_heartbeat import get_last_heartbeat  # Importiere die Funktion für den Heartbeat
 
 # Setup Logger
 logger = setup_logger(__name__)
@@ -28,24 +28,21 @@ async def watchdog_monitor(application):
 
     while True:
         try:
-            # Hole den letzten Heartbeat-Zeitstempel aus der Watchdog State
             last_heartbeat = get_last_heartbeat()
             time_since_last_heartbeat = time.time() - last_heartbeat
 
-            # Überprüfe, ob der Auto-Signal-Loop abgestürzt ist (keine Heartbeats innerhalb von 90 Sekunden)
+            # Wenn der Heartbeat zu lange fehlt, starten wir den Auto-Signal-Loop neu
             if time_since_last_heartbeat > 90:
                 logger.critical("⚠️ [Watchdog] Auto-Signal Loop heartbeat missing! Restart triggered.")
-                # Fehlerbericht senden, dass der Auto-Signal-Loop abgestürzt ist
                 await report_error(bot, chat_id, Exception("Auto-Signal Loop crashed. Restarting..."), context_info="Watchdog Crash Detection")
 
-                # Importiere und starte den Auto-Signal-Loop nur im Fehlerfall (Lazy Import)
+                # Lazy Import von `auto_signal_loop` im Fehlerfall und Neustart
                 from bot.auto.auto_signal_loop import auto_signal_loop
-                asyncio.create_task(auto_signal_loop())  # Neustart des Auto-Signal-Loops
+                asyncio.create_task(auto_signal_loop())
 
-            await asyncio.sleep(30)  # Warte 30 Sekunden, bevor die nächste Überprüfung erfolgt
+            await asyncio.sleep(30)  # Warten 30 Sekunden und überprüfe dann erneut
 
         except Exception as e:
-            # Logge und melde Fehler im Watchdog-Monitor
             logger.critical(f"🔥 [Watchdog] Fatal Watchdog Monitor Error: {e}")
             await report_error(bot, chat_id, e, context_info="Fatal Watchdog Error")
-            await asyncio.sleep(30)  # Warte 30 Sekunden, bevor erneut überprüft wird
+            await asyncio.sleep(30)  # Warten und nach 30 Sekunden erneut versuchen
