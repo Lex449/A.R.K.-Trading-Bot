@@ -1,7 +1,13 @@
+"""
+A.R.K. Signal Handler – Precision Signal Dispatch
+Handles /signal requests with Deep Confidence Boost and Risk Assessment.
+"""
+
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.engine.analysis_engine import analyze_symbol
 from bot.engine.risk_manager import assess_signal_risk
+from bot.engine.deep_confidence_engine import adjust_confidence  # NEU eingebaut
 from bot.utils.session_tracker import update_session_tracker
 from bot.utils.error_reporter import report_error
 from bot.utils.language import get_language
@@ -21,37 +27,42 @@ async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     language = get_language(chat_id) or "en"
 
     try:
-        # Send welcome message to user
+        # Send welcome message
         await update.message.reply_text(get_text("signal_start", language))
         logger.info(f"[Signal] Command triggered by {user_name} (Chat ID: {chat_id})")
 
-        # Retrieve configured symbols for analysis
+        # Get configured symbols
         symbols = context.bot_data.get("symbols", [])
         if not symbols:
             await update.message.reply_text(get_text("signal_no_symbols", language))
             logger.warning(f"[Signal] No symbols configured (User: {user_name})")
             return
 
-        signal_count = 0  # Keep track of valid signals
+        signal_count = 0
 
-        # Process each symbol in the list
         for symbol in symbols:
             result = await analyze_symbol(symbol)
 
             if not result:
-                logger.info(f"[Signal] No analysis result for {symbol}. Skipping.")
+                logger.info(f"[Signal] No data for {symbol}. Skipping.")
                 continue
 
-            # Skip signals that are "Hold" or have no valid pattern
             if result.get('signal') == "Hold" or result.get('pattern') == "No Pattern":
                 logger.info(f"[Signal] {symbol} – Hold/No Pattern. Skipping.")
                 continue
 
-            # Perform risk management and track signal data
-            risk_message, _ = await assess_signal_risk(result)
-            update_session_tracker(result.get("stars", 0))
+            # Deep Confidence Engine Integration
+            raw_confidence = result.get("avg_confidence", 0)
+            confidence = adjust_confidence(raw_confidence)
 
-            # Construct the signal message
+            # Risk Management
+            risk_message, _ = await assess_signal_risk(result)
+
+            # Session Update
+            stars = 5 if confidence >= 70 else 4 if confidence >= 65 else 3
+            update_session_tracker(stars=stars, confidence=confidence)
+
+            # Build Signal Message
             signal_message = (
                 f"📈 *Trading Signal*\n\n"
                 f"*Symbol:* `{symbol}`\n"
@@ -61,19 +72,18 @@ async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 f"*RSI:* {result.get('rsi', '-')}\n"
                 f"*Pattern:* {result.get('pattern', '-')}\n"
                 f"*Candlestick:* {result.get('candlestick', '-')}\n"
-                f"*Rating:* {result.get('stars', 0)} ⭐\n"
+                f"*Rating:* {stars} ⭐\n"
+                f"*Adjusted Confidence:* `{confidence:.1f}%`\n"
                 f"*Suggested Holding:* {result.get('suggested_holding', '-')}\n\n"
                 f"{risk_message}\n"
                 f"_⚡ Precision before quantity. Stay sharp._"
             )
 
-            # Send the message to the user
             await update.message.reply_text(signal_message, parse_mode="Markdown")
             logger.info(f"[Signal] Signal sent for {symbol}")
 
             signal_count += 1
 
-        # If no valid signals were found, inform the user
         if signal_count == 0:
             await update.message.reply_text(get_text("signal_no_valid", language))
             logger.info(f"[Signal] No actionable signals found (User: {user_name})")
