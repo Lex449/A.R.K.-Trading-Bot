@@ -1,6 +1,8 @@
 """
 A.R.K. Risk-Reward Analyzer – Smart Trade Evaluation System.
 Estimates realistic reward/risk ratios for smarter entries and safer trades.
+
+Ultra Masterclass Build – Precision meets Practicality.
 """
 
 import pandas as pd
@@ -53,24 +55,26 @@ class RiskRewardAnalyzer:
             raise ValueError(self._error_message("invalid_input"))
 
         try:
-            recent_closes = df["c"].tail(20)
+            # Work on safe copies
             recent_highs = df["h"].tail(20)
             recent_lows = df["l"].tail(20)
+            recent_closes = df["c"].tail(20)
 
             current_price = recent_closes.iloc[-1]
-            recent_high = recent_highs.max()
-            recent_low = recent_lows.min()
+            highest_high = recent_highs.max()
+            lowest_low = recent_lows.min()
 
             if combined_action == "Long 📈":
-                stop_loss = recent_low * 0.995  # 0.5% under recent low
-                target = current_price * 1.015  # 1.5% above current price
+                stop_loss = lowest_low * 0.995
+                target = current_price * 1.015
             else:  # Short 📉
-                stop_loss = recent_high * 1.005  # 0.5% above recent high
-                target = current_price * 0.985  # 1.5% below current price
+                stop_loss = highest_high * 1.005
+                target = current_price * 0.985
 
             risk = abs(current_price - stop_loss)
             reward = abs(target - current_price)
 
+            # No Risk no Trade
             if risk == 0:
                 return None
 
@@ -85,5 +89,6 @@ class RiskRewardAnalyzer:
                 "risk_reward_ratio": risk_reward_ratio
             }
 
-        except Exception:
+        except Exception as e:
+            # Fail-safe handling
             return None
