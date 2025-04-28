@@ -1,8 +1,3 @@
-"""
-A.R.K. List Timezones Handler – World-Class UX.
-Provides users with a structured, readable list of all supported timezones.
-"""
-
 import pytz
 from telegram import Update
 from telegram.ext import ContextTypes
