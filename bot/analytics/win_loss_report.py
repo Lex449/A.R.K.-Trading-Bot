@@ -1,3 +1,8 @@
+"""
+A.R.K. Win/Loss Report Generator – Detailed Session Snapshots
+Generates time-stamped reports of trading performance.
+"""
+
 from datetime import datetime
 from bot.analytics.performance_tracker import get_performance_summary
 from bot.utils.logger import setup_logger
@@ -8,20 +13,14 @@ logger = setup_logger(__name__)
 
 def generate_win_loss_report(lang: str = "en") -> str:
     """
-    Erstellt einen detaillierten Win/Loss-Performance-Report mit Mehrsprachigkeit.
-
-    Args:
-        lang (str): Die gewünschte Sprache für den Report ("en" oder "de").
-
-    Returns:
-        str: Formatierter Report für die Session-Übersicht.
+    Generates a detailed Win/Loss Report including timestamps and performance snapshot.
     """
+
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     performance = get_performance_summary(lang)
 
-    logger.info(f"[Win/Loss Report] Bericht generiert am {timestamp}.")
+    logger.info(f"[Win/Loss Report] Report generated at {timestamp}.")
 
-    # Sprachspezifische Templates
     templates = {
         "en": {
             "title": "📊 *Win/Loss Report*",
@@ -35,7 +34,7 @@ def generate_win_loss_report(lang: str = "en") -> str:
         }
     }
 
-    t = templates.get(lang.lower(), templates["en"])  # fallback to English if language is unknown
+    t = templates.get(lang.lower(), templates["en"])
 
     return (
         f"{t['title']}\n"
