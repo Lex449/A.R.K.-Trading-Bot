@@ -1,6 +1,6 @@
 """
 A.R.K. Analysis Engine – Full Signal Suite.
-Candle Patterns, ATR Volatility, Risk-Reward Profil – alles modular verbunden.
+Candle Patterns, ATR Volatility, Risk-Reward Profile – Modular und Ultra Stabil.
 """
 
 import pandas as pd
@@ -11,31 +11,30 @@ from bot.engine.data_loader import fetch_market_data
 
 async def analyze_symbol(symbol: str) -> dict:
     """
-    Master Function to analyze a symbol comprehensively.
+    Master Function: Analysiert ein Symbol umfassend.
 
     Args:
-        symbol (str): Trading symbol (e.g., AAPL, TSLA).
+        symbol (str): Trading-Symbol (z.B. AAPL, TSLA).
 
     Returns:
-        dict: Full analysis package.
+        dict: Vollständiges Analysepaket oder None bei Fehlern.
     """
-
-    # === 1. Fetch live data ===
+    # === 1. Daten abrufen ===
     df = await fetch_market_data(symbol)
 
     if df is None or len(df) < 20:
         return None
 
-    # === 2. Pattern Recognition ===
+    # === 2. Mustererkennung ===
     patterns = detect_patterns(df)
 
-    # === 3. Volatility Detection (ATR etc.) ===
+    # === 3. Volatilitätsanalyse ===
     volatility_info = await detect_volatility(df)
 
-    # === 4. Risk-Reward Evaluation ===
+    # === 4. Risiko-Rendite-Bewertung ===
     risk_reward_info = await assess_risk_reward(df)
 
-    # === 5. Build full Analysis Package ===
+    # === 5. Entscheidungslogik ===
     combined_action = determine_action(patterns, volatility_info)
 
     avg_confidence = calculate_confidence(patterns)
@@ -52,12 +51,11 @@ async def analyze_symbol(symbol: str) -> dict:
 
 def determine_action(patterns: list, volatility_info: dict) -> str:
     """
-    Determines whether Long / Short / Neutral based on patterns + volatility.
+    Leitet die Aktion (Long, Short, Neutral) basierend auf Mustern und Volatilität ab.
 
     Returns:
-        str: Action suggestion.
+        str: Handlungsempfehlung.
     """
-
     strong_patterns = [p for p in patterns if "Bullish" in p]
     weak_patterns = [p for p in patterns if "Bearish" in p]
 
@@ -72,12 +70,11 @@ def determine_action(patterns: list, volatility_info: dict) -> str:
 
 def calculate_confidence(patterns: list) -> float:
     """
-    Calculates average confidence score based on pattern ratings.
+    Berechnet die durchschnittliche Signalstärke basierend auf den Pattern-Bewertungen.
 
     Returns:
-        float: Average confidence.
+        float: Durchschnittliches Vertrauensniveau.
     """
-
     if not patterns:
         return 0.0
 
