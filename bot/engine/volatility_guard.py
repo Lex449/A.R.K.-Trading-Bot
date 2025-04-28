@@ -1,53 +1,62 @@
 """
-A.R.K. Volatility Guard – Smart Signal Filtering based on Live Market Conditions.
-Improves signal quality by dynamically adapting sensitivity.
+A.R.K. Volatility Guard – Ultra Adaptive Smart Filtering Engine 3.0
+Dynamic Signal Adjustment based on Live Volatility.
 """
 
 import statistics
 
-def is_market_high_volatility(candles: list) -> bool:
+def is_market_high_volatility(candles: list[dict]) -> bool:
     """
-    Detects if the market is currently in a high volatility phase.
+    Detects if the market is experiencing a high-volatility phase.
 
     Args:
-        candles (list): List of recent candle dictionaries with 'high', 'low' keys.
+        candles (list[dict]): List of recent candles with 'high' and 'low' values.
 
     Returns:
-        bool: True if high volatility detected, else False.
+        bool: True if high volatility is detected, otherwise False.
     """
-    if len(candles) < 10:
-        return False  # Not enough data to judge volatility
 
-    # Calculate % range for each candle
-    ranges = []
-    for candle in candles[-10:]:  # Last 10 candles
-        high = candle.get("high")
-        low = candle.get("low")
-        if high and low and high > low:
-            range_percent = ((high - low) / low) * 100
-            ranges.append(range_percent)
+    if not candles or len(candles) < 10:
+        return False  # Not enough data to determine
 
-    # Check average volatility
-    if not ranges:
+    try:
+        ranges = [
+            ((candle["high"] - candle["low"]) / candle["low"]) * 100
+            for candle in candles[-10:]
+            if candle.get("high") and candle.get("low") and candle["high"] > candle["low"]
+        ]
+
+        if not ranges:
+            return False
+
+        avg_volatility = statistics.mean(ranges)
+        std_dev_volatility = statistics.stdev(ranges) if len(ranges) > 1 else 0
+
+        # Smart threshold logic: if average or volatility deviation is high
+        return avg_volatility > 1.2 or std_dev_volatility > 0.6
+
+    except Exception:
         return False
-
-    avg_volatility = statistics.mean(ranges)
-
-    # Threshold: If >1.2% on average → high volatility
-    return avg_volatility > 1.2
 
 def adjust_signal_quality(confidence: float, high_volatility: bool) -> float:
     """
-    Dynamically adjusts signal confidence based on volatility.
+    Adjusts the confidence score dynamically based on market volatility.
 
     Args:
-        confidence (float): Original confidence score.
-        high_volatility (bool): Whether market is volatile.
+        confidence (float): Original confidence value.
+        high_volatility (bool): True if the market is volatile.
 
     Returns:
-        float: Adjusted confidence score.
+        float: Adjusted confidence score, bounded between 0 and 100.
     """
-    if high_volatility:
-        return confidence * 0.85  # Decrease quality slightly (riskier environment)
-    else:
-        return confidence * 1.05  # Boost slighty (calmer market)
+
+    try:
+        if high_volatility:
+            adjusted = confidence * 0.85  # Reduce in high-risk phases
+        else:
+            adjusted = confidence * 1.07  # Boost slightly in stable phases
+
+        return round(max(0.0, min(adjusted, 100.0)), 2)
+
+    except Exception:
+        return confidence
