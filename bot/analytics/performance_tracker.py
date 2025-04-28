@@ -1,11 +1,13 @@
 """
 A.R.K. Performance Tracker – Ultra Premium Live Monitoring
-Tracks quality, confidence, and accuracy of all generated signals.
+Tracks quality, confidence, and accuracy of all generated signals with auto-backup.
 """
 
+import json
+import os
 import logging
 from bot.utils.logger import setup_logger
-from bot.utils.i18n import get_text  # Für Multilingualität
+from bot.utils.i18n import get_text
 
 # Setup structured logger
 logger = setup_logger(__name__)
@@ -18,6 +20,18 @@ performance_data = {
     "weak_signals": 0,
     "total_confidence": 0.0,
 }
+
+# Auto-Backup File
+PERFORMANCE_FILE = "performance_data.json"
+
+# Load existing backup if available
+if os.path.exists(PERFORMANCE_FILE):
+    try:
+        with open(PERFORMANCE_FILE, "r", encoding="utf-8") as f:
+            performance_data.update(json.load(f))
+            logger.info("✅ [Performance Tracker] Previous session data loaded.")
+    except Exception as e:
+        logger.warning(f"⚠️ [Performance Tracker] Could not load performance backup: {e}")
 
 def update_performance(stars: int, confidence: float, lang: str = "en"):
     """
@@ -37,6 +51,18 @@ def update_performance(stars: int, confidence: float, lang: str = "en"):
         performance_data["weak_signals"] += 1
         logger.info(f"⚠️ [Performance Tracker] Weak Signal ({stars}⭐) | Confidence: {confidence:.2f}%")
 
+    # Save immediately after every update
+    _save_performance_data()
+
+def _save_performance_data():
+    """Save current performance data to JSON file."""
+    try:
+        with open(PERFORMANCE_FILE, "w", encoding="utf-8") as f:
+            json.dump(performance_data, f, indent=4)
+        logger.info("💾 [Performance Tracker] Performance data saved successfully.")
+    except Exception as e:
+        logger.error(f"❌ [Performance Tracker] Failed to save performance data: {e}")
+
 def get_performance_summary(lang: str = "en") -> str:
     """
     Returns a detailed real-time performance report.
@@ -49,7 +75,6 @@ def get_performance_summary(lang: str = "en") -> str:
     avg_confidence = (performance_data["total_confidence"] / total) if total else 0.0
     accuracy = (strong / total * 100) if total else 0.0
 
-    # Templates
     templates = {
         "en": {
             "title": "📈 *Performance Overview*",
