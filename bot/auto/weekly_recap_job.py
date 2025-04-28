@@ -1,6 +1,6 @@
 """
-A.R.K. Weekly Recap – Full Weekly Session + Motivation.
-Built for elite long-term traders.
+A.R.K. Weekly Recap – Full Strategic Reflection and Reset Engine.
+Engineered for elite traders to sharpen long-term consistency and mindset.
 """
 
 from telegram import Bot
@@ -11,35 +11,40 @@ from bot.config.settings import get_settings
 from bot.utils.i18n import get_text
 from bot.utils.language import get_language
 
-# Setup Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 config = get_settings()
 
 async def weekly_recap_job(application, chat_id=None):
     """
-    Sends weekly recap and resets weekly tracker.
+    Sends a detailed weekly performance recap + motivational reset.
+    Also resets weekly session data.
     """
+
     try:
         bot = application.bot if application else Bot(token=config["BOT_TOKEN"])
         target_chat_id = chat_id or int(config["TELEGRAM_CHAT_ID"])
 
-        # Retrieve the language for the user
         lang = get_language(target_chat_id) or "en"
 
-        # Fetch the weekly report
+        # === Retrieve Weekly Report ===
         weekly_report = get_weekly_report()
 
-        # Motivational text
+        # === Motivational End of Week Text ===
         motivation = get_text("weekly_motivation", lang) or (
-            "\n\n🏆 *End of Week Reflection:*\n"
-            "Success isn't built in a day, but momentum is.\n"
-            "Reset. Refocus. Reload. 🚀"
+            "\n\n🏆 *Weekly Reflection:*\n"
+            "_Winners reset, refocus, and reload._\n"
+            "The market waits for no one. 🚀"
         )
 
-        # Compose message
-        message = f"📈 *Weekly Trading Recap*\n\n{weekly_report}{motivation}"
+        # === Full Message Composition ===
+        message = (
+            f"📈 *Weekly Trading Recap*\n\n"
+            f"{weekly_report}"
+            f"{motivation}"
+        )
 
-        # Send the message to the user
+        # === Send Recap Message ===
         await bot.send_message(
             chat_id=target_chat_id,
             text=message,
@@ -47,12 +52,17 @@ async def weekly_recap_job(application, chat_id=None):
             disable_web_page_preview=True
         )
 
-        logger.info(f"✅ Weekly Recap sent successfully to {target_chat_id}.")
+        logger.info(f"✅ Weekly Recap successfully sent to {target_chat_id}.")
 
-        # Reset Weekly Tracker
+        # === Reset Weekly Session Tracker ===
         reset_weekly_data()
-        logger.info("♻️ Weekly session data reset successfully.")
+        logger.info(f"♻️ Weekly session data reset successfully for {target_chat_id}.")
 
     except Exception as e:
-        await report_error(bot, chat_id, e, context_info="Weekly Recap Job")
-        logger.error(f"❌ Error during Weekly Recap: {e}")
+        await report_error(
+            application.bot if application else Bot(token=config["BOT_TOKEN"]),
+            chat_id or int(config["TELEGRAM_CHAT_ID"]),
+            e,
+            context_info="Weekly Recap Job"
+        )
+        logger.error(f"❌ Critical error during Weekly Recap: {e}")
