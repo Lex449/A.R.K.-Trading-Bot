@@ -1,25 +1,48 @@
+"""
+A.R.K. Health Check Handler – Ultra Premium Resilience Build.
+Provides bilingual system health confirmation with maximum reliability.
+"""
+
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
+from bot.utils.logger import setup_logger
+from bot.utils.error_reporter import report_error
+
+# Setup structured logger
+logger = setup_logger(__name__)
 
 async def health_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Responds to the /health command.
-    Bilingual, stable, minimalistic.
+    Bilingual, ultra-stable, clean design.
     """
     chat_id = update.effective_chat.id
-    lang = get_language(chat_id) or "en"  # Get the preferred language of the user, defaulting to 'en'
+    user = update.effective_user.first_name or "Trader"
+    lang = get_language(chat_id) or "en"
 
     try:
-        # Send health check success message
-        health_message = get_text("health_ok", lang)  # Health check success message
-        await update.message.reply_text(health_message, parse_mode="Markdown")
+        # Compose success message
+        health_message = get_text("health_ok", lang) or "✅ *System Health Check:* All systems operational."
+        
+        await update.message.reply_text(
+            health_message,
+            parse_mode="Markdown"
+        )
+
+        logger.info(f"[HealthCheck] System health confirmed for {user} (Chat ID: {chat_id}).")
 
     except Exception as e:
-        # Send failure message in case of an error
-        error_message = get_text("health_fail", lang)  # Health check failure message
-        await update.message.reply_text(error_message, parse_mode="Markdown")
+        # Compose fallback error message
+        fallback_message = get_text("health_fail", lang) or "❌ *System Health Check:* Failure detected."
 
-        # Log the error for further investigation (raise to trigger global error handler)
-        raise Exception(f"Health check failed: {str(e)}")
+        await update.message.reply_text(
+            fallback_message,
+            parse_mode="Markdown"
+        )
+
+        logger.error(f"[HealthCheck] Health check failed for {user}: {e}")
+
+        # Report the error via Telegram alert system
+        await report_error(context.bot, chat_id, e, context_info="Health Check Command Error")
