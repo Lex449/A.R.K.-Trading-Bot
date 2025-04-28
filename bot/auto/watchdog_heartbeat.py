@@ -1,5 +1,3 @@
-# bot/auto/watchdog_heartbeat.py
-
 import time
 
 # === Internal Heartbeat Memory ===
