@@ -1,6 +1,6 @@
 """
 A.R.K. Ultra Watchdog Monitor – 2025 Version
-Autonomous Crash Detection and Recovery System
+Autonomous Crash Detection and Recovery System.
 """
 
 import asyncio
@@ -20,14 +20,14 @@ _last_heartbeat = time.time()
 
 def refresh_watchdog():
     """
-    Should be called periodically inside auto_signal_loop to update the heartbeat.
+    Refreshes the heartbeat timestamp.
     """
     global _last_heartbeat
     _last_heartbeat = time.time()
 
 async def watchdog_monitor(application):
     """
-    Monitors the auto_signal_loop and restarts it if crash is detected.
+    Monitors the auto_signal_loop and restarts it if a crash is detected.
     """
     bot = application.bot
     chat_id = int(config["TELEGRAM_CHAT_ID"])
@@ -39,14 +39,14 @@ async def watchdog_monitor(application):
             time_since_last_heartbeat = time.time() - _last_heartbeat
 
             if time_since_last_heartbeat > 90:
-                logger.error(f"⚠️ [Watchdog] Detected signal loop crash! Restarting...")
-                await report_error(bot, chat_id, Exception("Auto-Signal Loop crashed. Auto-restarting..."), context_info="Watchdog Crash Detection")
+                logger.critical("⚠️ [Watchdog] Detected signal loop crash! Restarting AutoSignalLoop...")
+                await report_error(bot, chat_id, Exception("Auto-Signal Loop crashed. Restarting..."), context_info="Watchdog Crash Detection")
 
-                # Restart the Auto Signal Loop
+                # Restart Auto Signal Loop
                 asyncio.create_task(auto_signal_loop())
                 refresh_watchdog()
 
-            await asyncio.sleep(30)  # Check every 30 seconds
+            await asyncio.sleep(30)
 
         except Exception as e:
             logger.critical(f"🔥 [Watchdog] Fatal Error: {e}")
