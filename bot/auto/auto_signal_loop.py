@@ -1,10 +1,3 @@
-# bot/auto/auto_signal_loop.py
-
-"""
-A.R.K. Auto Signal Loop – Ultra Wall Street Surveillance.
-Including Breaking News Detection, Health Check Switching, Premium Signal Handling.
-"""
-
 import asyncio
 import logging
 from telegram import Bot
