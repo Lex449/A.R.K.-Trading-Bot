@@ -1,8 +1,8 @@
-# bot/engine/auto_signal_loop.py
+# bot/auto/auto_signal_loop.py
 
 """
 A.R.K. Auto Signal Loop – Ultra Wall Street Surveillance.
-Including Breaking News Detection for Maximum Market Awareness.
+Including Breaking News Detection, Health Check Switching, Premium Signal Handling.
 """
 
 import asyncio
@@ -14,8 +14,9 @@ from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_n
 from bot.utils.ultra_signal_builder import build_ultra_signal
 from bot.utils.session_tracker import update_session_tracker
 from bot.utils.error_reporter import report_error
-from bot.config.settings import get_settings
 from bot.utils.market_time import is_trading_day, is_trading_hours
+from bot.utils.news_health_checker import check_finnhub_health
+from bot.config.settings import get_settings
 
 # Setup structured logger
 logger = logging.getLogger(__name__)
@@ -31,41 +32,44 @@ async def auto_signal_loop(bot: Bot):
     """
 
     chat_id = int(config["TELEGRAM_CHAT_ID"])
+    symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
+    signal_interval_sec = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
+    language = config.get("BOT_LANGUAGE", "en")
+
+    if not symbols:
+        logger.error("❌ [Auto Signal Loop] No symbols configured. Exiting loop.")
+        return
+
     logger.info("🚀 [Auto Signal Loop] Ultra-Premium Monitoring initialized...")
 
+    last_news_check = None
+
     try:
-        symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
-        signal_interval_sec = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
-        language = config.get("BOT_LANGUAGE", "en")
-
-        if not symbols:
-            logger.error("❌ [Auto Signal Loop] No symbols configured. Exiting loop.")
-            return
-
-        last_news_check = None
-
         while True:
             # === Check Market State ===
             if not is_trading_day() or not is_trading_hours():
-                logger.info("⏳ [Auto Signal Loop] Market closed or holiday. Sleeping 5 min.")
+                logger.info("⏳ Market closed or holiday. Sleeping 5 min.")
                 await asyncio.sleep(300)
                 continue
 
-            logger.info(f"🔎 [Auto Signal Loop] Scanning {len(symbols)} symbols...")
+            # === Health Check for News Source ===
+            await check_finnhub_health()
 
-            # === Symbol Analysis ===
+            logger.info(f"🔎 Scanning {len(symbols)} symbols...")
+
             for symbol in symbols:
                 try:
+                    # === Symbol Analysis ===
                     result = await analyze_symbol(symbol)
                     if not result:
                         continue
 
-                    # Move Detection
+                    # === Move Detection ===
                     move_alert = await detect_move_alert(result.get("df"))
                     if move_alert:
                         await send_move_alert(bot, chat_id, symbol, move_alert, language)
 
-                    # Premium Signal Detection
+                    # === Premium Signal Detection ===
                     valid_patterns = [
                         p for p in result.get("patterns", [])
                         if "⭐" in p and p.count("⭐") >= 3
@@ -95,14 +99,13 @@ async def auto_signal_loop(bot: Bot):
                     await asyncio.sleep(1.5)  # Respect Telegram rate limits
 
                 except Exception as symbol_error:
-                    logger.error(f"❌ [Auto Signal] Error for {symbol}: {symbol_error}")
+                    logger.error(f"❌ [Auto Signal] Error analyzing {symbol}: {symbol_error}")
                     await report_error(bot, chat_id, symbol_error, context_info=f"Auto Signal Symbol: {symbol}")
 
-            # === Breaking News Detection (after each cycle) ===
+            # === Breaking News Detection (every 5 minutes) ===
             try:
                 now = asyncio.get_event_loop().time()
 
-                # Check news only every 5 minutes to avoid overload
                 if last_news_check is None or (now - last_news_check) >= 300:
                     breaking_news = await detect_breaking_news()
 
