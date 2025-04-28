@@ -1,3 +1,5 @@
+# bot/utils/error_reporter.py
+
 """
 A.R.K. Error Reporter – Maximum Protection Build.
 Saves all errors locally + Telegram instant alert.
@@ -24,7 +26,6 @@ async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: s
     - Saves full traceback locally (.log)
     - Sends a summarized alert via Telegram
     """
-
     try:
         # === Build full error details for local saving ===
         timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
@@ -36,7 +37,7 @@ async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: s
         )
 
         # === Save detailed error to local file ===
-        with open(ERROR_LOG_FILE, "a", encoding="utf-8") as f:
+        with open(ERROR_LOG_FILE, "a", encoding="utf-8", errors="ignore") as f:
             f.write(full_error + "\n" + "="*80 + "\n")
 
         logger.error(f"[Reported Error] {context_info} | {error}")
@@ -46,12 +47,12 @@ async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: s
             f"⚠️ *Critical Bot Error*\n\n"
             f"*Context:* `{context_info}`\n"
             f"*Error:* `{str(error)}`\n"
-            f"```{''.join(traceback.format_exception_only(type(error), error)).strip()}```"
+            f"```\n{''.join(traceback.format_exception_only(type(error), error))}\n```"
         )
 
         # Telegram size limit handling
-        if len(short_error) > 4000:
-            short_error = short_error[:3990] + "`...`"
+        if len(short_error) > 3990:
+            short_error = short_error[:3990] + "\n```...```"
 
         await bot.send_message(chat_id=chat_id, text=short_error, parse_mode="Markdown")
 
