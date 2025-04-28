@@ -1,38 +1,45 @@
+# bot/utils/volatility_alert_builder.py
+
 """
 A.R.K. Volatility Alert Builder – Multilingual Ultra Precision Notifications.
 """
 
+from bot.utils.i18n import get_text
+
 def build_volatility_alert(symbol: str, move_data: dict, lang: str = "en") -> str:
     """
-    Builds a volatility alert text based on move detection.
+    Builds a multilingual volatility alert based on movement detection.
 
     Args:
-        symbol (str): Trading symbol
-        move_data (dict): Move and volume info
-        lang (str): Language ("en" or "de")
+        symbol (str): Trading symbol (e.g., AAPL)
+        move_data (dict): Movement data containing "move_percent", "volume_spike", "trend"
+        lang (str): "en" (default) or "de"
 
     Returns:
-        str: Structured alert message
+        str: Structured volatility alert message.
     """
-    move_percent = move_data["move_percent"]
-    volume_spike = move_data["volume_spike"]
-    trend = move_data["trend"]
+    try:
+        move_percent = move_data["move_percent"]
+        volume_spike = move_data["volume_spike"]
+        trend = move_data["trend"]
+    except KeyError as e:
+        # Critical fallback if move_data is incomplete
+        raise ValueError(f"[Volatility Alert Builder] Missing key in move_data: {e}")
 
-    if lang == "de":
-        return (
-            f"🚨 *Starke Bewegung erkannt!*\n\n"
-            f"*Symbol:* `{symbol}`\n"
-            f"*Bewegung:* `{move_percent:.2f}%`\n"
-            f"*Volumenanstieg:* `{volume_spike:.1f}%` über Durchschnitt\n"
-            f"*Trend:* {trend}\n\n"
-            f"⚡ _Bleib fokussiert. Chancen entstehen im Sturm._"
-        )
-    else:
-        return (
-            f"🚨 *Strong Move Detected!*\n\n"
-            f"*Symbol:* `{symbol}`\n"
-            f"*Move:* `{move_percent:.2f}%`\n"
-            f"*Volume Spike:* `{volume_spike:.1f}%` above average\n"
-            f"*Trend:* {trend}\n\n"
-            f"⚡ _Stay sharp. Opportunities are born in volatility._"
-        )
+    # === Build Message Dynamically via i18n ===
+    header = get_text("volatility_alert_header", lang)
+    move_label = get_text("volatility_alert_move", lang)
+    volume_label = get_text("volatility_alert_volume", lang)
+    trend_label = get_text("volatility_alert_trend", lang)
+    footer = get_text("volatility_alert_footer", lang)
+
+    message = (
+        f"{header}\n\n"
+        f"*Symbol:* `{symbol}`\n"
+        f"*{move_label}:* `{move_percent:.2f}%`\n"
+        f"*{volume_label}:* `{volume_spike:.1f}%`\n"
+        f"*{trend_label}:* {trend}\n\n"
+        f"{footer}"
+    )
+
+    return message
