@@ -1,12 +1,13 @@
 """
 A.R.K. News Alert Engine – Ultra Premium Breaking News Detection.
-Finnhub First, Yahoo Finance Backup. Optimized for Speed, Relevance, and Multilingual Alerts.
+Finnhub First, Yahoo Finance Backup. Optimized for Speed, Impact Scoring, and Multilingual Alerts.
 """
 
 import aiohttp
 from datetime import datetime
 from bot.config.settings import get_settings
 from bot.utils.news_health_checker import use_finnhub
+from bot.utils.breaking_news_filter import is_breaking_news
 from bot.utils.logger import setup_logger
 
 # Setup Logger
@@ -21,22 +22,8 @@ symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
 FINNHUB_ENDPOINT = f"https://finnhub.io/api/v1/news?category=general&token={finnhub_api_key}"
 YAHOO_ENDPOINT_TEMPLATE = "https://feeds.finance.yahoo.com/rss/2.0/headline?s={symbol}&region=US&lang=en-US"
 
-# Critical keywords tuned for stock traders
-IMPORTANT_KEYWORDS = [
-    "inflation", "rate hike", "interest rates", "recession", "market crash", "market turmoil", "geopolitical risk",
-    "defaults", "bankruptcy", "fed", "fomc", "central bank", "monetary policy", "rate decision",
-    "earnings miss", "earnings beat", "guidance cut", "guidance lowered", "profit warning", "revenue miss",
-    "layoffs", "job cuts", "hiring freeze", "leadership change", "ceo resigns", "data breach", "regulatory probe", "sec investigation",
-    "semiconductor shortage", "chip ban", "ai boom", "electric vehicles", "battery fire", "solar subsidy cuts", "military contract",
-    "acquisition", "merger", "takeover", "buyout", "spinoff",
-    "apple", "microsoft", "nvidia", "tesla", "meta", "amazon", "google", "alphabet", "amd", "netflix", "shopify", "coinbase",
-    "boeing", "lockheed martin", "raytheon", "northrop grumman", "broadcom", "block inc", "paypal", "rivian", "palantir",
-    "snowflake", "exxon mobil", "unitedhealth", "tractor supply", "carnival", "supermicro", "enphase", "plug power",
-    "first solar", "sunrun", "blink charging", "chargepoint", "ionq", "rigetti", "trump media", "gamestop", "amc",
-    "beyond big", "sofi", "upstart",
-]
-
 async def fetch_finnhub_news() -> list:
+    """Fetches the latest general market news from Finnhub."""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(FINNHUB_ENDPOINT, timeout=10) as response:
@@ -49,6 +36,7 @@ async def fetch_finnhub_news() -> list:
     return []
 
 async def fetch_yahoo_news(symbol: str) -> str:
+    """Fetches RSS feed headlines from Yahoo Finance."""
     try:
         async with aiohttp.ClientSession() as session:
             url = YAHOO_ENDPOINT_TEMPLATE.format(symbol=symbol)
@@ -62,6 +50,10 @@ async def fetch_yahoo_news(symbol: str) -> str:
     return ""
 
 async def detect_breaking_news() -> list:
+    """
+    Detects important breaking news headlines based on critical keywords and impact scoring.
+    Returns a list of relevant breaking news items.
+    """
     breaking_news = []
     now = datetime.utcnow()
 
@@ -71,22 +63,20 @@ async def detect_breaking_news() -> list:
             try:
                 published_time = datetime.utcfromtimestamp(article.get("datetime", 0))
                 age_minutes = (now - published_time).total_seconds() / 60
-                if age_minutes > 20:
-                    continue
+                headline = article.get("headline", "")
 
-                headline = article.get("headline", "").lower()
-                if any(keyword in headline for keyword in IMPORTANT_KEYWORDS):
+                if age_minutes <= 20 and is_breaking_news(headline):
                     breaking_news.append({
                         "headline": article.get("headline", ""),
                         "source": article.get("source", "Unknown"),
-                        "url": article.get("url", "")
+                        "url": article.get("url", "#")
                     })
             except Exception:
                 continue
     else:
         for symbol in symbols:
             raw_rss = await fetch_yahoo_news(symbol)
-            if any(keyword in raw_rss.lower() for keyword in IMPORTANT_KEYWORDS):
+            if any(is_breaking_news(line) for line in raw_rss.lower().splitlines()):
                 breaking_news.append({
                     "headline": f"Important event detected for {symbol}",
                     "source": "Yahoo Finance RSS",
@@ -96,15 +86,16 @@ async def detect_breaking_news() -> list:
     return breaking_news
 
 async def format_breaking_news(news_list: list, lang: str = "en") -> str:
+    """Formats the breaking news headlines into a single, beautiful message."""
     if not news_list:
         return ""
 
     if lang == "de":
         header = "📰 *Breaking News erkannt!*"
-        footer = "\n_Aktuelle Ereignisse könnten den Markt stark beeinflussen._"
+        footer = "\n_Aktuelle Ereignisse könnten die Märkte erheblich beeinflussen._"
     else:
         header = "📰 *Breaking News Detected!*"
-        footer = "\n_Current events may heavily impact the market._"
+        footer = "\n_Current events may heavily impact the markets._"
 
     parts = [header]
 
@@ -113,7 +104,7 @@ async def format_breaking_news(news_list: list, lang: str = "en") -> str:
         source = news.get("source", "Unknown")
         url = news.get("url", "#")
 
-        parts.append(f"• *{headline}*\nSource: `{source}`\n[Details]({url})")
+        parts.append(f"• *{headline}*\n_Source: {source}_\n[Details]({url})")
 
     parts.append(footer)
     return "\n\n".join(parts)
