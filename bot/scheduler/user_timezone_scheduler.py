@@ -1,5 +1,6 @@
 """
 A.R.K. User Timezone Scheduler – Handles dynamic Recap & Reset Jobs per user timezone.
+Ensures real-time task scheduling according to user timezones.
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -9,71 +10,84 @@ from bot.auto.reset_today_job import reset_today_job
 from bot.auto.reset_week_job import reset_week_job
 from bot.utils.user_timezone_manager import get_user_timezone
 from bot.utils.logger import setup_logger
+from bot.utils.i18n import get_text
 
-# Setup Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 
-def start_user_timezone_scheduler(application, chat_id: int):
+async def start_user_timezone_scheduler(application, chat_id: int):
     """
     Launches personalized background jobs for each user based on timezone.
+    Handles jobs like daily recap, weekly recap, and resets at user-specific times.
     """
 
     timezone = get_user_timezone(chat_id)
     scheduler = AsyncIOScheduler(timezone=timezone)
 
-    # Daily Recap (custom timezone)
-    scheduler.add_job(
-        func=daily_recap_job,
-        trigger="cron",
-        hour=16,
-        minute=5,
-        args=[application, chat_id],
-        id=f"daily_recap_{chat_id}",
-        name=f"Daily Recap for {chat_id}",
-        misfire_grace_time=300
-    )
-    logger.info(f"📊 Daily Recap scheduled for {chat_id} at 16:05 ({timezone}).")
+    try:
+        # Daily Recap (custom timezone)
+        scheduler.add_job(
+            func=daily_recap_job,
+            trigger="cron",
+            hour=16,
+            minute=5,
+            args=[application, chat_id],
+            id=f"daily_recap_{chat_id}",
+            name=f"Daily Recap for {chat_id}",
+            misfire_grace_time=300
+        )
+        logger.info(f"📊 Daily Recap scheduled for {chat_id} at 16:05 ({timezone}).")
 
-    # Weekly Recap (Friday)
-    scheduler.add_job(
-        func=weekly_recap_job,
-        trigger="cron",
-        day_of_week="fri",
-        hour=16,
-        minute=10,
-        args=[application, chat_id],
-        id=f"weekly_recap_{chat_id}",
-        name=f"Weekly Recap for {chat_id}",
-        misfire_grace_time=600
-    )
-    logger.info(f"📈 Weekly Recap scheduled for {chat_id} (Friday 16:10 {timezone}).")
+        # Weekly Recap (Friday)
+        scheduler.add_job(
+            func=weekly_recap_job,
+            trigger="cron",
+            day_of_week="fri",
+            hour=16,
+            minute=10,
+            args=[application, chat_id],
+            id=f"weekly_recap_{chat_id}",
+            name=f"Weekly Recap for {chat_id}",
+            misfire_grace_time=600
+        )
+        logger.info(f"📈 Weekly Recap scheduled for {chat_id} (Friday 16:10 {timezone}).")
 
-    # Daily Reset
-    scheduler.add_job(
-        func=reset_today_job,
-        trigger="cron",
-        hour=23,
-        minute=59,
-        args=[chat_id],
-        id=f"reset_today_{chat_id}",
-        name=f"Daily Reset for {chat_id}",
-        misfire_grace_time=300
-    )
-    logger.info(f"♻️ Daily Reset scheduled for {chat_id} at 23:59 ({timezone}).")
+        # Daily Reset
+        scheduler.add_job(
+            func=reset_today_job,
+            trigger="cron",
+            hour=23,
+            minute=59,
+            args=[chat_id],
+            id=f"reset_today_{chat_id}",
+            name=f"Daily Reset for {chat_id}",
+            misfire_grace_time=300
+        )
+        logger.info(f"♻️ Daily Reset scheduled for {chat_id} at 23:59 ({timezone}).")
 
-    # Weekly Reset
-    scheduler.add_job(
-        func=reset_week_job,
-        trigger="cron",
-        day_of_week="mon",
-        hour=0,
-        minute=0,
-        args=[chat_id],
-        id=f"reset_week_{chat_id}",
-        name=f"Weekly Reset for {chat_id}",
-        misfire_grace_time=600
-    )
-    logger.info(f"♻️ Weekly Reset scheduled for {chat_id} (Monday 00:00 {timezone}).")
+        # Weekly Reset
+        scheduler.add_job(
+            func=reset_week_job,
+            trigger="cron",
+            day_of_week="mon",
+            hour=0,
+            minute=0,
+            args=[chat_id],
+            id=f"reset_week_{chat_id}",
+            name=f"Weekly Reset for {chat_id}",
+            misfire_grace_time=600
+        )
+        logger.info(f"♻️ Weekly Reset scheduled for {chat_id} (Monday 00:00 {timezone}).")
 
-    scheduler.start()
-    logger.info(f"✅ Scheduler started for user {chat_id} (Timezone: {timezone}).")
+        scheduler.start()
+        logger.info(f"✅ Scheduler started for user {chat_id} (Timezone: {timezone}).")
+
+    except Exception as e:
+        # Handling unexpected failures
+        logger.error(f"❌ Error during scheduler setup for user {chat_id}: {e}")
+        await report_error(application.bot, chat_id, e, context_info="User Timezone Scheduler Error")
+        await application.bot.send_message(
+            chat_id,
+            get_text("scheduler_error", get_language(chat_id)) or "⚠️ An error occurred while setting up your scheduler. Please try again.",
+            parse_mode="Markdown"
+        )
