@@ -33,6 +33,7 @@ async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         choice = context.args[0].lower()
 
+        # Language validation
         if choice in ("de", "deutsch"):
             lang = "de"
         elif choice in ("en", "english"):
@@ -49,6 +50,7 @@ async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         context.user_data["lang"] = lang
         set_user_language(chat_id, lang)  # Optional DB/save feature for future scaling
 
+        # Send confirmation in the correct language
         confirmation = get_text("set_language_success", lang)
 
         await update.message.reply_text(
