@@ -1,6 +1,6 @@
 """
 A.R.K. Ultra Auto Signal Loop – Hyper Premium Engine 2025.
-Fully Boosted, AI-Tuned, News-Integrated, Crash-Protected. NASA Edition.
+Fully Boosted, AI-Tuned, News-Integrated, Crash-Protected.
 """
 
 import asyncio
@@ -16,11 +16,13 @@ from bot.utils.session_tracker import update_session_tracker
 from bot.utils.error_reporter import report_error
 from bot.utils.market_time import is_trading_day, is_trading_hours
 from bot.utils.news_health_checker import check_finnhub_health
-from bot.auto.watchdog_monitor import refresh_watchdog
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 
-# Setup structured logger
+# === Load Watchdog safely without direct circular import ===
+import bot.auto.watchdog_state as watchdog_state
+
+# Setup Logger
 logger = setup_logger(__name__)
 config = get_settings()
 
@@ -40,7 +42,7 @@ async def auto_signal_loop():
     start_minute = time.time()
 
     if not symbols:
-        logger.error("❌ [AutoSignal] No symbols configured! Check settings.")
+        logger.error("❌ [AutoSignal] No symbols configured! Exiting...")
         return
 
     logger.info("🚀 [AutoSignal] Ultra Monitoring Activated.")
@@ -49,20 +51,14 @@ async def auto_signal_loop():
 
     try:
         while True:
-            refresh_watchdog()
+            # === Refresh Watchdog Heartbeat ===
+            watchdog_state.refresh_watchdog()
 
             now = time.time()
 
             if now - start_minute >= 60:
                 calls = 0
                 start_minute = now
-
-            # Tiny Telegram Ping alle 10 Minuten
-            if int(time.time()) % 600 < 5:
-                try:
-                    await bot.get_me()
-                except Exception as e_ping:
-                    logger.warning(f"⚠️ [Heartbeat Ping] Telegram reconnect: {e_ping}")
 
             if not is_trading_day() or not is_trading_hours():
                 logger.info("⏳ [Market] Closed. Sleeping 5 min.")
@@ -76,17 +72,12 @@ async def auto_signal_loop():
             for symbol in symbols:
                 try:
                     if calls >= max_api_calls:
-                        logger.warning("⚠️ [API] Max API calls hit. Sleeping 10s.")
+                        logger.warning("⚠️ [API] Max API calls hit. Cooling down...")
                         await asyncio.sleep(10)
                         calls = 0
                         start_minute = time.time()
 
-                    try:
-                        result = await asyncio.wait_for(analyze_symbol(symbol), timeout=15)
-                    except asyncio.TimeoutError:
-                        logger.warning(f"⚠️ [Timeout] Analysis timeout at {symbol}")
-                        continue
-
+                    result = await analyze_symbol(symbol)
                     calls += 1
 
                     if not result:
@@ -133,19 +124,13 @@ async def auto_signal_loop():
                     await asyncio.sleep(1.1)
 
                 except Exception as e_symbol:
-                    logger.error(f"❌ [AutoSignal] Error at {symbol}: {e_symbol}")
-                    await report_error(bot, chat_id, e_symbol, context_info=f"Symbol {symbol}")
+                    logger.error(f"❌ [AutoSignal] Error for {symbol}: {e_symbol}")
+                    await report_error(bot, chat_id, e_symbol, context_info=f"AutoSignal Symbol Error: {symbol}")
 
-            # === Breaking News Check ===
+            # === Breaking News Detection ===
             try:
                 if last_news_check is None or now - last_news_check >= 300:
-                    try:
-                        news_list = await detect_breaking_news()
-                    except Exception as e_news_fetch:
-                        logger.error(f"❌ [NewsDetection] Fetch error: {e_news_fetch}")
-                        await report_error(bot, chat_id, e_news_fetch, context_info="Critical News Fetch")
-                        news_list = []
-
+                    news_list = await detect_breaking_news()
                     if news_list:
                         news_message = await format_breaking_news(news_list, lang)
                         if news_message:
@@ -155,7 +140,7 @@ async def auto_signal_loop():
                                 parse_mode="Markdown",
                                 disable_web_page_preview=True
                             )
-                            logger.info("📰 [News] Breaking news sent.")
+                            logger.info("📰 [News] Breaking News sent.")
 
                             boost_mode_active = True
                             boost_end_time = time.time() + 300
@@ -164,8 +149,9 @@ async def auto_signal_loop():
 
             except Exception as e_news:
                 logger.error(f"❌ [NewsDetection] Error: {e_news}")
-                await report_error(bot, chat_id, e_news, context_info="NewsDetection")
+                await report_error(bot, chat_id, e_news, context_info="Breaking News Detection Failure")
 
+            # === Sleep Control ===
             sleep_interval = boost_interval if boost_mode_active and time.time() < boost_end_time else signal_interval
 
             if boost_mode_active and time.time() >= boost_end_time:
@@ -176,8 +162,8 @@ async def auto_signal_loop():
             await asyncio.sleep(sleep_interval)
 
     except Exception as e_loop:
-        logger.critical(f"🔥 [AutoSignalLoop] Fatal error: {e_loop}")
-        await report_error(bot, chat_id, e_loop, context_info="AutoSignalLoop Fatal")
+        logger.critical(f"🔥 [AutoSignalLoop] Fatal crash: {e_loop}")
+        await report_error(bot, chat_id, e_loop, context_info="Fatal Crash in AutoSignalLoop")
         await asyncio.sleep(120)
 
 async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict, lang: str = "en"):
@@ -215,4 +201,4 @@ async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict,
         parse_mode="Markdown",
         disable_web_page_preview=True
     )
-    logger.info(f"📈 [MoveAlert] {symbol} move {move_percent:.2f}% sent.")
+    logger.info(f"📈 [MoveAlert] {symbol} moved {move_percent:.2f}%")
