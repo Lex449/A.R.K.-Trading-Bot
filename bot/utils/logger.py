@@ -40,7 +40,7 @@ def setup_logger(name: str, level: str = "INFO") -> logging.Logger:
             filename="logs/ark_bot.log",
             when="midnight",
             interval=1,
-            backupCount=7,  # Keep last 7 days
+            backupCount=7,
             encoding="utf-8"
         )
         file_formatter = logging.Formatter(
@@ -53,9 +53,10 @@ def setup_logger(name: str, level: str = "INFO") -> logging.Logger:
         logger.addHandler(stream_handler)
         logger.addHandler(file_handler)
 
-        logger.propagate = False  # Avoid duplicate logs
+        # Avoid duplicate logs
+        logger.propagate = False
 
-    # Set Logging Level
+    # Mapping for log levels
     level_mapping = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
@@ -63,6 +64,13 @@ def setup_logger(name: str, level: str = "INFO") -> logging.Logger:
         "ERROR": logging.ERROR,
         "CRITICAL": logging.CRITICAL,
     }
-    logger.setLevel(level_mapping.get(level.upper(), logging.INFO))
+
+    # Set Logging Level
+    resolved_level = level_mapping.get(level.upper())
+    if resolved_level is None:
+        logger.warning(f"⚠️ [Logger] Invalid level '{level}' provided. Defaulting to INFO.")
+        resolved_level = logging.INFO
+
+    logger.setLevel(resolved_level)
 
     return logger
