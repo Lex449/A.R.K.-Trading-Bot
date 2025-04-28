@@ -1,14 +1,14 @@
 # bot/utils/session_tracker.py
 
 """
-A.R.K. Session Tracker – Ultra Stable Build (Multilingual Edition).
-Tracks session, daily, and weekly trading performance.
+A.R.K. Session Tracker – Ultra Diamond Build
+Tracks signals, moves, news alerts, and generates multilingual reports.
 """
 
 import os
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from json import JSONDecodeError
 from bot.utils.logger import setup_logger
 from bot.utils.i18n import get_text
@@ -29,13 +29,14 @@ def initialize_session() -> None:
 
     if not os.path.exists(SESSION_FILE):
         _session_data = _create_new_session()
-        logger.info("📂 [Session Tracker] New session file created.")
+        logger.info("📂 [Session Tracker] New session created.")
     else:
         try:
             with open(SESSION_FILE, "r", encoding="utf-8") as f:
                 _session_data = json.load(f)
+            logger.info("🔄 [Session Tracker] Session loaded successfully.")
         except (JSONDecodeError, Exception) as error:
-            logger.warning(f"⚠️ [Session Tracker] Corrupted session file detected: {error}")
+            logger.warning(f"⚠️ [Session Tracker] Corrupted session detected: {error}")
             _session_data = _create_new_session()
 
     save_session_data()
@@ -44,10 +45,13 @@ def _create_new_session() -> dict:
     """Creates a new blank session."""
     return {
         "session_id": str(uuid.uuid4()),
-        "start_time": datetime.utcnow().isoformat(),
+        "start_time": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         "total": _empty_metrics(),
         "today": _empty_metrics(),
         "week": _empty_metrics(),
+        "move_alerts": 0,
+        "breaking_news_alerts": 0,
+        "scans_completed": 0,
     }
 
 def _empty_metrics() -> dict:
@@ -67,7 +71,7 @@ def save_session_data() -> None:
         json.dump(_session_data, f, indent=4)
 
 def update_session_tracker(stars: int, confidence: float) -> None:
-    """Updates session statistics after every signal."""
+    """Updates session stats after every valid trading signal."""
     for period in ["total", "today", "week"]:
         _session_data[period]["signals_total"] += 1
         _session_data[period]["confidence_sum"] += confidence
@@ -84,20 +88,43 @@ def update_session_tracker(stars: int, confidence: float) -> None:
 
     save_session_data()
 
-def get_session_report(chat_id: int = None) -> str:
-    """Returns full session overview."""
-    return _format_report("total", get_text("session_title_total", get_language(chat_id)))
+def track_move_alert() -> None:
+    """Tracks a detected move alert."""
+    _session_data["move_alerts"] += 1
+    save_session_data()
 
-def get_today_report(chat_id: int = None) -> str:
-    """Returns today's performance report."""
-    return _format_report("today", get_text("session_title_today", get_language(chat_id)))
+def track_breaking_news_alert() -> None:
+    """Tracks a detected breaking news alert."""
+    _session_data["breaking_news_alerts"] += 1
+    save_session_data()
 
-def get_weekly_report(chat_id: int = None) -> str:
-    """Returns this week's performance report."""
-    return _format_report("week", get_text("session_title_week", get_language(chat_id)))
+def track_scan_completed() -> None:
+    """Tracks a completed scan."""
+    _session_data["scans_completed"] += 1
+    save_session_data()
+
+def get_session_summary() -> dict:
+    """Returns a summarized session report for internal usage."""
+    if not _session_data:
+        initialize_session()
+
+    total_signals = _session_data["total"].get("signals_total", 0)
+    avg_confidence = 0.0
+    if total_signals > 0:
+        avg_confidence = _session_data["total"].get("confidence_sum", 0.0) / total_signals
+
+    return {
+        "session_id": _session_data.get("session_id"),
+        "start_time": _session_data.get("start_time"),
+        "scans_completed": _session_data.get("scans_completed"),
+        "signals_total": total_signals,
+        "avg_confidence": round(avg_confidence, 2),
+        "move_alerts": _session_data.get("move_alerts"),
+        "breaking_news_alerts": _session_data.get("breaking_news_alerts"),
+    }
 
 def _format_report(section: str, title: str) -> str:
-    """Formats the session data into a readable message."""
+    """Formats a detailed human-readable session report."""
     start_time = datetime.fromisoformat(_session_data.get("start_time"))
     uptime = datetime.utcnow() - start_time
 
@@ -108,8 +135,8 @@ def _format_report(section: str, title: str) -> str:
     uptime_str = f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m"
 
     data = _session_data.get(section, _empty_metrics())
-    avg_confidence = (data["confidence_sum"] / data["signals_total"]) if data["signals_total"] else 0
-    avg_scoring = (data["scoring_sum"] / data["signals_total"]) if data["signals_total"] else 0
+    avg_conf = (data["confidence_sum"] / data["signals_total"]) if data["signals_total"] else 0
+    avg_score = (data["scoring_sum"] / data["signals_total"]) if data["signals_total"] else 0
 
     lang = get_language()
 
@@ -122,24 +149,36 @@ def _format_report(section: str, title: str) -> str:
         f"*{get_text('strong_signals', lang)}:* {data['strong_signals']}\n"
         f"*{get_text('moderate_signals', lang)}:* {data['moderate_signals']}\n"
         f"*{get_text('weak_signals', lang)}:* {data['weak_signals']}\n"
-        f"*{get_text('avg_confidence', lang)}:* `{avg_confidence:.1f}%`\n"
-        f"*{get_text('avg_score', lang)}:* `{avg_scoring:.2f}`\n\n"
+        f"*{get_text('avg_confidence', lang)}:* `{avg_conf:.1f}%`\n"
+        f"*{get_text('avg_score', lang)}:* `{avg_score:.2f}`\n\n"
         f"🚀 _{get_text('relentless_footer', lang)}_"
     )
     return report
 
+def get_session_report(chat_id: int = None) -> str:
+    """Returns the full session overview."""
+    return _format_report("total", get_text("session_title_total", get_language(chat_id)))
+
+def get_today_report(chat_id: int = None) -> str:
+    """Returns today's trading performance."""
+    return _format_report("today", get_text("session_title_today", get_language(chat_id)))
+
+def get_weekly_report(chat_id: int = None) -> str:
+    """Returns weekly trading performance."""
+    return _format_report("week", get_text("session_title_week", get_language(chat_id)))
+
 def reset_today_data() -> None:
-    """Resets today's performance data."""
+    """Resets today's stats."""
     _session_data["today"] = _empty_metrics()
     save_session_data()
 
 def reset_weekly_data() -> None:
-    """Resets weekly performance data."""
+    """Resets this week's stats."""
     _session_data["week"] = _empty_metrics()
     save_session_data()
 
 def reset_full_session() -> None:
-    """Resets the entire session."""
+    """Completely resets session tracker."""
     global _session_data
     _session_data = _create_new_session()
     save_session_data()
