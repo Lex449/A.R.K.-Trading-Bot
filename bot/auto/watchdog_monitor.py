@@ -1,5 +1,3 @@
-# bot/auto/watchdog_monitor.py
-
 """
 A.R.K. Ultra Watchdog Monitor – Crash Detection Layer 2025
 Autonomous Recovery System for Auto-Signal Loop.
