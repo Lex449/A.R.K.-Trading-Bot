@@ -1,8 +1,3 @@
-"""
-A.R.K. Internationalization (i18n) Module – Ultra Premium Multilingual Build.
-Handles multilingual text output for clean and scalable user interaction.
-"""
-
 import logging
 from bot.utils.logger import setup_logger
 
