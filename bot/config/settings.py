@@ -1,3 +1,5 @@
+# bot/config/settings.py
+
 """
 A.R.K. Trading Bot – Settings Loader
 Ultra-Masterclass Build: Präzise. Sicher. Sauber.
@@ -53,6 +55,15 @@ def get_settings():
         logger.warning(f"⚠️ Ungültige ENVIRONMENT '{environment}' erkannt. Setze auf 'Production'.")
         environment = "Production"
 
+    # === Language Support ===
+    bot_language = os.getenv("BOT_LANGUAGE", "en")
+    if bot_language not in ["en", "de"]:
+        bot_language = "en"
+
+    # === News Filter Settings ===
+    news_filter_enabled = os.getenv("NEWS_FILTER_ENABLED", "True") == "True"
+    backup_news_enabled = os.getenv("BACKUP_NEWS_ENABLED", "True") == "True"
+
     logger.info(f"✅ Settings erfolgreich geladen. Environment: {environment}")
 
     # === Final Settings Paket ===
@@ -75,8 +86,13 @@ def get_settings():
         # API
         "FINNHUB_API_KEY": finnhub_api_key,
 
+        # News
+        "NEWS_FILTER_ENABLED": news_filter_enabled,
+        "BACKUP_NEWS_ENABLED": backup_news_enabled,
+
         # Deployment Info
         "ENVIRONMENT": environment,
+        "BOT_LANGUAGE": bot_language,
     }
 
     return settings
