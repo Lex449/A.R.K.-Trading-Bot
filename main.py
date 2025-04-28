@@ -1,5 +1,5 @@
 """
-A.R.K. Bot Main Entry – Ultra Stable Wall Street Version 2.0
+A.R.K. Bot Main Entry – Hyper Stable Wall Street Version 2.0
 Made in Bali. Engineered with German Precision.
 """
 
@@ -16,48 +16,58 @@ from bot.handlers.status import status_handler
 from bot.handlers.shutdown import shutdown_handler
 from bot.handlers.test_signal import test_signal
 from bot.handlers.test_analyse import test_analyse
-from bot.handlers.global_error_handler import global_error_handler  # <-- FIX: richtiger Import
+from bot.handlers.global_error_handler import global_error_handler
 from bot.handlers.set_my_commands import set_bot_commands
 
-# === Auto Signal Loop ===
+# === Auto Modules ===
 from bot.auto.auto_signal_loop import auto_signal_loop
+from bot.auto.daily_scheduler import start_daily_analysis_scheduler
+from bot.auto.heartbeat_scheduler import start_heartbeat
 
 # === Utilities ===
 from bot.utils.error_reporter import report_error
 from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
 
-# === Setup Logging ===
+# === Setup Structured Logging ===
 setup_logger(__name__)
 
 # === Allow nested event loops (Railway / Replit Support) ===
 nest_asyncio.apply()
 
-# === Load Config ===
+# === Load Configuration ===
 config = get_settings()
 TOKEN = config["BOT_TOKEN"]
 
 async def startup_tasks(application):
     """
-    Launches background services when Bot starts (no polling conflict).
+    Launches background services on startup.
     """
     try:
-        # Delete old webhook to ensure polling works
+        # Clean old webhook
         await application.bot.delete_webhook(drop_pending_updates=True)
 
-        # Start Auto Signal Loop
-        asyncio.create_task(auto_signal_loop(application.bot))
+        # Start Auto Signal Monitoring
+        asyncio.create_task(auto_signal_loop())
 
-        # Set clean /command list
+        # Start Daily Analysis Scheduler
+        start_daily_analysis_scheduler(application)
+
+        # Start Heartbeat Scheduler
+        start_heartbeat(application)
+
+        # Set available bot commands
         await set_bot_commands(application)
+
+        logging.info("✅ [Startup] All startup tasks completed successfully.")
 
     except Exception as e:
         await report_error(application.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Startup Task Error")
 
 async def main():
-    logging.info("🚀 A.R.K. Trading Bot 2.0 – Wall Street Stability Mode activated.")
+    logging.info("🚀 A.R.K. Trading Bot 2.0 – Hyper Stable Wall Street Mode activated.")
 
-    # Initialize Bot Application
+    # Initialize Application
     app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
 
     # === Register Command Handlers ===
@@ -74,7 +84,7 @@ async def main():
     # === Global Error Handler ===
     app.add_error_handler(global_error_handler)
 
-    # === Start Bot ===
+    # === Start Polling ===
     await app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
