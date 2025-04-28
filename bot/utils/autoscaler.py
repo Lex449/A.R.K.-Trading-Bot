@@ -2,7 +2,7 @@
 
 """
 A.R.K. Trading Bot – Autoscaler (Future Ready)
-Aktuell noch inaktiv. Vorbereitet für spätere intelligente Skalierungs-Strategien.
+Aktuell inaktiv – vorbereitet für spätere intelligente Skalierungsstrategien.
 """
 
 import logging
@@ -18,7 +18,7 @@ async def run_autoscaler(bot: Bot, chat_id: int) -> None:
     Derzeit keine aktive Logik implementiert.
     """
     try:
-        logger.info("🔧 Autoscaler ausgeführt – derzeit inaktiv (Platzhalter für zukünftige Upgrades).")
+        logger.info("🛠️ [Autoscaler] Placeholder executed – no active logic yet.")
 
-    except Exception as e:
-        logger.error(f"❌ Fehler beim Autoscaler: {str(e)}")
+    except Exception as error:
+        logger.error(f"❌ [Autoscaler] Unexpected error occurred: {str(error)}")
