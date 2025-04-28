@@ -1,3 +1,8 @@
+"""
+A.R.K. Performance Tracker – Ultra Premium Live Monitoring
+Tracks quality, confidence, and accuracy of all generated signals.
+"""
+
 import logging
 from bot.utils.logger import setup_logger
 from bot.utils.i18n import get_text  # Für Multilingualität
@@ -9,65 +14,62 @@ logger = setup_logger(__name__)
 performance_data = {
     "total_signals": 0,
     "strong_signals": 0,
+    "moderate_signals": 0,
     "weak_signals": 0,
-    "total_confidence": 0.0,  # Neu hinzugefügt für Confidence Tracking
+    "total_confidence": 0.0,
 }
 
 def update_performance(stars: int, confidence: float, lang: str = "en"):
     """
-    Aktualisiert die Performance-Daten basierend auf der Sternebewertung des Signals und der Confidence.
-    
-    Args:
-        stars (int): Anzahl der Sterne für das Handelssignal.
-        confidence (float): Confidence-Wert des Signals.
-        lang (str): Sprache ("en" oder "de").
+    Updates the live performance statistics based on star rating and confidence.
     """
+
     performance_data["total_signals"] += 1
     performance_data["total_confidence"] += confidence
 
-    # Signal Qualität basierend auf Sternen und Confidence
-    if stars >= 4 and confidence >= 70:
+    if stars >= 5:
         performance_data["strong_signals"] += 1
-        logger.info(f"[Performance Tracker] Starkes Signal registriert ({stars}⭐), Confidence: {confidence}%")
+        logger.info(f"✅ [Performance Tracker] 5⭐ Elite Signal | Confidence: {confidence:.2f}%")
+    elif stars == 4:
+        performance_data["moderate_signals"] += 1
+        logger.info(f"⚡ [Performance Tracker] 4⭐ Good Signal | Confidence: {confidence:.2f}%")
     else:
         performance_data["weak_signals"] += 1
-        logger.info(f"[Performance Tracker] Schwaches Signal registriert ({stars}⭐), Confidence: {confidence}%")
+        logger.info(f"⚠️ [Performance Tracker] Weak Signal ({stars}⭐) | Confidence: {confidence:.2f}%")
 
 def get_performance_summary(lang: str = "en") -> str:
     """
-    Erzeugt eine zusammengefasste Echtzeit-Performance-Übersicht.
-
-    Args:
-        lang (str): Sprache für die Rückgabe der Übersichts-Meldung.
-
-    Returns:
-        str: Formatierter Performance-Report in der gewünschten Sprache.
+    Returns a detailed real-time performance report.
     """
+
     total = performance_data["total_signals"]
     strong = performance_data["strong_signals"]
+    moderate = performance_data["moderate_signals"]
     weak = performance_data["weak_signals"]
-    avg_confidence = performance_data["total_confidence"] / total if total > 0 else 0
-    accuracy = (strong / total * 100) if total > 0 else 0
+    avg_confidence = (performance_data["total_confidence"] / total) if total else 0.0
+    accuracy = (strong / total * 100) if total else 0.0
 
-    # Sprachspezifische Templates
+    # Templates
     templates = {
         "en": {
             "title": "📈 *Performance Overview*",
             "total_signals": "*Total Signals:*",
-            "strong_signals": "*Strong Signals (4–5⭐):*",
-            "weak_signals": "*Weak Signals (<4⭐):*",
-            "accuracy": "*Accuracy:*",
+            "strong_signals": "*Strong (5⭐):*",
+            "moderate_signals": "*Moderate (4⭐):*",
+            "weak_signals": "*Weak (<4⭐):*",
+            "accuracy": "*Strong Accuracy:*",
             "confidence": "*Average Confidence:*",
-            "footer": "⚡ _Stay disciplined. Quality over quantity._"
+            "footer": "⚡ _Mastery is built signal by signal._"
         },
         "de": {
             "title": "📈 *Performance-Übersicht*",
-            "total_signals": "*Gesamtzahl der Signale:*",
-            "strong_signals": "*Starke Signale (4–5⭐):*",
-            "weak_signals": "*Schwache Signale (<4⭐):*",
-            "accuracy": "*Genauigkeit:*",
+            "total_signals": "*Gesamtzahl Signale:*",
+            "strong_signals": "*Stark (5⭐):*",
+            "moderate_signals": "*Mittel (4⭐):*",
+            "weak_signals": "*Schwach (<4⭐):*",
+            "accuracy": "*Starke Trefferquote:*",
             "confidence": "*Durchschnittliche Confidence:*",
-            "footer": "⚡ _Bleib diszipliniert. Qualität über Quantität._"
+            "footer": "⚡ _Meisterschaft entsteht Signal für Signal._"
         }
     }
 
@@ -77,6 +79,7 @@ def get_performance_summary(lang: str = "en") -> str:
         f"{t['title']}\n\n"
         f"{t['total_signals']} `{total}`\n"
         f"{t['strong_signals']} `{strong}`\n"
+        f"{t['moderate_signals']} `{moderate}`\n"
         f"{t['weak_signals']} `{weak}`\n"
         f"{t['accuracy']} `{accuracy:.2f}%`\n"
         f"{t['confidence']} `{avg_confidence:.2f}%`\n\n"
