@@ -1,5 +1,5 @@
 """
-A.R.K. Bot Main Entry – Ultra Stable Wall Street Version 2.0
+A.R.K. Bot Main Entry – Ultra Stable Wall Street Version 2.1
 Made in Bali. Engineered with German Precision.
 """
 
@@ -9,7 +9,7 @@ import nest_asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler
 
-# === Handlers ===
+# === Command Handlers ===
 from bot.handlers.commands import start, help_command, analyze_symbol_handler, set_language
 from bot.handlers.signal import signal_handler
 from bot.handlers.status import status_handler
@@ -31,43 +31,50 @@ from bot.utils.error_reporter import report_error
 from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
 
-# === Setup Logging ===
+# === Setup Logger Early ===
 setup_logger(__name__)
 
-# === Allow nested event loops (Railway / Replit Support) ===
+# === Allow Nested Event Loops (Railway / Replit Support) ===
 nest_asyncio.apply()
 
 # === Load Config ===
 config = get_settings()
 TOKEN = config["BOT_TOKEN"]
+CHAT_ID = int(config["TELEGRAM_CHAT_ID"])
 
 async def startup_tasks(application):
     """
-    Launches background services when Bot starts (no polling conflict).
+    Startup Task Launcher – Initializes background loops and schedulers.
     """
     try:
         await application.bot.delete_webhook(drop_pending_updates=True)
+        logging.info("✅ Webhook cleared successfully.")
 
-        chat_id = int(config["TELEGRAM_CHAT_ID"])
+        # Start Daily Analysis Scheduler
+        start_daily_analysis_scheduler(application, CHAT_ID)
 
-        # Start daily scheduler
-        start_daily_analysis_scheduler(application, chat_id)
-
-        # Start heartbeat
-        start_heartbeat(application, chat_id)
+        # Start Heartbeat Scheduler
+        start_heartbeat(application, CHAT_ID)
 
         # Start Auto Signal Loop
         asyncio.create_task(auto_signal_loop())
 
-        # Set clean /command list
+        # Set /command list
         await set_bot_commands(application)
 
+        logging.info("✅ Startup tasks completed.")
+
     except Exception as e:
-        await report_error(application.bot, int(config["TELEGRAM_CHAT_ID"]), e, context_info="Startup Task Error")
+        await report_error(application.bot, CHAT_ID, e, context_info="Startup Task Error")
+        logging.error(f"❌ Startup Task Error: {e}")
 
 async def main():
-    logging.info("🚀 A.R.K. Trading Bot 2.0 – Wall Street Stability Mode activated.")
+    """
+    Main Runner for A.R.K. Trading Bot
+    """
+    logging.info("🚀 A.R.K. Trading Bot 2.1 – Wall Street Stability Mode activated.")
 
+    # Initialize Bot Application
     app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
 
     # === Register Command Handlers ===
@@ -84,7 +91,7 @@ async def main():
     # === Global Error Handler ===
     app.add_error_handler(global_error_handler)
 
-    # === Start Bot ===
+    # === Start Bot Polling ===
     await app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
