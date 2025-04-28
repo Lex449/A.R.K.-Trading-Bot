@@ -1,7 +1,7 @@
 """
-A.R.K. Data Loader – Dual Source Market Fetcher Ultra 3.0
+A.R.K. Data Loader – Dual Source Market Fetcher Ultra Final 4.0
 Primary: Finnhub API | Backup: Yahoo Finance
-Maximal Fault-Tolerant, Ultra-Optimized, Multilingual Logging.
+Next-Level Fault Tolerance, Data Integrity Checks, Multilingual Logging.
 """
 
 import pandas as pd
@@ -13,7 +13,7 @@ from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.logger import setup_logger
 
-# Setup Logger
+# Logger Setup
 logger = setup_logger(__name__)
 config = get_settings()
 
@@ -22,15 +22,15 @@ FINNHUB_TOKEN = config.get("FINNHUB_API_KEY")
 
 async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | None:
     """
-    Fetches historical OHLCV data for a symbol.
+    Fetches historical OHLCV data for a trading symbol.
     Priority: Finnhub → Backup: Yahoo Finance.
 
     Args:
-        symbol (str): Ticker symbol (e.g., AAPL, TSLA).
-        chat_id (int, optional): For user-specific language messages.
+        symbol (str): Trading symbol (e.g., AAPL, TSLA).
+        chat_id (int, optional): Chat ID for language selection.
 
     Returns:
-        pd.DataFrame or None if both sources fail.
+        pd.DataFrame or None if both sources fail or data is insufficient.
     """
     lang = get_language(chat_id) if chat_id else "en"
 
@@ -44,8 +44,8 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
                 if response.status == 200:
                     data = await response.json()
 
-                    if data.get("s") != "ok":
-                        raise ValueError(f"Invalid Finnhub Response: {data}")
+                    if data.get("s") != "ok" or not data.get("c"):
+                        raise ValueError(f"Invalid Finnhub response: {data}")
 
                     df = pd.DataFrame({
                         "t": pd.to_datetime(data["t"], unit="s"),
@@ -55,6 +55,9 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
                         "c": data["c"],
                         "v": data["v"],
                     }).set_index("t")
+
+                    if df.empty or len(df) < 20:
+                        raise ValueError("Finnhub returned insufficient data points.")
 
                     logger.info(f"[DataLoader] ✅ Finnhub data fetched successfully for {symbol}.")
                     return df
@@ -72,8 +75,8 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
         ticker = yf.Ticker(symbol)
         hist = ticker.history(period="5d", interval="5m")
 
-        if hist.empty:
-            raise ValueError("Yahoo Finance returned empty dataset.")
+        if hist.empty or len(hist) < 20:
+            raise ValueError("Yahoo Finance returned insufficient data.")
 
         hist = hist.rename(columns={
             "Open": "o",
