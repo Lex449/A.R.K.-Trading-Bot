@@ -1,20 +1,20 @@
 """
 A.R.K. Risk-Reward Calculator – Premium Smart Estimates.
-Helps evaluate optimal trade setups based on current price action.
+Provides quick risk/reward insights based on current market behavior.
 """
 
 import pandas as pd
 
 def calculate_risk_reward(df: pd.DataFrame, action: str) -> dict:
     """
-    Calculates simple Risk/Reward estimates based on recent volatility.
+    Calculates simple risk/reward percentages based on last 20 candles.
 
     Args:
-        df (pd.DataFrame): OHLCV DataFrame
-        action (str): "Long" or "Short"
+        df (pd.DataFrame): Market OHLCV data.
+        action (str): Expected action ("Long" or "Short").
 
     Returns:
-        dict: {risk: x%, reward: y%} or None if insufficient data
+        dict or None: Risk/Reward estimation, or None if invalid input.
     """
     if df is None or df.empty or action not in ["Long", "Short"]:
         return None
@@ -23,6 +23,9 @@ def calculate_risk_reward(df: pd.DataFrame, action: str) -> dict:
         recent_high = df["h"].rolling(window=20, min_periods=1).max().iloc[-1]
         recent_low = df["l"].rolling(window=20, min_periods=1).min().iloc[-1]
         current_close = df["c"].iloc[-1]
+
+        if current_close == 0:
+            return None  # Sicherheitscheck: Keine Division durch Null
 
         if action == "Long":
             risk = ((current_close - recent_low) / current_close) * 100
