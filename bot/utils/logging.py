@@ -17,24 +17,22 @@ def setup_logger():
 
     # Create base logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-
-    # === Format Setup ===
-    formatter = logging.Formatter(
-        "[%(asctime)s] | %(levelname)-8s | %(name)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
-
-    # === Stream to stdout (console) ===
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(formatter)
 
     # === Clean Setup: Prevent duplicate handlers ===
     if not logger.hasHandlers():
+        # Set StreamHandler (stdout)
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_formatter = logging.Formatter(
+            "[%(asctime)s] | %(levelname)-8s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        console_handler.setFormatter(console_formatter)
         logger.addHandler(console_handler)
+
+    logger.setLevel(logging.INFO)
 
     # === Startup Message with Environment Context ===
     env = os.getenv("ENVIRONMENT", "Production").capitalize()
-    logger.info(f"✅ Logger initialized successfully for A.R.K. Bot (Environment: {env})")
+    logger.info(f"✅ [Logger Setup] A.R.K. Logger initialized successfully (Environment: {env})")
 
     return logger
