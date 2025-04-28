@@ -1,6 +1,6 @@
 """
-A.R.K. Uptime Handler – Tracks and displays Bot session uptime.
-Ultra Premium Build: Clean, Safe, Elegant.
+A.R.K. Uptime Handler – Ultra Premium Session Tracker.
+Monitors and reports bot operational uptime with maximum safety and style.
 """
 
 import os
@@ -20,31 +20,31 @@ SESSION_FILE = "session_data.json"
 async def uptime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handles /uptime command.
-    Provides the bot's operational uptime since last session start.
+    Sends real-time bot uptime information since session start.
     """
+
     chat_id = update.effective_chat.id
     user = update.effective_user.first_name or "Trader"
 
     try:
         if not os.path.exists(SESSION_FILE):
             await update.message.reply_text(
-                "ℹ️ *Uptime Data:* No session data available yet.",
+                "ℹ️ *Uptime Info:*\n_No active session data available yet._",
                 parse_mode="Markdown"
             )
-            logger.warning(f"Uptime request but session_data.json not found (User: {user})")
+            logger.warning(f"[Uptime] No session_data.json found (User: {user}).")
             return
 
-        # Load session data
         with open(SESSION_FILE, "r", encoding="utf-8") as f:
             session_data = json.load(f)
 
         start_time_iso = session_data.get("start_time")
         if not start_time_iso:
             await update.message.reply_text(
-                "⚠️ *Error:* Start time missing in session data.",
+                "⚠️ *Uptime Error:*\n_Session start time missing._",
                 parse_mode="Markdown"
             )
-            logger.error(f"Session start time missing (User: {user})")
+            logger.error(f"[Uptime] Start time missing (User: {user}).")
             return
 
         start_time = datetime.fromisoformat(start_time_iso)
@@ -57,18 +57,24 @@ async def uptime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         uptime_str = f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m"
 
-        # Reply with uptime info
+        # Build clean uptime message
+        message = (
+            f"⏱️ *A.R.K. Session Uptime*\n\n"
+            f"`{uptime_str}`\n\n"
+            "_Relentless precision. Relentless progress._"
+        )
+
         await update.message.reply_text(
-            f"⏱️ *A.R.K. Uptime:*\n\n`{uptime_str}`",
+            message,
             parse_mode="Markdown"
         )
 
-        logger.info(f"Uptime sent to {user} (Uptime: {uptime_str})")
+        logger.info(f"[Uptime] Uptime sent to {user} → {uptime_str}.")
 
     except Exception as e:
+        logger.critical(f"[Uptime] Critical error retrieving uptime: {e}")
         await update.message.reply_text(
-            "❌ *Critical Error:* Unable to retrieve uptime data.",
+            "❌ *Critical Error:*\n_Unable to retrieve uptime information._",
             parse_mode="Markdown"
         )
-        await report_error(context.bot, chat_id, e, context_info="Uptime Handler Error")
-        logger.critical(f"Critical error retrieving uptime: {e}")
+        await report_error(context.bot, chat_id, e, context_info="Uptime Handler Failure")
