@@ -1,6 +1,8 @@
 """
-A.R.K. Volume Spike Detector – Ultra Masterclass Build.
-Detects real-time smart volume surges with adaptive thresholding.
+A.R.K. Volume Spike Detector – Ultra Precision 3.0
+Smart, Adaptive Volume Surge Recognition for Elite Trading.
+
+Engineered for: Real-Time Detection, Dynamic Environments, Multilingual Safety Logging.
 """
 
 import pandas as pd
@@ -9,45 +11,48 @@ from bot.utils.logger import setup_logger
 # Setup structured logger
 logger = setup_logger(__name__)
 
-def detect_volume_spike(df: pd.DataFrame, window: int = 30, multiplier: float = 1.4) -> dict:
+def detect_volume_spike(df: pd.DataFrame, window: int = 30, multiplier: float = 1.4) -> dict | None:
     """
-    Detects meaningful volume spikes based on dynamic average.
+    Detects significant volume spikes based on dynamic rolling averages.
 
     Args:
-        df (pd.DataFrame): DataFrame with 'v' (volume) column.
-        window (int): Rolling window size (default 30 candles).
-        multiplier (float): Spike multiplier threshold (default 1.4x).
+        df (pd.DataFrame): DataFrame containing 'v' (volume) column.
+        window (int): Rolling window size for average calculation (default: 30 candles).
+        multiplier (float): Threshold multiplier to define a spike (default: 1.4x).
 
     Returns:
-        dict or None
+        dict or None: Detailed spike information or None if no spike detected.
     """
+
     if df is None or df.empty or "v" not in df.columns:
-        logger.warning("⚠️ [Volume Spike] Invalid or missing DataFrame input.")
+        logger.warning("⚠️ [VolumeSpikeDetector] Invalid DataFrame input – volume column missing.")
         return None
 
     try:
+        # === Rolling Average Volume ===
         avg_volume = df["v"].rolling(window=window, min_periods=10).mean().iloc[-1]
         recent_volumes = df["v"].tail(3)
+        recent_avg_volume = recent_volumes.mean()
 
         if avg_volume == 0:
-            logger.warning("⚠️ [Volume Spike] Zero average volume, skipping detection.")
+            logger.warning("⚠️ [VolumeSpikeDetector] Zero average volume detected. Spike detection skipped.")
             return None
 
-        # New logic: compare last 3 candles' average to rolling average
-        recent_avg = recent_volumes.mean()
+        # === Spike Detection Logic ===
+        if recent_avg_volume >= avg_volume * multiplier:
+            volume_spike_percent = (recent_avg_volume / avg_volume) * 100
 
-        if recent_avg >= avg_volume * multiplier:
-            volume_percent = (recent_avg / avg_volume) * 100
+            logger.info(f"✅ [VolumeSpikeDetector] Volume spike detected: {volume_spike_percent:.2f}% over average.")
 
             return {
                 "volume_spike": True,
-                "recent_volume_avg": int(recent_avg),
+                "recent_volume_avg": int(recent_avg_volume),
                 "rolling_volume_avg": int(avg_volume),
-                "volume_percent": round(volume_percent, 2)
+                "volume_percent": round(volume_spike_percent, 2)
             }
 
         return None
 
     except Exception as e:
-        logger.error(f"❌ [Volume Spike] Critical detection error: {e}")
+        logger.error(f"❌ [VolumeSpikeDetector Critical Error] {e}")
         return None
