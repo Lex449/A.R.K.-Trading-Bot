@@ -1,8 +1,7 @@
 """
-A.R.K. Data Loader – Dual Source Market Fetcher.
-Primary: Finnhub API
-Backup: Yahoo Finance
-Optimized for fault tolerance, speed, and multilingual logging.
+A.R.K. Data Loader – Dual Source Market Fetcher Ultra 3.0
+Primary: Finnhub API | Backup: Yahoo Finance
+Maximal Fault-Tolerant, Ultra-Optimized, Multilingual Logging.
 """
 
 import pandas as pd
@@ -18,19 +17,20 @@ from bot.utils.logger import setup_logger
 logger = setup_logger(__name__)
 config = get_settings()
 
+# Finnhub API Key
 FINNHUB_TOKEN = config.get("FINNHUB_API_KEY")
 
-async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame:
+async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | None:
     """
-    Fetches historical OHLC data for a symbol from Finnhub.
-    Falls back to Yahoo Finance if Finnhub fails.
+    Fetches historical OHLCV data for a symbol.
+    Priority: Finnhub → Backup: Yahoo Finance.
 
     Args:
         symbol (str): Ticker symbol (e.g., AAPL, TSLA).
-        chat_id (int, optional): User's chat ID for language detection.
+        chat_id (int, optional): For user-specific language messages.
 
     Returns:
-        pd.DataFrame or None
+        pd.DataFrame or None if both sources fail.
     """
     lang = get_language(chat_id) if chat_id else "en"
 
@@ -43,9 +43,9 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame:
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
-                    
+
                     if data.get("s") != "ok":
-                        raise ValueError(f"Finnhub response invalid: {data}")
+                        raise ValueError(f"Invalid Finnhub Response: {data}")
 
                     df = pd.DataFrame({
                         "t": pd.to_datetime(data["t"], unit="s"),
@@ -54,19 +54,18 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame:
                         "l": data["l"],
                         "c": data["c"],
                         "v": data["v"],
-                    })
+                    }).set_index("t")
 
-                    df = df[["t", "o", "h", "l", "c", "v"]]
-                    df.set_index("t", inplace=True)
-                    logger.info(f"[DataLoader] Finnhub data fetched successfully for {symbol}.")
+                    logger.info(f"[DataLoader] ✅ Finnhub data fetched successfully for {symbol}.")
                     return df
+
                 else:
-                    raise Exception(f"HTTP {response.status}")
+                    raise ConnectionError(f"Finnhub HTTP Error: {response.status}")
 
-    except Exception as e:
-        logger.warning(f"[DataLoader] {get_text('error_primary_source', lang)}: {e}")
+    except Exception as primary_error:
+        logger.warning(f"[DataLoader] {get_text('error_primary_source', lang)}: {primary_error}")
 
-    # === Backup Source: Yahoo Finance ===
+    # === Fallback to Backup Source: Yahoo Finance ===
     try:
         logger.info(f"[DataLoader] {get_text('fetching_data_backup', lang)}")
 
@@ -74,7 +73,7 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame:
         hist = ticker.history(period="5d", interval="5m")
 
         if hist.empty:
-            raise ValueError("Yahoo Finance returned empty data.")
+            raise ValueError("Yahoo Finance returned empty dataset.")
 
         hist = hist.rename(columns={
             "Open": "o",
@@ -85,9 +84,10 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame:
         })
 
         df = hist[["o", "h", "l", "c", "v"]]
-        logger.info(f"[DataLoader] Yahoo Finance data fetched successfully for {symbol}.")
+
+        logger.info(f"[DataLoader] ✅ Yahoo Finance data fetched successfully for {symbol}.")
         return df
 
-    except Exception as e:
-        logger.error(f"[DataLoader] {get_text('error_backup_source', lang)}: {e}")
+    except Exception as backup_error:
+        logger.error(f"[DataLoader] {get_text('error_backup_source', lang)}: {backup_error}")
         return None
