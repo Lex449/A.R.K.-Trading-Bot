@@ -1,53 +1,61 @@
 # bot/auto/heartbeat_scheduler.py
 
 """
-A.R.K. Heartbeat Scheduler – Daily Analysis Auto-Recovery.
-Ensures Daily Scheduler is always active.
+A.R.K. Heartbeat Scheduler – Live Pulse Monitoring
+Sends automatic status pings to ensure bot uptime and transparency.
 """
 
 import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from bot.auto.daily_scheduler import daily_scheduler, start_daily_analysis_scheduler
 from bot.utils.logger import setup_logger
+from bot.config.settings import get_settings
 
-# Logger Setup
+# Setup Logger
 logger = setup_logger(__name__)
 
-# Heartbeat Scheduler (separat vom normalen Scheduler)
+# Global Heartbeat Scheduler
 heartbeat_scheduler = AsyncIOScheduler()
 
 def start_heartbeat(application):
     """
-    Starts the Heartbeat Monitoring to ensure Daily Scheduler stays alive.
+    Starts sending a heartbeat message at regular intervals (every 60 minutes).
     """
+    config = get_settings()
+    chat_id = int(config["TELEGRAM_CHAT_ID"])
+
     try:
-        # Alle alten Jobs entfernen (Safety)
+        # Sicherstellen, dass alte Jobs gelöscht sind
         heartbeat_scheduler.remove_all_jobs()
 
-        # Heartbeat alle 5 Minuten
+        # Alle 60 Minuten eine Ping-Nachricht
         heartbeat_scheduler.add_job(
-            check_daily_scheduler,
-            trigger=IntervalTrigger(minutes=5),
-            args=[application],
-            id="heartbeat_check_daily",
+            send_heartbeat,
+            trigger=IntervalTrigger(minutes=60),
+            args=[application, chat_id],
+            id="heartbeat_ping",
             replace_existing=True,
-            name="Heartbeat – Check Daily Scheduler"
+            name="Heartbeat Ping"
         )
 
-        heartbeat_scheduler.start()
+        if not heartbeat_scheduler.running:
+            heartbeat_scheduler.start()
 
-        logger.info("✅ [Heartbeat] Daily Scheduler Heartbeat started successfully.")
+        logger.info("✅ [Heartbeat] Heartbeat Scheduler gestartet.")
 
     except Exception as e:
-        logger.error(f"❌ [Heartbeat] Failed to start Heartbeat: {e}")
+        logger.error(f"❌ [Heartbeat Error] Fehler beim Start des Heartbeats: {e}")
 
-async def check_daily_scheduler(application):
+async def send_heartbeat(application, chat_id: int):
     """
-    Checks if Daily Scheduler is running and restarts if needed.
+    Sends a simple heartbeat message.
     """
-    if not daily_scheduler.running:
-        logger.warning("❗ [Heartbeat] Daily Scheduler is NOT running. Restarting...")
-        start_daily_analysis_scheduler(application)
-    else:
-        logger.info("✅ [Heartbeat] Daily Scheduler is healthy.")
+    try:
+        await application.bot.send_message(
+            chat_id=chat_id,
+            text="✅ *Heartbeat:* Bot läuft stabil. Alle Systeme aktiv.",
+            parse_mode="Markdown"
+        )
+        logger.info(f"✅ [Heartbeat] Ping gesendet an Chat ID {chat_id}.")
+    except Exception as e:
+        logger.error(f"❌ [Heartbeat] Fehler beim Senden des Heartbeats: {e}")
