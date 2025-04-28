@@ -1,5 +1,3 @@
-# bot/utils/i18n.py
-
 """
 A.R.K. Internationalization (i18n) Module – Ultra Premium Multilingual Build.
 Handles multilingual text output for clean and scalable user interaction.
@@ -19,6 +17,20 @@ translations = {
         "analysis_no_symbol": "❌ Please provide a valid symbol. Example: `/analyse AAPL`",
         "set_language": "✅ Language updated successfully. All future messages will be sent in your selected language.",
         "shutdown": "🛑 Bot is shutting down. Stay tuned for the next session!",
+        # Session Tracker Additions
+        "session_title_total": "📊 *Session Overview*",
+        "session_title_today": "🌞 *Today’s Report*",
+        "session_title_week": "📆 *Weekly Report*",
+        "session_id": "Session ID",
+        "start_time": "Start Time",
+        "uptime": "Uptime",
+        "total_signals": "Total Signals",
+        "strong_signals": "Strong Signals (≥4⭐)",
+        "moderate_signals": "Moderate Signals (3⭐)",
+        "weak_signals": "Weak Signals (≤2⭐)",
+        "avg_confidence": "Avg Confidence",
+        "avg_score": "Avg Signal Score",
+        "relentless_footer": "Relentless progress. Relentless precision."
     },
     "de": {
         "start": "👋 Hallo {user}! Willkommen bei *A.R.K. Trading Bot 2.0*.\n\nNutze /help, um alle verfügbaren Befehle anzuzeigen und smarter zu traden.",
@@ -26,6 +38,20 @@ translations = {
         "analysis_no_symbol": "❌ Bitte gib ein gültiges Symbol an. Beispiel: `/analyse AAPL`",
         "set_language": "✅ Sprache erfolgreich aktualisiert. Alle weiteren Nachrichten folgen in der gewählten Sprache.",
         "shutdown": "🛑 Der Bot wird beendet. Bis zum nächsten Einsatz!",
+        # Session Tracker Additions
+        "session_title_total": "📊 *Session Übersicht*",
+        "session_title_today": "🌞 *Bericht Heute*",
+        "session_title_week": "📆 *Wochenbericht*",
+        "session_id": "Session-ID",
+        "start_time": "Startzeit",
+        "uptime": "Laufzeit",
+        "total_signals": "Gesamtsignale",
+        "strong_signals": "Starke Signale (≥4⭐)",
+        "moderate_signals": "Moderate Signale (3⭐)",
+        "weak_signals": "Schwache Signale (≤2⭐)",
+        "avg_confidence": "Durchschnittliches Vertrauen",
+        "avg_score": "Durchschnittliche Bewertung",
+        "relentless_footer": "Unaufhaltsamer Fortschritt. Unaufhaltsame Präzision."
     }
 }
 
