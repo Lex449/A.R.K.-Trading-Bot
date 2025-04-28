@@ -8,6 +8,8 @@ from bot.utils.session_tracker import get_weekly_report, reset_weekly_data
 from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
 from bot.config.settings import get_settings
+from bot.utils.i18n import get_text
+from bot.utils.language import get_language
 
 # Setup Logger
 logger = setup_logger(__name__)
@@ -21,16 +23,23 @@ async def weekly_recap_job(application, chat_id=None):
         bot = application.bot if application else Bot(token=config["BOT_TOKEN"])
         target_chat_id = chat_id or int(config["TELEGRAM_CHAT_ID"])
 
+        # Retrieve the language for the user
+        lang = get_language(target_chat_id) or "en"
+
+        # Fetch the weekly report
         weekly_report = get_weekly_report()
 
-        motivation = (
+        # Motivational text
+        motivation = get_text("weekly_motivation", lang) or (
             "\n\n🏆 *End of Week Reflection:*\n"
             "Success isn't built in a day, but momentum is.\n"
             "Reset. Refocus. Reload. 🚀"
         )
 
+        # Compose message
         message = f"📈 *Weekly Trading Recap*\n\n{weekly_report}{motivation}"
 
+        # Send the message to the user
         await bot.send_message(
             chat_id=target_chat_id,
             text=message,
