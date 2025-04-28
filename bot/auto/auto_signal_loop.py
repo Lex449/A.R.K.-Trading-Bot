@@ -1,6 +1,6 @@
 """
-A.R.K. Ultra Auto Signal Loop – 2025 Hyper Premium Edition.
-Boost Mode | Deep Confidence AI | Adaptive Trading Intelligence
+A.R.K. Ultra Auto Signal Loop – Hyper Premium Engine 2025.
+Fully Boosted, AI-Tuned, News-Integrated, Crash-Protected.
 """
 
 import asyncio
@@ -10,7 +10,7 @@ from telegram import Bot
 from bot.engine.analysis_engine import analyze_symbol
 from bot.engine.move_alert_engine import detect_move_alert
 from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news
-from bot.engine.deep_confidence_engine import adjust_confidence  # << NEU
+from bot.engine.deep_confidence_engine import adjust_confidence
 from bot.utils.ultra_signal_builder import build_ultra_signal
 from bot.utils.session_tracker import update_session_tracker
 from bot.utils.error_reporter import report_error
@@ -27,33 +27,35 @@ async def auto_signal_loop():
     bot = Bot(token=config["BOT_TOKEN"])
     chat_id = int(config["TELEGRAM_CHAT_ID"])
     symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
-    language = config.get("BOT_LANGUAGE", "en")
+    lang = config.get("BOT_LANGUAGE", "en")
 
-    max_api_calls_per_minute = 140
-    signal_interval_sec = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
-    boost_interval_sec = 20  # Boost Interval
+    max_api_calls = 140
+    signal_interval = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
+    boost_interval = 20
     boost_mode_active = False
-    boost_mode_end_time = None
+    boost_end_time = None
 
-    calls_this_minute = 0
-    minute_start_time = time.time()
+    calls = 0
+    start_minute = time.time()
 
     if not symbols:
-        logger.error("❌ [AutoSignal] No symbols configured! Exiting.")
+        logger.error("❌ [AutoSignal] No symbols configured! Check settings.")
         return
 
-    logger.info("🚀 [AutoSignal] Hyper Monitoring Activated...")
+    logger.info("🚀 [AutoSignal] Ultra Monitoring Activated.")
 
     last_news_check = None
 
     try:
         while True:
-            # Reset API counter every minute
-            if time.time() - minute_start_time >= 60:
-                calls_this_minute = 0
-                minute_start_time = time.time()
+            now = time.time()
 
-            # Check if Market is Open
+            # === Reset API Call Counter ===
+            if now - start_minute >= 60:
+                calls = 0
+                start_minute = now
+
+            # === Market Open Check ===
             if not is_trading_day() or not is_trading_hours():
                 logger.info("⏳ [Market] Closed. Sleeping 5 min.")
                 await asyncio.sleep(300)
@@ -65,72 +67,71 @@ async def auto_signal_loop():
 
             for symbol in symbols:
                 try:
-                    if calls_this_minute >= max_api_calls_per_minute:
-                        logger.warning("⚠️ [API Limit] Max API calls reached. Cooling down 10s.")
+                    # Respect API limits
+                    if calls >= max_api_calls:
+                        logger.warning("⚠️ [API] Max API calls hit. Sleeping 10s.")
                         await asyncio.sleep(10)
-                        calls_this_minute = 0
-                        minute_start_time = time.time()
+                        calls = 0
+                        start_minute = time.time()
 
                     result = await analyze_symbol(symbol)
-                    calls_this_minute += 1
+                    calls += 1
 
                     if not result:
                         continue
 
+                    # Move Detection
                     move_alert = await detect_move_alert(result.get("df"))
                     if move_alert:
-                        await send_move_alert(bot, chat_id, symbol, move_alert, language)
+                        await send_move_alert(bot, chat_id, symbol, move_alert, lang)
 
                         if move_alert.get("move_percent", 0) >= 2.5:
                             boost_mode_active = True
-                            boost_mode_end_time = time.time() + 300  # 5 Minuten Boost
-                            logger.info(f"⚡ [BOOST] Boost Mode activated due to strong move in {symbol}.")
+                            boost_end_time = now + 300  # Boost 5 min
+                            logger.info(f"⚡ [BOOST] Boost activated by move in {symbol}")
 
+                    # Signal Detection
                     valid_patterns = [
                         p for p in result.get("patterns", [])
                         if "⭐" in p and p.count("⭐") >= 3
                     ]
 
-                    # === Deep Learning Confidence Adjustment ===
                     raw_confidence = result.get("avg_confidence", 0)
                     confidence = adjust_confidence(raw_confidence)
 
                     if valid_patterns and confidence >= 58:
                         update_session_tracker(len(valid_patterns), confidence)
 
-                        signal_message = build_ultra_signal(
+                        message = build_ultra_signal(
                             symbol=symbol,
                             move=result.get("move"),
                             volume_spike=result.get("volume_spike"),
                             atr_breakout=result.get("atr_breakout"),
                             risk_reward=result.get("risk_reward"),
-                            lang=language
+                            lang=lang
                         )
 
-                        if signal_message:
+                        if message:
                             await bot.send_message(
                                 chat_id=chat_id,
-                                text=signal_message,
+                                text=message,
                                 parse_mode="Markdown",
                                 disable_web_page_preview=True
                             )
-                            logger.info(f"✅ [Signal] Premium signal sent for {symbol} | Confidence: {confidence:.2f}%")
+                            logger.info(f"✅ [Signal] Signal sent for {symbol} | Confidence {confidence:.1f}%")
 
-                    await asyncio.sleep(1.1)  # Respect Telegram Rate Limit
+                    await asyncio.sleep(1.1)  # Avoid Telegram limits
 
-                except Exception as symbol_error:
-                    logger.error(f"❌ [AutoSignal] Error for {symbol}: {symbol_error}")
-                    await report_error(bot, chat_id, symbol_error, context_info=f"AutoSignal for {symbol}")
+                except Exception as e_symbol:
+                    logger.error(f"❌ [AutoSignal] Error at {symbol}: {e_symbol}")
+                    await report_error(bot, chat_id, e_symbol, context_info=f"Symbol {symbol}")
 
-            # === Breaking News Check ===
+            # === Breaking News ===
             try:
-                now = time.time()
-                if last_news_check is None or (now - last_news_check) >= 300:
-                    breaking_news = await detect_breaking_news()
-
-                    if breaking_news:
-                        news_message = await format_breaking_news(breaking_news, lang=language)
-
+                if last_news_check is None or now - last_news_check >= 300:
+                    news_list = await detect_breaking_news()
+                    if news_list:
+                        news_message = await format_breaking_news(news_list, lang)
                         if news_message:
                             await bot.send_message(
                                 chat_id=chat_id,
@@ -138,63 +139,62 @@ async def auto_signal_loop():
                                 parse_mode="Markdown",
                                 disable_web_page_preview=True
                             )
-                            logger.info("📰 [NewsAlert] Breaking News sent.")
+                            logger.info("📰 [News] Breaking news sent.")
 
                             boost_mode_active = True
-                            boost_mode_end_time = time.time() + 300
-                            logger.info("📰 [BOOST] Boost Mode activated after Breaking News.")
+                            boost_end_time = time.time() + 300
 
                     last_news_check = now
 
-            except Exception as news_error:
-                logger.error(f"⚠️ [NewsDetection] Error: {news_error}")
-                await report_error(bot, chat_id, news_error, context_info="NewsDetection Failure")
+            except Exception as e_news:
+                logger.error(f"❌ [NewsDetection] Error: {e_news}")
+                await report_error(bot, chat_id, e_news, context_info="NewsDetection")
 
-            # Decide Sleep Interval
-            sleep_time = boost_interval_sec if boost_mode_active and time.time() < boost_mode_end_time else signal_interval_sec
+            # === Sleep Management ===
+            sleep_interval = boost_interval if boost_mode_active and time.time() < boost_end_time else signal_interval
 
-            if boost_mode_active and time.time() >= boost_mode_end_time:
+            if boost_mode_active and time.time() >= boost_end_time:
                 boost_mode_active = False
-                logger.info("⚡ [BOOST] Boost Mode ended, normal cycle resumed.")
+                logger.info("⚡ [BOOST] Boost Mode ended.")
 
-            logger.info(f"⏳ [AutoSignal] Cycle complete. Sleeping {sleep_time} seconds...")
-            await asyncio.sleep(sleep_time)
+            logger.info(f"⏳ [AutoSignal] Cycle complete. Sleeping {sleep_interval}s...")
+            await asyncio.sleep(sleep_interval)
 
-    except Exception as loop_error:
-        logger.critical(f"🔥 [AutoSignalLoop] Fatal crash: {loop_error}")
-        await report_error(bot, chat_id, loop_error, context_info="AutoSignalLoop Fatal Crash")
+    except Exception as e_loop:
+        logger.critical(f"🔥 [AutoSignalLoop] Fatal error: {e_loop}")
+        await report_error(bot, chat_id, e_loop, context_info="AutoSignalLoop Fatal")
         await asyncio.sleep(120)
 
-async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict, language: str = "en"):
+async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict, lang: str = "en"):
     """
-    Sends early/strong move alerts.
+    Sends early warning or strong move alert.
     """
     move_type = move_alert.get("type", "early")
     move_percent = move_alert.get("move_percent", 0.0)
 
-    if language.lower() == "de":
+    if lang == "de":
         text = (
-            f"🚨 *Starke Marktbewegung!*\n\n"
+            f"🚨 *Starke Marktbewegung*\n\n"
             f"*Symbol:* `{symbol}`\n"
             f"*Bewegung:* `{move_percent:.2f}%`\n"
-            f"_A.R.K. erkennt Marktveränderungen in Echtzeit._"
+            f"_A.R.K. erkennt Veränderungen sofort._"
         ) if move_type == "full" else (
-            f"⚠️ *Frühe Bewegungswarnung*\n\n"
+            f"⚠️ *Frühe Marktbewegung*\n\n"
             f"*Symbol:* `{symbol}`\n"
             f"*Bewegung:* `{move_percent:.2f}%`\n"
-            f"_A.R.K. überwacht den Markt kontinuierlich._"
+            f"_Wachsamkeit führt zu Siegen._"
         )
     else:
         text = (
-            f"🚨 *Strong Market Move!*\n\n"
+            f"🚨 *Strong Market Move*\n\n"
             f"*Symbol:* `{symbol}`\n"
             f"*Movement:* `{move_percent:.2f}%`\n"
-            f"_A.R.K. detects market changes in real-time._"
+            f"_A.R.K. detects real shifts instantly._"
         ) if move_type == "full" else (
-            f"⚠️ *Early Move Warning*\n\n"
+            f"⚠️ *Early Market Move*\n\n"
             f"*Symbol:* `{symbol}`\n"
             f"*Movement:* `{move_percent:.2f}%`\n"
-            f"_Smart traders act before the herd._"
+            f"_First movers take the prize._"
         )
 
     await bot.send_message(
@@ -203,4 +203,4 @@ async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict,
         parse_mode="Markdown",
         disable_web_page_preview=True
     )
-    logger.info(f"📈 [MoveAlert] {symbol} moved {move_percent:.2f}%")
+    logger.info(f"📈 [MoveAlert] {symbol} move {move_percent:.2f}% sent.")
