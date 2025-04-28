@@ -1,6 +1,6 @@
 """
-A.R.K. Performance Metrics – Ultra Stable Handlers.
-Delivers real-time session statistics and win/loss breakdown.
+A.R.K. Performance Metrics – Ultra Stable Wall Street Edition.
+Delivers real-time session performance and win/loss breakdown with flawless resilience.
 """
 
 import logging
@@ -18,40 +18,50 @@ logger = setup_logger(__name__)
 
 async def performance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handler for /performance command.
-    Provides clean, real-time session stats in the user's language.
+    Handles the /performance command.
+    Provides a real-time session performance overview.
     """
     chat_id = update.effective_chat.id
     user = update.effective_user.first_name or "Trader"
     lang = get_language(chat_id) or "en"
 
     try:
-        # Retrieve the performance summary and send the response
+        # Fetch performance summary
         summary = get_performance_summary(lang)
-        await update.message.reply_text(summary, parse_mode="Markdown")
-        logger.info(f"[Performance] Report sent to {user} (Chat ID: {chat_id})")
+
+        await update.message.reply_text(
+            summary,
+            parse_mode="Markdown",
+            disable_web_page_preview=True
+        )
+
+        logger.info(f"[Performance] Sent performance report to {user} (Chat ID: {chat_id}).")
 
     except Exception as e:
-        # Handle any errors during the performance command
         await report_error(context.bot, chat_id, e, context_info="Performance Command Error")
-        logger.error(f"[Performance Error] {e}")
+        logger.error(f"[Performance] Critical error: {e}")
 
 async def winloss(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handler for /winloss command.
-    Sends a win/loss overview with motivation message.
+    Handles the /winloss command.
+    Delivers win/loss ratio overview and motivational feedback.
     """
     chat_id = update.effective_chat.id
     user = update.effective_user.first_name or "Trader"
     lang = get_language(chat_id) or "en"
 
     try:
-        # Generate the win/loss report and send it
+        # Fetch win/loss report
         report = generate_win_loss_report(lang)
-        await update.message.reply_text(report, parse_mode="Markdown")
-        logger.info(f"[WinLoss] Report sent to {user} (Chat ID: {chat_id})")
+
+        await update.message.reply_text(
+            report,
+            parse_mode="Markdown",
+            disable_web_page_preview=True
+        )
+
+        logger.info(f"[WinLoss] Sent win/loss report to {user} (Chat ID: {chat_id}).")
 
     except Exception as e:
-        # Handle any errors during the win/loss command
         await report_error(context.bot, chat_id, e, context_info="WinLoss Command Error")
-        logger.error(f"[WinLoss Error] {e}")
+        logger.error(f"[WinLoss] Critical error: {e}")
