@@ -18,6 +18,7 @@ from bot.utils.market_time import is_trading_day, is_trading_hours
 from bot.utils.news_health_checker import check_finnhub_health
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
+from bot.auto.watchdog_monitor import refresh_watchdog  # <— NEU: Watchdog refresh integration
 
 # Setup structured logger
 logger = setup_logger(__name__)
@@ -48,14 +49,15 @@ async def auto_signal_loop():
 
     try:
         while True:
+            refresh_watchdog()  # <— Update heartbeat bei jedem Durchlauf
+
             now = time.time()
 
-            # === Reset API Call Counter ===
+            # Reset API calls
             if now - start_minute >= 60:
                 calls = 0
                 start_minute = now
 
-            # === Market Open Check ===
             if not is_trading_day() or not is_trading_hours():
                 logger.info("⏳ [Market] Closed. Sleeping 5 min.")
                 await asyncio.sleep(300)
@@ -67,7 +69,6 @@ async def auto_signal_loop():
 
             for symbol in symbols:
                 try:
-                    # Respect API limits
                     if calls >= max_api_calls:
                         logger.warning("⚠️ [API] Max API calls hit. Sleeping 10s.")
                         await asyncio.sleep(10)
@@ -80,17 +81,15 @@ async def auto_signal_loop():
                     if not result:
                         continue
 
-                    # Move Detection
                     move_alert = await detect_move_alert(result.get("df"))
                     if move_alert:
                         await send_move_alert(bot, chat_id, symbol, move_alert, lang)
 
                         if move_alert.get("move_percent", 0) >= 2.5:
                             boost_mode_active = True
-                            boost_end_time = now + 300  # Boost 5 min
+                            boost_end_time = now + 300
                             logger.info(f"⚡ [BOOST] Boost activated by move in {symbol}")
 
-                    # Signal Detection
                     valid_patterns = [
                         p for p in result.get("patterns", [])
                         if "⭐" in p and p.count("⭐") >= 3
@@ -120,13 +119,13 @@ async def auto_signal_loop():
                             )
                             logger.info(f"✅ [Signal] Signal sent for {symbol} | Confidence {confidence:.1f}%")
 
-                    await asyncio.sleep(1.1)  # Avoid Telegram limits
+                    await asyncio.sleep(1.1)
 
                 except Exception as e_symbol:
                     logger.error(f"❌ [AutoSignal] Error at {symbol}: {e_symbol}")
                     await report_error(bot, chat_id, e_symbol, context_info=f"Symbol {symbol}")
 
-            # === Breaking News ===
+            # Breaking News
             try:
                 if last_news_check is None or now - last_news_check >= 300:
                     news_list = await detect_breaking_news()
@@ -150,7 +149,7 @@ async def auto_signal_loop():
                 logger.error(f"❌ [NewsDetection] Error: {e_news}")
                 await report_error(bot, chat_id, e_news, context_info="NewsDetection")
 
-            # === Sleep Management ===
+            # Sleep Control
             sleep_interval = boost_interval if boost_mode_active and time.time() < boost_end_time else signal_interval
 
             if boost_mode_active and time.time() >= boost_end_time:
@@ -166,9 +165,6 @@ async def auto_signal_loop():
         await asyncio.sleep(120)
 
 async def send_move_alert(bot: Bot, chat_id: int, symbol: str, move_alert: dict, lang: str = "en"):
-    """
-    Sends early warning or strong move alert.
-    """
     move_type = move_alert.get("type", "early")
     move_percent = move_alert.get("move_percent", 0.0)
 
