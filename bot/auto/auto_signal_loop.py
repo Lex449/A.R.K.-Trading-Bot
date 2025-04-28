@@ -1,8 +1,6 @@
-# bot/auto/auto_signal_loop.py
-
 """
 A.R.K. Ultra Auto Signal Loop – 2025 Hyper Premium Edition.
-Boost Mode | API Control | Adaptive Trading Intelligence
+Boost Mode | Deep Confidence AI | Adaptive Trading Intelligence
 """
 
 import asyncio
@@ -12,6 +10,7 @@ from telegram import Bot
 from bot.engine.analysis_engine import analyze_symbol
 from bot.engine.move_alert_engine import detect_move_alert
 from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news
+from bot.engine.deep_confidence_engine import adjust_confidence  # << NEU
 from bot.utils.ultra_signal_builder import build_ultra_signal
 from bot.utils.session_tracker import update_session_tracker
 from bot.utils.error_reporter import report_error
@@ -82,10 +81,9 @@ async def auto_signal_loop():
                     if move_alert:
                         await send_move_alert(bot, chat_id, symbol, move_alert, language)
 
-                        # Activate Boost Mode if strong move
                         if move_alert.get("move_percent", 0) >= 2.5:
                             boost_mode_active = True
-                            boost_mode_end_time = time.time() + 300  # Boost for 5 minutes
+                            boost_mode_end_time = time.time() + 300  # 5 Minuten Boost
                             logger.info(f"⚡ [BOOST] Boost Mode activated due to strong move in {symbol}.")
 
                     valid_patterns = [
@@ -93,10 +91,12 @@ async def auto_signal_loop():
                         if "⭐" in p and p.count("⭐") >= 3
                     ]
 
-                    avg_confidence = result.get("avg_confidence", 0)
+                    # === Deep Learning Confidence Adjustment ===
+                    raw_confidence = result.get("avg_confidence", 0)
+                    confidence = adjust_confidence(raw_confidence)
 
-                    if valid_patterns and avg_confidence >= 58:
-                        update_session_tracker(len(valid_patterns), avg_confidence)
+                    if valid_patterns and confidence >= 58:
+                        update_session_tracker(len(valid_patterns), confidence)
 
                         signal_message = build_ultra_signal(
                             symbol=symbol,
@@ -114,9 +114,9 @@ async def auto_signal_loop():
                                 parse_mode="Markdown",
                                 disable_web_page_preview=True
                             )
-                            logger.info(f"✅ [Signal] Premium signal sent for {symbol}")
+                            logger.info(f"✅ [Signal] Premium signal sent for {symbol} | Confidence: {confidence:.2f}%")
 
-                    await asyncio.sleep(1.1)  # Respect Telegram limit
+                    await asyncio.sleep(1.1)  # Respect Telegram Rate Limit
 
                 except Exception as symbol_error:
                     logger.error(f"❌ [AutoSignal] Error for {symbol}: {symbol_error}")
@@ -140,7 +140,6 @@ async def auto_signal_loop():
                             )
                             logger.info("📰 [NewsAlert] Breaking News sent.")
 
-                            # Optional: Boost after Breaking News
                             boost_mode_active = True
                             boost_mode_end_time = time.time() + 300
                             logger.info("📰 [BOOST] Boost Mode activated after Breaking News.")
