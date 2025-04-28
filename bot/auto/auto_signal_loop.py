@@ -1,6 +1,6 @@
 """
 A.R.K. Ultra Auto Signal Loop – Hyper Premium Engine 2025.
-Fully Boosted, AI-Tuned, News-Integrated, Crash-Protected.
+Fully Boosted, AI-Tuned, News-Integrated, Crash-Protected. NASA Edition.
 """
 
 import asyncio
@@ -16,9 +16,9 @@ from bot.utils.session_tracker import update_session_tracker
 from bot.utils.error_reporter import report_error
 from bot.utils.market_time import is_trading_day, is_trading_hours
 from bot.utils.news_health_checker import check_finnhub_health
+from bot.auto.watchdog_monitor import refresh_watchdog
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
-from bot.auto.watchdog_monitor import refresh_watchdog  # <— NEU: Watchdog refresh integration
 
 # Setup structured logger
 logger = setup_logger(__name__)
@@ -49,14 +49,20 @@ async def auto_signal_loop():
 
     try:
         while True:
-            refresh_watchdog()  # <— Update heartbeat bei jedem Durchlauf
+            refresh_watchdog()
 
             now = time.time()
 
-            # Reset API calls
             if now - start_minute >= 60:
                 calls = 0
                 start_minute = now
+
+            # Tiny Telegram Ping alle 10 Minuten
+            if int(time.time()) % 600 < 5:
+                try:
+                    await bot.get_me()
+                except Exception as e_ping:
+                    logger.warning(f"⚠️ [Heartbeat Ping] Telegram reconnect: {e_ping}")
 
             if not is_trading_day() or not is_trading_hours():
                 logger.info("⏳ [Market] Closed. Sleeping 5 min.")
@@ -75,7 +81,12 @@ async def auto_signal_loop():
                         calls = 0
                         start_minute = time.time()
 
-                    result = await analyze_symbol(symbol)
+                    try:
+                        result = await asyncio.wait_for(analyze_symbol(symbol), timeout=15)
+                    except asyncio.TimeoutError:
+                        logger.warning(f"⚠️ [Timeout] Analysis timeout at {symbol}")
+                        continue
+
                     calls += 1
 
                     if not result:
@@ -125,10 +136,16 @@ async def auto_signal_loop():
                     logger.error(f"❌ [AutoSignal] Error at {symbol}: {e_symbol}")
                     await report_error(bot, chat_id, e_symbol, context_info=f"Symbol {symbol}")
 
-            # Breaking News
+            # === Breaking News Check ===
             try:
                 if last_news_check is None or now - last_news_check >= 300:
-                    news_list = await detect_breaking_news()
+                    try:
+                        news_list = await detect_breaking_news()
+                    except Exception as e_news_fetch:
+                        logger.error(f"❌ [NewsDetection] Fetch error: {e_news_fetch}")
+                        await report_error(bot, chat_id, e_news_fetch, context_info="Critical News Fetch")
+                        news_list = []
+
                     if news_list:
                         news_message = await format_breaking_news(news_list, lang)
                         if news_message:
@@ -149,7 +166,6 @@ async def auto_signal_loop():
                 logger.error(f"❌ [NewsDetection] Error: {e_news}")
                 await report_error(bot, chat_id, e_news, context_info="NewsDetection")
 
-            # Sleep Control
             sleep_interval = boost_interval if boost_mode_active and time.time() < boost_end_time else signal_interval
 
             if boost_mode_active and time.time() >= boost_end_time:
