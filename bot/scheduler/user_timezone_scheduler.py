@@ -1,6 +1,6 @@
 """
-A.R.K. User Timezone Scheduler – Handles dynamic Recap & Reset Jobs per user timezone.
-Ensures real-time task scheduling according to user timezones.
+A.R.K. User Timezone Scheduler – Ultra Premium Dynamic Scheduling System.
+Handles Recap & Reset Jobs automatically for any user based on personal timezone.
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -11,21 +11,23 @@ from bot.auto.reset_week_job import reset_week_job
 from bot.utils.user_timezone_manager import get_user_timezone
 from bot.utils.logger import setup_logger
 from bot.utils.i18n import get_text
+from bot.utils.language import get_language
+from bot.utils.error_reporter import report_error
 
-# Setup structured logger
+# Logger
 logger = setup_logger(__name__)
 
 async def start_user_timezone_scheduler(application, chat_id: int):
     """
-    Launches personalized background jobs for each user based on timezone.
-    Handles jobs like daily recap, weekly recap, and resets at user-specific times.
+    Starts personalized background jobs based on user timezone.
+    Includes Daily Recap, Weekly Recap, Daily Reset, Weekly Reset.
     """
 
-    timezone = get_user_timezone(chat_id)
-    scheduler = AsyncIOScheduler(timezone=timezone)
-
     try:
-        # Daily Recap (custom timezone)
+        timezone = get_user_timezone(chat_id)
+        scheduler = AsyncIOScheduler(timezone=timezone)
+
+        # === Daily Recap (Personalized Timezone) ===
         scheduler.add_job(
             func=daily_recap_job,
             trigger="cron",
@@ -38,7 +40,7 @@ async def start_user_timezone_scheduler(application, chat_id: int):
         )
         logger.info(f"📊 Daily Recap scheduled for {chat_id} at 16:05 ({timezone}).")
 
-        # Weekly Recap (Friday)
+        # === Weekly Recap (Friday) ===
         scheduler.add_job(
             func=weekly_recap_job,
             trigger="cron",
@@ -52,7 +54,7 @@ async def start_user_timezone_scheduler(application, chat_id: int):
         )
         logger.info(f"📈 Weekly Recap scheduled for {chat_id} (Friday 16:10 {timezone}).")
 
-        # Daily Reset
+        # === Daily Reset (Midnight) ===
         scheduler.add_job(
             func=reset_today_job,
             trigger="cron",
@@ -65,7 +67,7 @@ async def start_user_timezone_scheduler(application, chat_id: int):
         )
         logger.info(f"♻️ Daily Reset scheduled for {chat_id} at 23:59 ({timezone}).")
 
-        # Weekly Reset
+        # === Weekly Reset (Monday) ===
         scheduler.add_job(
             func=reset_week_job,
             trigger="cron",
@@ -80,14 +82,16 @@ async def start_user_timezone_scheduler(application, chat_id: int):
         logger.info(f"♻️ Weekly Reset scheduled for {chat_id} (Monday 00:00 {timezone}).")
 
         scheduler.start()
-        logger.info(f"✅ Scheduler started for user {chat_id} (Timezone: {timezone}).")
+        logger.info(f"✅ User-Specific Scheduler started for {chat_id} (Timezone: {timezone}).")
 
     except Exception as e:
-        # Handling unexpected failures
-        logger.error(f"❌ Error during scheduler setup for user {chat_id}: {e}")
-        await report_error(application.bot, chat_id, e, context_info="User Timezone Scheduler Error")
-        await application.bot.send_message(
-            chat_id,
-            get_text("scheduler_error", get_language(chat_id)) or "⚠️ An error occurred while setting up your scheduler. Please try again.",
-            parse_mode="Markdown"
-        )
+        logger.error(f"❌ [Scheduler Error] Could not setup user scheduler for {chat_id}: {e}")
+        await report_error(application.bot, chat_id, e, context_info="User Timezone Scheduler Failure")
+        try:
+            await application.bot.send_message(
+                chat_id=chat_id,
+                text=get_text("scheduler_error", get_language(chat_id)) or "⚠️ Scheduler setup failed. Please try again.",
+                parse_mode="Markdown"
+            )
+        except Exception as inner_error:
+            logger.error(f"❌ [Scheduler Alert Error] Failed to notify user {chat_id}: {inner_error}")
