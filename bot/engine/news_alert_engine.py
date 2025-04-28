@@ -21,15 +21,22 @@ symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
 FINNHUB_ENDPOINT = f"https://finnhub.io/api/v1/news?category=general&token={finnhub_api_key}"
 YAHOO_ENDPOINT_TEMPLATE = "https://feeds.finance.yahoo.com/rss/2.0/headline?s={symbol}&region=US&lang=en-US"
 
-# Critical keywords triggering alerts
+# Critical keywords tuned for stock traders
 IMPORTANT_KEYWORDS = [
-    "inflation", "rate hike", "recession", "crash", "bankruptcy",
-    "fed", "layoffs", "defaults", "market turmoil", "collapse",
-    "interest rates", "geopolitical", "fomc", "earnings warning"
+    "inflation", "rate hike", "interest rates", "recession", "market crash", "market turmoil", "geopolitical risk",
+    "defaults", "bankruptcy", "fed", "fomc", "central bank", "monetary policy", "rate decision",
+    "earnings miss", "earnings beat", "guidance cut", "guidance lowered", "profit warning", "revenue miss",
+    "layoffs", "job cuts", "hiring freeze", "leadership change", "ceo resigns", "data breach", "regulatory probe", "sec investigation",
+    "semiconductor shortage", "chip ban", "ai boom", "electric vehicles", "battery fire", "solar subsidy cuts", "military contract",
+    "acquisition", "merger", "takeover", "buyout", "spinoff",
+    "apple", "microsoft", "nvidia", "tesla", "meta", "amazon", "google", "alphabet", "amd", "netflix", "shopify", "coinbase",
+    "boeing", "lockheed martin", "raytheon", "northrop grumman", "broadcom", "block inc", "paypal", "rivian", "palantir",
+    "snowflake", "exxon mobil", "unitedhealth", "tractor supply", "carnival", "supermicro", "enphase", "plug power",
+    "first solar", "sunrun", "blink charging", "chargepoint", "ionq", "rigetti", "trump media", "gamestop", "amc",
+    "beyond big", "sofi", "upstart",
 ]
 
 async def fetch_finnhub_news() -> list:
-    """Fetches the latest general market news from Finnhub."""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(FINNHUB_ENDPOINT, timeout=10) as response:
@@ -42,7 +49,6 @@ async def fetch_finnhub_news() -> list:
     return []
 
 async def fetch_yahoo_news(symbol: str) -> str:
-    """Fetches RSS feed headlines from Yahoo Finance."""
     try:
         async with aiohttp.ClientSession() as session:
             url = YAHOO_ENDPOINT_TEMPLATE.format(symbol=symbol)
@@ -56,7 +62,6 @@ async def fetch_yahoo_news(symbol: str) -> str:
     return ""
 
 async def detect_breaking_news() -> list:
-    """Detects important breaking news headlines."""
     breaking_news = []
     now = datetime.utcnow()
 
@@ -91,7 +96,6 @@ async def detect_breaking_news() -> list:
     return breaking_news
 
 async def format_breaking_news(news_list: list, lang: str = "en") -> str:
-    """Formats the breaking news headlines into a single message."""
     if not news_list:
         return ""
 
@@ -112,5 +116,4 @@ async def format_breaking_news(news_list: list, lang: str = "en") -> str:
         parts.append(f"• *{headline}*\nSource: `{source}`\n[Details]({url})")
 
     parts.append(footer)
-
     return "\n\n".join(parts)
