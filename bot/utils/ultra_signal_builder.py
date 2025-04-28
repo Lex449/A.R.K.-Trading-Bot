@@ -1,69 +1,71 @@
-# bot/engine/ultra_signal_builder.py
+# bot/utils/ultra_signal_builder.py
 
 """
-A.R.K. Ultra Signal Builder – Combines all detections into premium multilingual messages.
-Designed for: Premium Signal Outputs, Ultra Clarity, Motivational Edge.
+A.R.K. Ultra Signal Builder – Premium Trade Signal Generation
+Made for Ultra Precision, Risk Awareness and Dynamic Messaging.
 """
 
-def build_ultra_signal(symbol: str, move: dict, volume_spike: dict, atr_breakout: dict, risk_reward: dict, lang: str = "en") -> str:
+import logging
+from bot.utils.i18n import get_text
+from bot.utils.logger import setup_logger
+
+# Setup Logger
+logger = setup_logger(__name__)
+
+def build_ultra_signal(symbol: str,
+                       move: dict = None,
+                       volume_spike: dict = None,
+                       atr_breakout: dict = None,
+                       risk_reward: dict = None,
+                       lang: str = "en") -> str:
     """
-    Builds the ultimate multilingual premium trading signal message.
+    Builds a premium, ultra-smart trade signal message.
 
     Args:
         symbol (str): Trading symbol.
-        move (dict): Move Detection result (required).
-        volume_spike (dict): Volume Spike Detection result (optional).
-        atr_breakout (dict): ATR Breakout Detection result (optional).
-        risk_reward (dict): Risk/Reward analysis result (required).
-        lang (str): Language code ("en" or "de").
+        move (dict, optional): Movement alert details.
+        volume_spike (dict, optional): Volume spike detection.
+        atr_breakout (dict, optional): ATR breakout detection.
+        risk_reward (dict, optional): Risk/Reward analysis.
+        lang (str, optional): Language for output.
 
     Returns:
-        str: Complete formatted signal message.
+        str: Fully formatted signal message.
     """
 
-    if not move or not risk_reward:
-        return ""  # Critical components missing
+    try:
+        # === Base Header ===
+        header = f"🚀 *{get_text('signal_ultra_premium', lang)}*"
 
-    # Language Templates
-    templates = {
-        "en": {
-            "title": "🚨 Strong Move Detected!",
-            "symbol": "*Symbol:*",
-            "movement": "*Movement:*",
-            "volume": "*Volume Spike:*",
-            "atr": "*ATR Breakout:*",
-            "trend": "*Trend:*",
-            "confidence": "🧠 Stay sharp – strategy rules!",
-            "long": "📈 Long",
-            "short": "📉 Short",
-            "rr": "*Risk/Reward Analysis:*",
-        },
-        "de": {
-            "title": "🚨 Starker Marktalarm!",
-            "symbol": "*Symbol:*",
-            "movement": "*Bewegung:*",
-            "volume": "*Volumen Spike:*",
-            "atr": "*ATR-Ausbruch:*",
-            "trend": "*Trend:*",
-            "confidence": "🧠 Selbstvertrauen hoch halten – Strategie bleibt König!",
-            "long": "📈 Long",
-            "short": "📉 Short",
-            "rr": "*Risiko/Ertrags Analyse:*",
-        }
-    }
+        body = f"*Symbol:* `{symbol}`\n"
 
-    t = templates.get(lang.lower(), templates["en"])  # fallback to English if unknown
+        # === Move Detection Info ===
+        if move:
+            move_type = move.get("type", "Early Move ⚡")
+            move_percent = move.get("move_percent", 0.0)
+            body += f"*Movement:* `{move_percent:.2f}%` – {move_type}\n"
 
-    # Message Parts
-    parts = [
-        t["title"],
-        f"{t['symbol']} `{symbol}`",
-        f"{t['movement']} `{move['move_percent']:.2f}%`",
-        f"{t['volume']} `{volume_spike['volume_percent']:.1f}%`" if volume_spike else "",
-        f"{t['atr']} `{atr_breakout['atr_ratio']:.1f}%`" if atr_breakout else "",
-        f"{t['trend']} {t['long'] if move['direction'] == 'long' else t['short']}",
-        f"{t['rr']} ➔ Target `{risk_reward['target']}` | Stop `{risk_reward['stop_loss']}` | R/R `{risk_reward['risk_reward_ratio']}x`",
-        f"\n{t['confidence']}"
-    ]
+        # === Volume Spike Info ===
+        if volume_spike and volume_spike.get("volume_spike"):
+            body += f"*Volume Spike:* 📈 `{volume_spike.get('volume_percent', 0):.1f}%`\n"
 
-    return "\n".join([p for p in parts if p])
+        # === ATR Breakout Info ===
+        if atr_breakout and atr_breakout.get("atr_breakout"):
+            body += "*ATR Breakout:* ✅ Confirmed\n"
+
+        # === Risk/Reward Info ===
+        if risk_reward:
+            risk_reward_ratio = risk_reward.get("risk_reward_ratio", "-")
+            body += f"*Risk/Reward:* `{risk_reward_ratio}:1`\n"
+            body += f"*Stop-Loss:* `{risk_reward.get('stop_loss', '-')}`\n"
+            body += f"*Target:* `{risk_reward.get('target', '-')}`\n"
+
+        # === Footer ===
+        footer = f"\n\n_{get_text('signal_footer', lang)}_"
+
+        # === Full Message ===
+        return f"{header}\n\n{body}{footer}"
+
+    except Exception as e:
+        logger.error(f"[Ultra Signal Builder] Error building signal: {e}")
+        return f"⚠️ Error building signal for `{symbol}`."
