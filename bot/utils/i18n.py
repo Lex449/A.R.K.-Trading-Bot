@@ -2,7 +2,8 @@
 
 """
 A.R.K. Internationalization (i18n) Engine – Human-Grade Localization.
-Provides full multilingual translations.
+Provides full multilingual translations for all core functions.
+Made in Bali. Engineered with German Precision.
 """
 
 import logging
@@ -19,6 +20,16 @@ translations = {
         "analysis_no_symbol": "❌ Please provide a symbol. Example: /analyse AAPL",
         "set_language": "✅ Language updated successfully!",
         "global_error_report": "⚠️ Unexpected error occurred:\n\n`{error}`",
+
+        "no_data_today": "No data recorded today.",
+        "signals_total": "Total Signals",
+        "strong_signals": "Strong Signals",
+        "moderate_signals": "Moderate Signals",
+        "weak_signals": "Weak Signals",
+        "avg_confidence": "Avg. Confidence",
+        "summary_failed": "Summary generation failed.",
+        "daily_recap": "Daily Recap",
+        "weekly_recap": "Weekly Recap"
     },
     "de": {
         "start": "👋 Hallo {user}! Willkommen bei *A.R.K. Trading Bot 2.0*.\nVerwende /help, um die Funktionen anzuzeigen.",
@@ -27,6 +38,16 @@ translations = {
         "analysis_no_symbol": "❌ Bitte gib ein Symbol an. Beispiel: /analyse AAPL",
         "set_language": "✅ Sprache erfolgreich geändert!",
         "global_error_report": "⚠️ Unerwarteter Fehler aufgetreten:\n\n`{error}`",
+
+        "no_data_today": "Keine Daten für heute erfasst.",
+        "signals_total": "Signale insgesamt",
+        "strong_signals": "Starke Signale",
+        "moderate_signals": "Mittlere Signale",
+        "weak_signals": "Schwache Signale",
+        "avg_confidence": "Ø Vertrauensscore",
+        "summary_failed": "Zusammenfassung fehlgeschlagen.",
+        "daily_recap": "Tägliche Zusammenfassung",
+        "weekly_recap": "Wöchentliche Zusammenfassung"
     }
 }
 
