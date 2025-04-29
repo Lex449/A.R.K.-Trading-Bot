@@ -1,8 +1,6 @@
-# bot/auto/auto_signal_loop.py
-
 """
-A.R.K. Auto Signal Loop – Real-Time Signal Scanner 2025.
-Analyzes markets 24/7, monitors heartbeat, watchdogs connection, bilingual output.
+A.R.K. Auto Signal Loop – Ultra Smart US Market Scanner 2025 Final.
+Analyzes only during US trading hours, heartbeat monitor, bilingual signals, ultra risk control.
 """
 
 import asyncio
@@ -12,22 +10,23 @@ from bot.engine.analysis_engine import analyze_market
 from bot.utils.logger import setup_logger
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
+from bot.utils.market_session_guard import is_us_market_open
 from bot.config.settings import get_settings
 
-# Setup structured logger
+# Logger & Config
 logger = setup_logger(__name__)
 config = get_settings()
 
-# Signal Loop Control
+# Loop Control
 RUNNING = True
 
 async def auto_signal_loop(application):
     """
-    Core background loop that continuously analyzes market conditions
-    and sends real-time trade signals.
+    Core background loop that continuously analyzes live markets
+    during US session only and sends premium trading signals.
     """
 
-    logger.info("🚀 [AutoSignalLoop] Starting auto signal loop...")
+    logger.info("🚀 [AutoSignalLoop] Preparing ultra market signal loop...")
 
     while RUNNING:
         try:
@@ -37,9 +36,15 @@ async def auto_signal_loop(application):
             # Connection watchdog
             connection_ok = await check_connection()
             if not connection_ok:
-                logger.warning("⚠️ [AutoSignalLoop] Connection issue detected!")
+                logger.warning("⚠️ [AutoSignalLoop] Connection unstable, retrying...")
                 await asyncio.sleep(30)
-                continue  # Skip this cycle if connection unstable
+                continue
+
+            # === US Market Guard ===
+            if not is_us_market_open():
+                logger.info("⏳ [AutoSignalLoop] US Market closed. Analysis paused.")
+                await asyncio.sleep(120)  # Sleep 2 minutes during closed hours
+                continue
 
             # Perform Market Analysis
             logger.info("📈 [AutoSignalLoop] Performing live market analysis...")
@@ -71,12 +76,12 @@ async def auto_signal_loop(application):
                         logger.error(f"❌ [AutoSignalLoop] Error sending signal: {e}")
 
             else:
-                logger.info("ℹ️ [AutoSignalLoop] No strong signals detected this cycle.")
+                logger.info("ℹ️ [AutoSignalLoop] No valid signals detected this cycle.")
 
         except Exception as outer_error:
-            logger.error(f"🔥 [AutoSignalLoop] Critical error: {outer_error}")
+            logger.error(f"🔥 [AutoSignalLoop] Critical auto loop error: {outer_error}")
 
-        await asyncio.sleep(config.get("AUTO_SIGNAL_INTERVAL", 60))  # Default: every 60 seconds
+        await asyncio.sleep(config.get("AUTO_SIGNAL_INTERVAL", 60))  # Cycle interval (default 60 sec)
 
 async def stop_auto_signal_loop():
     """
@@ -84,4 +89,4 @@ async def stop_auto_signal_loop():
     """
     global RUNNING
     RUNNING = False
-    logger.info("🛑 [AutoSignalLoop] Stopping auto signal loop...")
+    logger.info("🛑 [AutoSignalLoop] Stopping auto signal loop gracefully...")
