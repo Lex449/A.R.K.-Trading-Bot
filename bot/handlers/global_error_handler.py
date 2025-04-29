@@ -1,14 +1,14 @@
-# bot/handlers/global_error_handler.py
-
 """
-A.R.K. Global Error Handler – Ultra Diamond Defense
-Fängt ALLE unhandled Errors im System sicher ab und meldet sie sofort.
+A.R.K. Global Error Handler – Ultra Diamond Resilience Build 2025.
+Captures and reports all unhandled errors safely.
 """
 
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.utils.error_reporter import report_error
+from bot.utils.language import get_language
+from bot.utils.i18n import get_text
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 
@@ -18,34 +18,41 @@ config = get_settings()
 
 async def global_error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Globale Catch-All Error-Handler-Funktion.
-    Jede unvorhergesehene Exception wird hier sicher aufgefangen und gemeldet.
+    Global catcher for all unhandled exceptions in the bot system.
+    Ensures full resilience and instant reporting.
     """
     bot = context.bot
     fallback_chat_id = int(config["TELEGRAM_CHAT_ID"])
+    chat_id = fallback_chat_id
+    lang = "en"
 
     try:
-        error = context.error
-        chat_id = fallback_chat_id
-
+        # Try to extract user chat ID
         if update and hasattr(update, "effective_chat") and update.effective_chat:
             chat_id = update.effective_chat.id
+            lang = get_language(chat_id) or "en"
 
-        logger.error(f"⚠️ [GlobalError] {error}")
+        error = context.error
+        logger.error(f"⚠️ [GlobalError] {repr(error)}")
 
-        # Fehler sauber reporten
+        # Send error report
         await report_error(bot, chat_id, error, context_info="Global Handler Exception")
 
-        # Nutzer optional über Fehler informieren
+        # Notify user if possible
         if update and hasattr(update, "message") and update.message:
+            error_message = get_text("global_error_report", lang).format(error=str(error))
             await update.message.reply_text(
-                text="⚠️ *Oops, something went wrong!* Our team has been notified.",
-                parse_mode="Markdown"
+                error_message,
+                parse_mode="Markdown",
+                disable_web_page_preview=True
             )
 
-        logger.info(f"✅ [GlobalErrorHandler] Error processed successfully for Chat ID: {chat_id}")
+        logger.info(f"✅ [ErrorHandler] Error successfully processed for Chat ID: {chat_id}")
 
-    except Exception as fallback_error:
-        # Falls der Error Handler selbst crasht
-        logger.critical(f"🔥 [Fatal Crash in GlobalErrorHandler] {repr(fallback_error)}")
-        await report_error(bot, fallback_chat_id, fallback_error, context_info="Fatal Crash in Global ErrorHandler")
+    except Exception as fatal_error:
+        # Fatal fallback if error handling itself crashes
+        logger.critical(f"🔥 [Fatal Error in Global Error Handler] {repr(fatal_error)}")
+        try:
+            await report_error(bot, fallback_chat_id, fatal_error, context_info="Fatal Crash in Error Handler")
+        except Exception:
+            pass  # Absolute fallback: ignore if report fails
