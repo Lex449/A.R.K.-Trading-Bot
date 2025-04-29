@@ -1,7 +1,7 @@
 # bot/auto/auto_analysis.py
 
 """
-A.R.K. Auto Market Scanner Ultra 4.0 – Supreme Signal Builder.
+A.R.K. Auto Market Scanner Ultra 4.1 – Supreme Signal Builder.
 Scans all configured symbols dynamically and dispatches ultra-premium trading signals.
 Made in Bali. Engineered with German Precision.
 """
@@ -15,6 +15,7 @@ from bot.utils.session_tracker import update_session_tracker
 from bot.utils.error_reporter import report_error
 from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
+from bot.utils.i18n import get_text
 
 # Setup structured logger
 logger = setup_logger(__name__)
@@ -33,19 +34,22 @@ async def auto_analysis(context: ContextTypes.DEFAULT_TYPE):
 
     if not symbols:
         logger.error("❌ [AutoAnalysis] No symbols configured. Aborting scan.")
+        await bot.send_message(chat_id=chat_id, text=get_text("no_symbols_configured", language), parse_mode="Markdown")
         return
 
     logger.info("🚀 [AutoAnalysis] Starting full dynamic market scan...")
-    await bot.send_message(chat_id=chat_id, text="🔍 *Starting Auto-Analysis...*", parse_mode="Markdown")
+    await bot.send_message(chat_id=chat_id, text=get_text("scan_start", language), parse_mode="Markdown")
 
     try:
-        # === Analyze All Configured Symbols ===
+        # === Analyse Symbols ===
         analysis_results = await analyze_market(symbols)
 
         if not analysis_results:
-            await bot.send_message(chat_id=chat_id, text="ℹ️ *No trading signals detected during scan.*", parse_mode="Markdown")
-            logger.info("ℹ️ [AutoAnalysis] No valid signals found.")
+            logger.warning("ℹ️ [AutoAnalysis] Empty result from analysis engine.")
+            await bot.send_message(chat_id=chat_id, text=get_text("no_signals_found", language), parse_mode="Markdown")
             return
+
+        found_valid_signals = False
 
         for result in analysis_results:
             try:
@@ -56,7 +60,7 @@ async def auto_analysis(context: ContextTypes.DEFAULT_TYPE):
                 signal_category = result.get("signal_category", "⭐")
 
                 if not symbol:
-                    logger.warning("[AutoAnalysis] Symbol missing in result. Skipping.")
+                    logger.warning("[AutoAnalysis] Missing symbol in result. Skipping.")
                     continue
 
                 if confidence < 60:
@@ -64,15 +68,15 @@ async def auto_analysis(context: ContextTypes.DEFAULT_TYPE):
                     continue
 
                 if action not in ["Long 📈", "Short 📉"]:
-                    logger.info(f"[AutoAnalysis] {symbol} → No strong action detected ({action}). Skipping.")
+                    logger.info(f"[AutoAnalysis] {symbol} → No tradable action ({action}). Skipping.")
                     continue
 
                 valid_patterns = [p for p in patterns if p.get("stars", 0) >= 3]
                 if not valid_patterns:
-                    logger.info(f"[AutoAnalysis] {symbol} → No strong patterns found. Skipping.")
+                    logger.info(f"[AutoAnalysis] {symbol} → No strong patterns. Skipping.")
                     continue
 
-                # Build Ultra Signal Message
+                # Build Signal Message
                 signal_message = build_ultra_signal(
                     symbol=symbol,
                     move=action,
@@ -90,22 +94,26 @@ async def auto_analysis(context: ContextTypes.DEFAULT_TYPE):
                         disable_web_page_preview=True
                     )
                     logger.info(f"✅ [AutoAnalysis] Signal dispatched for {symbol}.")
+                    found_valid_signals = True
 
-                    # Update Session Statistics
                     update_session_tracker(
                         signal_strength=len(valid_patterns),
                         avg_confidence=confidence
                     )
 
-                await asyncio.sleep(1.0)  # Protection against Telegram flood limits
+                await asyncio.sleep(1.0)
 
             except Exception as symbol_error:
-                logger.error(f"❌ [AutoAnalysis] Signal dispatch failed for {symbol}: {symbol_error}")
-                await report_error(bot, chat_id, symbol_error, context_info=f"AutoAnalysis Error ({symbol})")
+                logger.error(f"❌ [AutoAnalysis] Signal error for {symbol}: {symbol_error}")
+                await report_error(bot, chat_id, symbol_error, context_info=f"AutoAnalysis Symbol Error ({symbol})")
 
-        await bot.send_message(chat_id=chat_id, text="✅ *Auto-Analysis Completed Successfully!*", parse_mode="Markdown")
-        logger.info("✅ [AutoAnalysis] Full auto scan completed.")
+        if found_valid_signals:
+            await bot.send_message(chat_id=chat_id, text=get_text("scan_complete_success", language), parse_mode="Markdown")
+            logger.info("✅ [AutoAnalysis] Scan complete with signals.")
+        else:
+            await bot.send_message(chat_id=chat_id, text=get_text("scan_complete_empty", language), parse_mode="Markdown")
+            logger.info("ℹ️ [AutoAnalysis] Scan complete – no valid signals.")
 
     except Exception as global_error:
-        logger.critical(f"🔥 [AutoAnalysis] Fatal Error during scan: {global_error}")
+        logger.critical(f"🔥 [AutoAnalysis] Fatal scan error: {global_error}")
         await report_error(bot, chat_id, global_error, context_info="AutoAnalysis Global Error")
