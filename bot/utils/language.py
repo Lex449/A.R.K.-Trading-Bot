@@ -1,46 +1,70 @@
-# bot/utils/language.py
-
 """
-A.R.K. Language Detection and Management – Ultra Premium Build.
-Determines user language preference with intelligent fallback system.
+A.R.K. Language Manager – Ultra Multilingual Switcher
+Handles user language settings dynamically and persistently.
 """
 
-import logging
+import os
+import json
 from bot.utils.logger import setup_logger
 
-# Setup structured logger
+# Setup Structured Logger
 logger = setup_logger(__name__)
 
-# === Supported Languages ===
-SUPPORTED_LANGUAGES = ["en", "de"]
+# === File for storing user language preferences ===
+LANGUAGE_FILE = "user_languages.json"
 
-def get_language(update_or_context) -> str:
+# === Internal Memory ===
+user_languages = {}
+
+def load_user_languages() -> None:
     """
-    Determines the preferred language of the user.
-    
-    Priority:
-    1. Checks if user_data['lang'] exists (context-based).
-    2. Defaults to English ('en') if undefined or invalid.
+    Loads all user language settings from disk.
+    """
+    global user_languages
 
-    Args:
-        update_or_context: Telegram Update object, Context object, or fallback.
+    if os.path.exists(LANGUAGE_FILE):
+        try:
+            with open(LANGUAGE_FILE, "r", encoding="utf-8") as file:
+                user_languages = json.load(file)
+            logger.info("✅ [LanguageManager] User languages loaded successfully.")
+        except Exception as e:
+            logger.error(f"❌ [LanguageManager] Failed to load user languages: {e}")
+            user_languages = {}
+    else:
+        user_languages = {}
 
-    Returns:
-        str: Language code ('en' or 'de').
+def save_user_languages() -> None:
+    """
+    Saves all user language settings to disk.
     """
     try:
-        lang = "en"  # Default fallback
-
-        if hasattr(update_or_context, "user_data"):
-            lang_candidate = update_or_context.user_data.get("lang", "en")
-            if lang_candidate in SUPPORTED_LANGUAGES:
-                lang = lang_candidate
-            else:
-                logger.warning(f"[Language Manager] Unsupported language fallback: {lang_candidate}")
-
-        logger.debug(f"[Language Manager] Detected language: {lang}")
-        return lang
-
+        with open(LANGUAGE_FILE, "w", encoding="utf-8") as file:
+            json.dump(user_languages, file, indent=4)
+        logger.info("✅ [LanguageManager] User languages saved successfully.")
     except Exception as e:
-        logger.error(f"[Language Manager] Language detection error: {e}")
-        return "en"
+        logger.error(f"❌ [LanguageManager] Failed to save user languages: {e}")
+
+def set_language(chat_id: int, language: str) -> None:
+    """
+    Sets the language preference for a specific user.
+
+    Args:
+        chat_id (int): The user's chat ID.
+        language (str): Language code (e.g., 'en', 'de').
+    """
+    global user_languages
+    user_languages[str(chat_id)] = language
+    save_user_languages()
+    logger.info(f"🌐 [LanguageManager] Language for chat_id {chat_id} set to {language}.")
+
+def get_language(chat_id: int) -> str:
+    """
+    Gets the language preference for a specific user.
+
+    Args:
+        chat_id (int): The user's chat ID.
+
+    Returns:
+        str: The user's language code ('en' by default if not set).
+    """
+    return user_languages.get(str(chat_id), "en")
