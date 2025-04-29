@@ -1,32 +1,33 @@
 # bot/utils/logger.py
 
 """
-A.R.K. Logger Setup – Structured Ultra Premium Logging 2025.
-Provides consistent, structured, and readable logging across the bot.
+A.R.K. Logger – Ultra Premium Structured Logging 2025.
+Centralized structured logger setup for the entire bot.
 """
 
 import logging
-import sys
+import os
 
 def setup_logger(name: str) -> logging.Logger:
     """
-    Creates a standardized logger instance for modules.
+    Sets up and returns a structured logger instance.
+
+    Args:
+        name (str): Name of the logger (typically __name__).
+
+    Returns:
+        logging.Logger: Configured logger instance.
     """
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
 
-    # Clear any existing handlers (avoid duplicates)
-    if logger.hasHandlers():
-        logger.handlers.clear()
+    if not logger.handlers:
+        log_level = logging.DEBUG if os.getenv("ENVIRONMENT", "Production").lower() == "development" else logging.INFO
+        logger.setLevel(log_level)
 
-    # Setup StreamHandler
-    handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        fmt="[{asctime}] [{levelname}] {name}: {message}",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        style="{"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+        console_handler = logging.StreamHandler()
+        formatter = logging.Formatter("[%(asctime)s] %(levelname)-8s | %(name)s | %(message)s", "%Y-%m-%d %H:%M:%S")
+        console_handler.setFormatter(formatter)
+
+        logger.addHandler(console_handler)
 
     return logger
