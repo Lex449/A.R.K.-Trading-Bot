@@ -1,52 +1,48 @@
+# bot/startup/startup_tasks.py
+
 """
-A.R.K. Startup Task Engine – Ultra Precision Launch Build 2025.
-Boots all critical systems safely, reliably, and fault-tolerantly.
+A.R.K. Startup Engine – Ultimate Bot Launcher.
+Handles all critical boot tasks safely, sequentially, fault-tolerant.
 """
 
 import asyncio
 import logging
-from bot.auto.heartbeat_manager import start_heartbeat
 from bot.auto.daily_scheduler import start_daily_analysis_scheduler
-from bot.auto.auto_signal_loop import auto_signal_loop
-from bot.handlers.set_my_commands import set_bot_commands
+from bot.auto.heartbeat_manager import start_heartbeat_manager
+from bot.handlers.set_bot_commands import set_bot_commands
 from bot.utils.error_reporter import report_error
 from bot.config.settings import get_settings
-from bot.utils.logger import setup_logger
 
-# Setup Structured Logger
-logger = setup_logger(__name__)
+# Setup logger
+logger = logging.getLogger(__name__)
 config = get_settings()
 
 async def startup_tasks(application):
     """
-    Sequentially and safely executes all startup processes.
+    Executes all essential startup tasks safely.
     """
 
     chat_id = int(config["TELEGRAM_CHAT_ID"])
 
     try:
-        # === 1. Remove Webhook to avoid conflict with polling ===
+        # === Remove Webhook for clean polling ===
         await application.bot.delete_webhook(drop_pending_updates=True)
-        logger.info("✅ [Startup] Webhook removed successfully.")
+        logger.info("✅ Webhook removed successfully.")
 
-        # === 2. Set Commands (e.g., /start, /help etc.) ===
+        # === Set Bot Command List ===
         await set_bot_commands(application)
-        logger.info("✅ [Startup] Bot commands set successfully.")
+        logger.info("✅ Bot commands set successfully.")
 
-        # === 3. Start Heartbeat (every hour status ping) ===
-        start_heartbeat(application, chat_id)
-        logger.info("✅ [Startup] Heartbeat Scheduler started.")
+        # === Start Heartbeat Scheduler ===
+        start_heartbeat_manager(application, chat_id)
+        logger.info("✅ Heartbeat Scheduler started.")
 
-        # === 4. Start Daily Market Scan Scheduler ===
+        # === Start Daily Analysis Scheduler ===
         start_daily_analysis_scheduler(application, chat_id)
-        logger.info("✅ [Startup] Daily Analysis Scheduler started.")
+        logger.info("✅ Daily Analysis Scheduler started.")
 
-        # === 5. Start Auto Signal Monitoring (async) ===
-        asyncio.create_task(auto_signal_loop())
-        logger.info("✅ [Startup] Auto Signal Loop launched successfully.")
-
-        logger.info("🚀 [Startup] All systems booted successfully. A.R.K. is fully operational.")
+        logger.info("🚀 All Startup Tasks completed. Bot is now fully operational.")
 
     except Exception as e:
-        logger.critical(f"🔥 [Startup] Fatal error during startup: {e}")
-        await report_error(application.bot, chat_id, e, context_info="Fatal Error in Startup Tasks")
+        logger.error(f"❌ Startup Tasks Error: {e}")
+        await report_error(application.bot, chat_id, e, context_info="Startup Phase")
