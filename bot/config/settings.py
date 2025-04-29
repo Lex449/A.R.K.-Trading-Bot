@@ -1,63 +1,67 @@
-# bot/config/settings.py
-
 """
-A.R.K. Settings Loader – Ultra Diamond Build
+A.R.K. Settings Loader – Ultra Diamond Build 3.0
 Lädt und validiert alle Umgebungsvariablen aus der .env Datei für maximale Stabilität.
 """
 
 import os
-import logging
 from dotenv import load_dotenv
 from bot.utils.logger import setup_logger
 
-# === Load Environment Variables Early ===
+# === Load .env Early ===
 load_dotenv()
 
-# === Setup Logger Early ===
+# === Setup Logger ===
 logger = setup_logger(__name__)
 
 def get_settings() -> dict:
     """
-    Loads and validates all environment variables for the bot.
+    Loads, validates, and structures all environment settings.
     """
 
-    # --- Core API Tokens ---
-    bot_token = os.getenv("BOT_TOKEN")
-    telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
-    finnhub_api_key = os.getenv("FINNHUB_API_KEY")
+    def get_env_var(key: str, required: bool = False, default=None, cast_type=None):
+        value = os.getenv(key)
+        if value is None:
+            if required:
+                logger.critical(f"❌ [Settings] Missing required environment variable: {key}")
+                raise ValueError(f"{key} is required.")
+            return default
+        try:
+            return cast_type(value) if cast_type else value
+        except Exception:
+            logger.warning(f"⚠️ [Settings] Could not cast {key}. Using raw value.")
+            return value
 
-    if not bot_token:
-        logger.critical("❌ [Settings] Missing BOT_TOKEN in .env.")
-        raise ValueError("BOT_TOKEN is required.")
-    if not telegram_chat_id:
-        logger.critical("❌ [Settings] Missing TELEGRAM_CHAT_ID in .env.")
-        raise ValueError("TELEGRAM_CHAT_ID is required.")
-    if not finnhub_api_key:
-        logger.critical("❌ [Settings] Missing FINNHUB_API_KEY in .env.")
-        raise ValueError("FINNHUB_API_KEY is required.")
+    # === Core API Tokens ===
+    bot_token = get_env_var("BOT_TOKEN", required=True)
+    telegram_chat_id = get_env_var("TELEGRAM_CHAT_ID", required=True)
+    finnhub_api_key = get_env_var("FINNHUB_API_KEY", required=True)
 
-    # --- Trading Settings ---
-    interval = os.getenv("INTERVAL", "1min")
-    auto_signal_symbols = os.getenv("AUTO_SIGNAL_SYMBOLS", "")
+    # === Trading Settings ===
+    interval = get_env_var("INTERVAL", default="1min")
+    auto_signal_symbols = get_env_var("AUTO_SIGNAL_SYMBOLS", default="")
     symbols_list = [s.strip().upper() for s in auto_signal_symbols.split(",") if s.strip()]
 
-    # --- Bot Behavior ---
-    environment = os.getenv("ENVIRONMENT", "Production").capitalize()
-    bot_language = os.getenv("BOT_LANGUAGE", "en").lower()
+    # === Bot Behavior ===
+    environment = get_env_var("ENVIRONMENT", default="Production").capitalize()
+    bot_language = get_env_var("BOT_LANGUAGE", default="en").lower()
 
-    # --- Signal Settings ---
-    signal_check_interval_sec = int(os.getenv("SIGNAL_CHECK_INTERVAL_SEC", 60))
-    max_signals_per_hour = int(os.getenv("MAX_SIGNALS_PER_HOUR", 150))
+    # === Signal Settings ===
+    signal_check_interval_sec = get_env_var("SIGNAL_CHECK_INTERVAL_SEC", default=60, cast_type=int)
+    max_signals_per_hour = get_env_var("MAX_SIGNALS_PER_HOUR", default=150, cast_type=int)
 
-    # --- Advanced Modules ---
-    news_filter_enabled = os.getenv("NEWS_FILTER_ENABLED", "True").lower() == "true"
-    backup_news_enabled = os.getenv("BACKUP_NEWS_ENABLED", "True").lower() == "true"
-    confidence_adjustment_enabled = os.getenv("CONFIDENCE_ADJUSTMENT_ENABLED", "False").lower() == "true"
-    confidence_scaling_factor = float(os.getenv("CONFIDENCE_SCALING_FACTOR", 1.0))
+    # === Advanced Modules ===
+    news_filter_enabled = get_env_var("NEWS_FILTER_ENABLED", default="True").lower() == "true"
+    backup_news_enabled = get_env_var("BACKUP_NEWS_ENABLED", default="True").lower() == "true"
+    confidence_adjustment_enabled = get_env_var("CONFIDENCE_ADJUSTMENT_ENABLED", default="False").lower() == "true"
+    confidence_scaling_factor = get_env_var("CONFIDENCE_SCALING_FACTOR", default=1.0, cast_type=float)
 
-    # --- Watchdog System ---
-    watchdog_enabled = os.getenv("WATCHDOG_ENABLED", "True").lower() == "true"
-    watchdog_interval_min = int(os.getenv("WATCHDOG_INTERVAL_MIN", 30))
+    # === Watchdog System ===
+    watchdog_enabled = get_env_var("WATCHDOG_ENABLED", default="True").lower() == "true"
+    watchdog_interval_min = get_env_var("WATCHDOG_INTERVAL_MIN", default=30, cast_type=int)
+
+    # === US Market Sessions ===
+    us_market_open_hour = get_env_var("US_MARKET_OPEN_HOUR", default=13, cast_type=int)  # UTC 13:30
+    us_market_close_hour = get_env_var("US_MARKET_CLOSE_HOUR", default=20, cast_type=int)  # UTC 20:00
 
     logger.info(f"✅ [Settings] Loaded successfully. Environment: {environment}")
 
@@ -77,4 +81,6 @@ def get_settings() -> dict:
         "CONFIDENCE_SCALING_FACTOR": confidence_scaling_factor,
         "WATCHDOG_ENABLED": watchdog_enabled,
         "WATCHDOG_INTERVAL_MIN": watchdog_interval_min,
+        "US_MARKET_OPEN_HOUR": us_market_open_hour,
+        "US_MARKET_CLOSE_HOUR": us_market_close_hour,
     }
