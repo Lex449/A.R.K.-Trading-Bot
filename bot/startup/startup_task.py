@@ -5,7 +5,6 @@ Maximale Stabilität für 24/7 Betrieb auf Koenigsegg-Niveau.
 """
 
 import os
-import logging
 import asyncio
 from datetime import datetime
 import pytz
@@ -19,7 +18,7 @@ from bot.utils.logger import setup_logger
 
 # === Logger & Settings Setup ===
 logger = setup_logger(__name__)
-logger.propagate = False  # optional: doppelte Logs vermeiden
+logger.propagate = False  # Optional: doppelte Logs vermeiden
 settings = get_settings()
 
 # === Core Startup Functions ===
@@ -61,17 +60,17 @@ async def send_startup_ping(bot: Bot):
         logger.error(f"❌ [Startup] Fehler beim Senden des Startup-Pings: {e}")
 
 async def launch_schedulers(application):
-    """Startet alle Hintergrund-Jobs mit sauberer Übergabe."""
+    """Startet alle Hintergrund-Jobs sauber."""
     try:
         bot = application.bot
         chat_id = int(settings["TELEGRAM_CHAT_ID"])
 
-        start_heartbeat_job(application)
+        start_heartbeat_job(application, chat_id)  # <<< Hier Korrektur: chat_id wird übergeben
         start_connection_watchdog(application)
         start_news_scanner_job(bot, chat_id)
         start_recap_scheduler(bot, chat_id)
 
-        logger.info("✅ [Startup] Alle Scheduler aktiviert.")
+        logger.info("✅ [Startup] Alle Scheduler erfolgreich aktiviert.")
     except Exception as e:
         logger.critical(f"🔥 [Startup] Fehler beim Start der Scheduler: {e}")
         raise
