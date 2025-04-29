@@ -17,16 +17,14 @@ from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.startup.startup_task import execute_startup_tasks
 
-# Setup Logger and Settings
+# === Logger and Settings Setup ===
 logger = setup_logger(__name__)
 config = get_settings()
 
 async def main():
     """
-    A.R.K. Bot Initializer.
-    Launches core systems, loads environment, builds Telegram bot application.
+    Launch core bot systems.
     """
-
     logger.info("🚀 [Main] Launch sequence initiated...")
 
     # === Build Application ===
@@ -42,18 +40,18 @@ async def main():
     application.add_handler(set_language_handler)
     application.add_handler(shutdown_handler)
 
-    # === Global Error Handler ===
+    # === Register Error Handler ===
     application.add_error_handler(global_error_handler)
 
-    # === Startup Scheduler Tasks ===
+    # === Execute Startup Tasks (Schedulers etc.) ===
     await execute_startup_tasks(application)
 
     # === Start Bot Polling ===
-    logger.info("✅ [Main] A.R.K. Bot ready. Entering full operational mode.")
+    logger.info("✅ [Main] A.R.K. is now fully operational.")
     await application.run_polling()
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logger.warning("🛑 [Main] Shutdown sequence triggered manually.")
+        logger.warning("🛑 [Main] Manual shutdown detected. Closing bot safely.")
