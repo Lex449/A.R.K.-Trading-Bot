@@ -3,7 +3,7 @@
 """
 A.R.K. Startup Task – Ultra Premium NASA Build 2025
 Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Startup-Ping.
-Maximale Stabilität für 24/7 Betrieb.
+Maximale Stabilität für 24/7 Betrieb auf Koenigsegg-Niveau.
 """
 
 import os
@@ -33,29 +33,31 @@ def check_env_variables():
     required_vars = [
         "BOT_TOKEN",
         "TELEGRAM_CHAT_ID",
-        "FINNHUB_API_KEY"
+        "FINNHUB_API_KEY",
     ]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     if missing_vars:
+        logger.critical(f"❌ [Startup] Fehlende ENV-Variablen: {', '.join(missing_vars)}")
         raise EnvironmentError(f"Fehlende ENV-Variablen: {', '.join(missing_vars)}")
-    logger.info("✅ [Startup] Alle erforderlichen ENV-Variablen vorhanden.")
+    logger.info("✅ [Startup] Alle erforderlichen ENV-Variablen erfolgreich geladen.")
 
 def check_system_time():
     """Überprüft die Systemzeit auf Plausibilität."""
     try:
         utc_now = datetime.now(pytz.utc)
         if utc_now.year < 2023:
-            raise ValueError("Systemzeit scheint nicht korrekt zu laufen.")
-        logger.info(f"✅ [Startup] Systemzeit OK: {utc_now.isoformat()}")
+            raise ValueError("Systemzeit läuft nicht korrekt.")
+        logger.info(f"✅ [Startup] Systemzeit plausibel: {utc_now.isoformat()}")
     except Exception as e:
-        raise ValueError(f"❌ [Startup] Fehler bei Systemzeitprüfung: {e}")
+        logger.critical(f"❌ [Startup] Systemzeitprüfung fehlgeschlagen: {e}")
+        raise
 
 async def send_startup_ping():
     """Sendet eine Benachrichtigung an den Admin über erfolgreichen Bot-Start."""
     try:
         await bot.send_message(
             chat_id=settings["TELEGRAM_CHAT_ID"],
-            text="✅ A.R.K. Bot erfolgreich gestartet.\nAlle Systeme stabil.\nReady to dominate the markets.",
+            text="✅ *A.R.K. erfolgreich gestartet!*\n\n_Systems online. Ready to dominate._",
             parse_mode="Markdown"
         )
         logger.info("✅ [Startup] Startup-Ping erfolgreich gesendet.")
@@ -63,15 +65,16 @@ async def send_startup_ping():
         logger.error(f"❌ [Startup] Fehler beim Senden des Startup-Pings: {e}")
 
 async def launch_schedulers(application):
-    """Startet alle Hintergrund-Jobs (Heartbeat, Connection Watchdog, News Scanner, Recap)."""
+    """Startet alle Hintergrund-Jobs."""
     try:
         start_heartbeat_job(application)
         start_connection_watchdog(application)
         start_news_scanner_job(application)
         start_recap_scheduler(bot, int(settings["TELEGRAM_CHAT_ID"]))
-        logger.info("✅ [Startup] Alle Scheduler erfolgreich aktiviert.")
+        logger.info("✅ [Startup] Alle Scheduler aktiviert.")
     except Exception as e:
         logger.critical(f"🔥 [Startup] Fehler beim Start der Scheduler: {e}")
+        raise
 
 async def execute_startup_tasks(application):
     """
@@ -79,16 +82,16 @@ async def execute_startup_tasks(application):
     - ENV-Check
     - Systemzeit-Check
     - Scheduler-Startup
-    - Admin-Info
+    - Admin-Notification
     """
-    logger.info("🚀 [Startup] Initialisiere A.R.K. Bot...")
+    logger.info("🚀 [Startup] Initialisiere A.R.K. Master-System...")
 
     try:
         check_env_variables()
         check_system_time()
         await launch_schedulers(application)
         await send_startup_ping()
-        logger.info("✅ [Startup] A.R.K. Startup vollständig abgeschlossen.")
+        logger.info("✅ [Startup] A.R.K. vollständig einsatzbereit.")
     except Exception as e:
-        logger.critical(f"🔥 [Startup] Schwerwiegender Startup-Fehler: {e}")
-        raise e
+        logger.critical(f"🔥 [Startup] Schwerwiegender Fehler beim Initialisieren: {e}")
+        raise
