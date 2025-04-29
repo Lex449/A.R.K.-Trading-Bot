@@ -1,6 +1,8 @@
+# bot/utils/error_reporter.py
+
 """
-A.R.K. Error Reporter – Absolute Defense Edition 2025.
-Local Save + Instant Telegram Alert + Stability Shield.
+A.R.K. Error Reporter – Ultra Diamond Safety Layer
+Speichert alle Fehler lokal + Telegram Alarm + Fallback-System.
 """
 
 import os
@@ -21,15 +23,15 @@ os.makedirs(LOG_DIR, exist_ok=True)
 async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: str = "") -> None:
     """
     Full error reporting system:
-    - Local trace log
-    - Telegram instant alert
-    - Hard-fallback in case Telegram fails
+    - Save local logs
+    - Send instant Telegram alert
+    - Safe fallback in case Telegram fails
     """
     try:
         # === Timestamp ===
         timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
 
-        # === Full Traceback Build ===
+        # === Full Traceback ===
         full_trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__)).strip()
 
         # === Save to Local File ===
@@ -46,7 +48,7 @@ async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: s
 
         logger.error(f"[Reported Error] Context: {context_info} | {repr(error)}")
 
-        # === Build Telegram Alert (Safe Size) ===
+        # === Build Safe Telegram Message ===
         short_message = (
             f"⚠️ *Critical Error Detected*\n\n"
             f"*Context:* `{context_info}`\n"
@@ -65,10 +67,10 @@ async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: s
         )
 
     except Exception as fallback_error:
-        # === Ultimate Self-Fallback ===
+        # === Fallback wenn selbst das Reporting crasht ===
         fallback_message = (
             f"🔥 [ErrorReporter FATAL] Backup triggered:\n"
-            f"Original Error Context: {context_info}\n"
+            f"Original Context: {context_info}\n"
             f"Original Error: {repr(error)}\n"
             f"Fallback Error: {repr(fallback_error)}"
         )
@@ -82,5 +84,5 @@ async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: s
                 parse_mode="Markdown"
             )
         except Exception:
-            # Not even Telegram works? Then it's logged only locally.
+            # Wenn Telegram komplett nicht mehr funktioniert → nur lokal speichern
             pass
