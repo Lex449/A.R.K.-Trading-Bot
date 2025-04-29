@@ -1,3 +1,5 @@
+# bot/engine/analysis_engine.py
+
 """
 A.R.K. Analysis Engine – Ultra Full Signal Suite 6.2 Aggressive Build
 Handles Patterns, Trend, Volume, Volatility, Risk-Reward, Confidence Boost – Modular, Scalable, Premium-Grade.
@@ -22,6 +24,7 @@ logger = setup_logger(__name__)
 async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
     """
     Ultra Signal Analyzer mit maximaler Sensitivität und Marktdaten-Output.
+    Liefert alle relevanten Metriken für Live-Signale auf Premium-Level.
     """
     try:
         df = await fetch_market_data(symbol, chat_id=chat_id)
@@ -31,6 +34,7 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
 
         last_price = df["c"].iloc[-1]  # aktueller Kurs
 
+        # === Submodule: Analyse & Bewertung ===
         patterns = detect_patterns(df)
         volume_info = detect_volume_spike(df)
         trend_info = detect_adaptive_trend(df)
@@ -47,8 +51,9 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         base_confidence = calculate_confidence(patterns)
         adjusted_confidence = optimize_confidence(base_confidence, trend_info)
 
-        # Mehr Signale: künstlich erhöhen bei klarem Trend
-        adjusted_confidence += 10 if combined_action != "Neutral ⚪" else 0
+        # === Confidence Push bei klarem Setup ===
+        if combined_action != "Neutral ⚪":
+            adjusted_confidence += 10
         adjusted_confidence = min(100.0, adjusted_confidence)
 
         signal_category = categorize_signal(adjusted_confidence)
@@ -68,7 +73,10 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
             "df": df,
         }
 
-        logger.info(f"✅ [AnalysisEngine] {symbol} → {combined_action} | Price: {last_price:.2f} | Confidence: {adjusted_confidence:.2f}%")
+        logger.info(
+            f"✅ [AnalysisEngine] {symbol} → {combined_action} | "
+            f"Price: {last_price:.2f} | Confidence: {adjusted_confidence:.2f}%"
+        )
         return result
 
     except Exception as e:
@@ -76,17 +84,23 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         return None
 
 def determine_action(patterns: list, trend_info: dict, indicator_score: float) -> str:
+    """
+    Kombiniert Pattern, Trend und Indikatorbewertung zu einer finalen Aktion.
+    """
     bullish = any(p.get("action", "").startswith("Long") for p in patterns)
     bearish = any(p.get("action", "").startswith("Short") for p in patterns)
-    early_trend = trend_info.get("trend") if trend_info else None
+    trend = trend_info.get("trend") if trend_info else None
 
-    if (bullish and early_trend == "bullish") or (indicator_score > 60 and early_trend == "bullish"):
+    if (bullish and trend == "bullish") or (indicator_score > 60 and trend == "bullish"):
         return "Long 📈"
-    elif (bearish and early_trend == "bearish") or (indicator_score < 40 and early_trend == "bearish"):
+    elif (bearish and trend == "bearish") or (indicator_score < 40 and trend == "bearish"):
         return "Short 📉"
     return "Neutral ⚪"
 
 def calculate_confidence(patterns: list) -> float:
+    """
+    Berechnet durchschnittliches Confidence-Level aus Pattern-Bewertungen.
+    """
     if not patterns:
         return 0.0
     total_confidence = sum(p.get("confidence", 60) for p in patterns)
