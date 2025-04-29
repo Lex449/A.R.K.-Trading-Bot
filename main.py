@@ -23,14 +23,14 @@ config = get_settings()
 
 async def main():
     """
-    Launch core bot systems.
+    Launches the complete A.R.K. Bot System.
     """
     logger.info("🚀 [Main] Launch sequence initiated...")
 
-    # === Build Application ===
+    # === Build Telegram Application ===
     application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
 
-    # === Register Command Handlers ===
+    # === Register Core Command Handlers ===
     application.add_handler(start)
     application.add_handler(help_command)
     application.add_handler(analyze_symbol_handler)
@@ -40,18 +40,18 @@ async def main():
     application.add_handler(set_language_handler)
     application.add_handler(shutdown_handler)
 
-    # === Register Error Handler ===
+    # === Register Global Error Handler ===
     application.add_error_handler(global_error_handler)
 
-    # === Execute Startup Tasks (Schedulers etc.) ===
+    # === Run Startup Tasks (Schedulers, Health Checks etc.) ===
     await execute_startup_tasks(application)
 
-    # === Start Bot Polling ===
-    logger.info("✅ [Main] A.R.K. is now fully operational.")
-    await application.run_polling()
+    # === Start Polling Loop ===
+    logger.info("✅ [Main] A.R.K. Bot fully operational. Commencing live mode.")
+    await application.run_polling(poll_interval=1.0)
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logger.warning("🛑 [Main] Manual shutdown detected. Closing bot safely.")
+        logger.warning("🛑 [Main] Manual shutdown detected. Exiting gracefully.")
