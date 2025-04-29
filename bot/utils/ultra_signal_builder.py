@@ -3,7 +3,6 @@ A.R.K. Ultra Signal Builder – Hyper Precision Trade Signal Generation
 Built for Deep Confidence, Dynamic Risk Profiling, and Adaptive Messaging.
 """
 
-import logging
 from bot.utils.i18n import get_text
 from bot.utils.logger import setup_logger
 
@@ -11,7 +10,7 @@ from bot.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 def build_ultra_signal(symbol: str,
-                       move: dict = None,
+                       move=None,
                        volume_spike: dict = None,
                        atr_breakout: dict = None,
                        risk_reward: dict = None,
@@ -30,9 +29,12 @@ def build_ultra_signal(symbol: str,
 
         # === Movement Detection ===
         if move:
-            move_type = move.get("type", "Early Move ⚡")
-            move_percent = move.get("move_percent", 0.0)
-            body += f"*Movement:* `{move_percent:.2f}%` – {move_type}\n"
+            if isinstance(move, dict):
+                move_type = move.get("type", "Early Move ⚡")
+                move_percent = move.get("move_percent", 0.0)
+                body += f"*Movement:* `{move_percent:.2f}%` – {move_type}\n"
+            elif isinstance(move, str):
+                body += f"*Move:* `{move}`\n"
 
         # === Volume Spike ===
         if volume_spike and volume_spike.get("volume_spike"):
@@ -54,7 +56,7 @@ def build_ultra_signal(symbol: str,
                 f"*Target:* `{target}`\n"
             )
 
-        # === Confidence Score (Deep Engine Boosted) ===
+        # === Confidence Score ===
         if confidence is not None:
             body += f"*Confidence:* `{confidence:.1f}%`\n"
 
