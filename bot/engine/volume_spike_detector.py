@@ -1,58 +1,80 @@
 """
-A.R.K. Volume Spike Detector – Ultra Precision 3.0
-Smart, Adaptive Volume Surge Recognition for Elite Trading.
+A.R.K. Volume Spike Detector – Ultra Adaptive Intelligence 3.0
+Precision Detection of Dynamic Volume Surges for Elite Signal Enhancement.
 
-Engineered for: Real-Time Detection, Dynamic Environments, Multilingual Safety Logging.
+Built for: Instant Breakout Warning, Scalable Use Across Assets, Multilingual Ultra Stability.
 """
 
 import pandas as pd
 from bot.utils.logger import setup_logger
 
-# Setup structured logger
+# === Setup structured logger ===
 logger = setup_logger(__name__)
 
-def detect_volume_spike(df: pd.DataFrame, window: int = 30, multiplier: float = 1.4) -> dict | None:
+def detect_volume_spike(df: pd.DataFrame, window: int = 30, multiplier: float = 1.5) -> dict | None:
     """
-    Detects significant volume spikes based on dynamic rolling averages.
+    Detects highly dynamic volume spikes based on rolling averages and short-term surges.
 
     Args:
         df (pd.DataFrame): DataFrame containing 'v' (volume) column.
-        window (int): Rolling window size for average calculation (default: 30 candles).
-        multiplier (float): Threshold multiplier to define a spike (default: 1.4x).
+        window (int): Rolling window size for base volume (default: 30 candles).
+        multiplier (float): Threshold multiplier for surge detection (default: 1.5x).
 
     Returns:
-        dict or None: Detailed spike information or None if no spike detected.
+        dict or None: Spike event data or None if no event detected.
     """
-
     if df is None or df.empty or "v" not in df.columns:
-        logger.warning("⚠️ [VolumeSpikeDetector] Invalid DataFrame input – volume column missing.")
+        logger.warning("⚠️ [Volume Spike Detector] DataFrame invalid: missing volume column.")
         return None
 
     try:
-        # === Rolling Average Volume ===
-        avg_volume = df["v"].rolling(window=window, min_periods=10).mean().iloc[-1]
+        # === Rolling Average (Base Volume) ===
+        rolling_avg_volume = df["v"].rolling(window=window, min_periods=max(10, window//2)).mean().iloc[-1]
         recent_volumes = df["v"].tail(3)
         recent_avg_volume = recent_volumes.mean()
 
-        if avg_volume == 0:
-            logger.warning("⚠️ [VolumeSpikeDetector] Zero average volume detected. Spike detection skipped.")
+        # === Spike Detection Logic ===
+        if rolling_avg_volume <= 0:
+            logger.warning("⚠️ [Volume Spike Detector] Rolling average volume zero. Spike detection aborted.")
             return None
 
-        # === Spike Detection Logic ===
-        if recent_avg_volume >= avg_volume * multiplier:
-            volume_spike_percent = (recent_avg_volume / avg_volume) * 100
+        spike_factor = recent_avg_volume / rolling_avg_volume
 
-            logger.info(f"✅ [VolumeSpikeDetector] Volume spike detected: {volume_spike_percent:.2f}% over average.")
+        if spike_factor >= multiplier:
+            spike_strength = round((spike_factor - 1) * 100, 2)
+
+            logger.info(f"🚀 [Volume Spike Detector] Spike detected: +{spike_strength:.2f}% over rolling average.")
 
             return {
                 "volume_spike": True,
                 "recent_volume_avg": int(recent_avg_volume),
-                "rolling_volume_avg": int(avg_volume),
-                "volume_percent": round(volume_spike_percent, 2)
+                "rolling_volume_avg": int(rolling_avg_volume),
+                "volume_increase_percent": spike_strength,
+                "spike_strength": _classify_spike_strength(spike_strength)
             }
 
         return None
 
     except Exception as e:
-        logger.error(f"❌ [VolumeSpikeDetector Critical Error] {e}")
+        logger.error(f"❌ [Volume Spike Detector] Critical failure: {e}")
         return None
+
+# === Internal Spike Classifier ===
+def _classify_spike_strength(percent: float) -> str:
+    """
+    Classifies the strength of the detected volume spike.
+
+    Args:
+        percent (float): Percent increase over the average.
+
+    Returns:
+        str: Classification label.
+    """
+    if percent >= 150:
+        return "Ultra Spike 🔥"
+    elif percent >= 100:
+        return "Strong Spike ⚡"
+    elif percent >= 50:
+        return "Moderate Spike ⚡"
+    else:
+        return "Mild Spike ⚪"
