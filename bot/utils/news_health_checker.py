@@ -1,59 +1,60 @@
 """
-A.R.K. News Health Checker – Ultra Premium Stability Build.
-Real-time monitoring and switching between Finnhub and Yahoo Finance news sources.
+A.R.K. News Health Checker – Ultra Premium Stability Build 4.0
+Real-time monitoring and dynamic switching between Finnhub and Yahoo Finance based on service health.
+
+Built for: Fault Tolerance, Lightning Recovery, and 24/7 Signal Reliability.
 """
 
 import aiohttp
-import logging
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 
-# === Setup ===
+# === Setup Logger and Config ===
 logger = setup_logger(__name__)
 config = get_settings()
 
-# Constants
+# === Constants ===
 FINNHUB_API_KEY = config.get("FINNHUB_API_KEY")
 FINNHUB_ENDPOINT = f"https://finnhub.io/api/v1/news?category=general&token={FINNHUB_API_KEY}"
 
-# Global State
-_finnhub_available = True
+# === Global Health State ===
+_finnhub_healthy = True
 
 def use_finnhub() -> bool:
     """
-    Returns whether Finnhub should be used as the primary news source.
+    Determines whether Finnhub should be used as the active news source.
 
     Returns:
-        bool: True if Finnhub is healthy, False if fallback (Yahoo) needed.
+        bool: True if Finnhub is healthy, False if fallback (Yahoo Finance) is active.
     """
-    return _finnhub_available
+    return _finnhub_healthy
 
-async def check_finnhub_health(timeout_sec: int = 5):
+async def check_finnhub_health(timeout_sec: int = 5) -> None:
     """
-    Checks if Finnhub News API is currently healthy.
-    Automatically switches backup source if needed.
+    Pings Finnhub API to verify availability.
+    Updates internal status and triggers source switching if necessary.
 
     Args:
-        timeout_sec (int): Timeout duration for health check request.
+        timeout_sec (int): Timeout for the API health check.
 
     Returns:
         None
     """
-    global _finnhub_available
+    global _finnhub_healthy
 
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(FINNHUB_ENDPOINT, timeout=timeout_sec) as response:
                 if response.status == 200:
-                    if not _finnhub_available:
-                        logger.info("✅ [News Health] Finnhub connection restored. Using Finnhub again.")
-                    _finnhub_available = True
+                    if not _finnhub_healthy:
+                        logger.info("✅ [News Health] Finnhub API back online. Switching primary source to Finnhub.")
+                    _finnhub_healthy = True
                 else:
-                    if _finnhub_available:
-                        logger.warning(f"⚠️ [News Health] Finnhub returned status {response.status}. Switching to backup.")
-                    _finnhub_available = False
+                    if _finnhub_healthy:
+                        logger.warning(f"⚠️ [News Health] Finnhub responded with {response.status}. Switching to Yahoo fallback.")
+                    _finnhub_healthy = False
 
     except Exception as e:
-        if _finnhub_available:
-            logger.error(f"❌ [News Health] Finnhub unreachable: {e}. Switching to backup source.")
-        _finnhub_available = False
+        if _finnhub_healthy:
+            logger.error(f"❌ [News Health] Finnhub health check failed: {e}. Switching to Yahoo fallback.")
+        _finnhub_healthy = False
