@@ -1,70 +1,63 @@
+# bot/utils/language.py
+
 """
-A.R.K. Language Manager – Ultra Multilingual Switcher
-Handles user language settings dynamically and persistently.
+A.R.K. Language Manager – Ultra Stable Multilingual Engine 2025.
+Handles user language preferences safely, scalable, and future-proof.
 """
 
 import os
 import json
 from bot.utils.logger import setup_logger
 
-# Setup Structured Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 
-# === File for storing user language preferences ===
-LANGUAGE_FILE = "user_languages.json"
+# Path to store user language preferences
+LANGUAGE_FILE = "user_language.json"
 
-# === Internal Memory ===
+# In-memory cache
 user_languages = {}
 
-def load_user_languages() -> None:
-    """
-    Loads all user language settings from disk.
-    """
-    global user_languages
+# === Helper Functions ===
 
+def _load_languages():
+    global user_languages
     if os.path.exists(LANGUAGE_FILE):
         try:
-            with open(LANGUAGE_FILE, "r", encoding="utf-8") as file:
-                user_languages = json.load(file)
-            logger.info("✅ [LanguageManager] User languages loaded successfully.")
+            with open(LANGUAGE_FILE, "r", encoding="utf-8") as f:
+                user_languages = json.load(f)
+            logger.info(f"✅ [LanguageManager] Loaded {len(user_languages)} user language settings.")
         except Exception as e:
             logger.error(f"❌ [LanguageManager] Failed to load user languages: {e}")
-            user_languages = {}
-    else:
-        user_languages = {}
 
-def save_user_languages() -> None:
-    """
-    Saves all user language settings to disk.
-    """
+def _save_languages():
     try:
-        with open(LANGUAGE_FILE, "w", encoding="utf-8") as file:
-            json.dump(user_languages, file, indent=4)
+        with open(LANGUAGE_FILE, "w", encoding="utf-8") as f:
+            json.dump(user_languages, f, ensure_ascii=False, indent=4)
         logger.info("✅ [LanguageManager] User languages saved successfully.")
     except Exception as e:
         logger.error(f"❌ [LanguageManager] Failed to save user languages: {e}")
 
-def set_language(chat_id: int, language: str) -> None:
-    """
-    Sets the language preference for a specific user.
-
-    Args:
-        chat_id (int): The user's chat ID.
-        language (str): Language code (e.g., 'en', 'de').
-    """
-    global user_languages
-    user_languages[str(chat_id)] = language
-    save_user_languages()
-    logger.info(f"🌐 [LanguageManager] Language for chat_id {chat_id} set to {language}.")
+# === Public Interface ===
 
 def get_language(chat_id: int) -> str:
     """
-    Gets the language preference for a specific user.
-
-    Args:
-        chat_id (int): The user's chat ID.
-
-    Returns:
-        str: The user's language code ('en' by default if not set).
+    Returns the preferred language of a user.
+    Defaults to English ("en") if unknown.
     """
+    if not user_languages:
+        _load_languages()
+
     return user_languages.get(str(chat_id), "en")
+
+def set_language(chat_id: int, language_code: str):
+    """
+    Sets the preferred language for a user.
+    """
+    if language_code not in ["en", "de"]:
+        logger.warning(f"⚠️ [LanguageManager] Unsupported language code '{language_code}'. Defaulting to 'en'.")
+        language_code = "en"
+
+    user_languages[str(chat_id)] = language_code
+    _save_languages()
+    logger.info(f"✅ [LanguageManager] Language set to '{language_code}' for chat_id {chat_id}.")
