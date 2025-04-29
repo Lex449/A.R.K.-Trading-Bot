@@ -1,6 +1,9 @@
+# bot/engine/risk_engine.py
+
 """
-A.R.K. Risk Engine – Ultra Precision Signal Evaluator 4-in-1
-Vereint Risk Manager, Analyzer, Calculator & Estimator für maximale Effizienz.
+A.R.K. Risk Engine – Ultra Precision Signal Evaluator 5.0
+Fuses Risk Manager, Analyzer, Calculator & Estimator into one ultimate precision module.
+Designed for: Smart Risk Control, Signal Validation, Dynamic RRR Estimation.
 """
 
 import logging
@@ -10,73 +13,72 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
-# === Signal Risk Assessment ===
+# === Ultra Signal Risk Assessment ===
 async def assess_signal_risk(signal_data: dict) -> tuple:
     """
-    Evaluates a trading signal using:
-    - Star Rating (Signal Quality)
+    Evaluates a trading signal with:
+    - Stars (Signal Quality)
     - Confidence %
-    - RSI Value
-    Returns: (Formatted Message: str, Is High Risk: bool)
+    - RSI Status
+    Returns:
+        (Formatted Message: str, Is High Risk: bool)
     """
     stars = signal_data.get("stars", 0)
     confidence = signal_data.get("confidence", 0.0)
-    pattern = signal_data.get("pattern", "Unknown Pattern")
-    rsi = signal_data.get("rsi")
+    pattern = signal_data.get("pattern", "Unknown")
+    rsi = signal_data.get("rsi", None)
 
     try:
         rating_text = (
-            "✅ *Ultra High-Quality Signal (5⭐)* – _Technical Masterpiece._" if stars == 5 else
-            "✅ *Strong Signal (4⭐)* – _High probability trade._" if stars == 4 else
+            "✅ *Elite Signal (5⭐)* – _Masterpiece Setup._" if stars == 5 else
+            "✅ *High-Quality Signal (4⭐)* – _Strong probability._" if stars == 4 else
             "⚠️ *Moderate Signal (3⭐)* – _Needs confirmation._" if stars == 3 else
-            "❌ *Weak Signal (<3⭐)* – _Trade not recommended._"
+            "❌ *Weak Signal* – _Avoid trading._"
         )
 
         confidence_text = f"*Confidence:* `{confidence:.1f}%`"
-        confidence_note = "\n❗ *Warning: Low Confidence (<55%).*" if confidence < 55 else ""
+        confidence_warn = "\n❗ *Warning: Confidence below 55%.*" if confidence < 55 else ""
 
         rsi_text = ""
         if isinstance(rsi, (int, float)):
             if rsi > 70:
-                rsi_text = "\n🔴 *RSI: Overbought (>70)* – _Caution on Long entries._"
+                rsi_text = "\n🔴 *RSI Overbought (>70)* – Caution Long."
             elif rsi < 30:
-                rsi_text = "\n🔵 *RSI: Oversold (<30)* – _Caution on Short entries._"
+                rsi_text = "\n🔵 *RSI Oversold (<30)* – Caution Short."
 
-        suggested_action = (
+        action_suggestion = (
             "🚀 *Strong Buy Setup*" if stars >= 4 and confidence >= 70 else
-            "📈 *Potential Buy – Caution Advised*" if stars >= 4 and confidence >= 60 else
+            "📈 *Potential Buy (Caution)*" if stars >= 4 and confidence >= 60 else
             "👀 *Watchlist Candidate*" if stars == 3 and confidence >= 60 else
-            "❌ *Avoid Trade – Too Risky*"
+            "❌ *Avoid Trade*"
         )
 
         message = (
-            f"⚡ *Risk Analysis*\n\n"
+            f"⚡ *Risk Assessment*\n\n"
             f"*Pattern:* `{pattern}`\n"
             f"{confidence_text}\n"
             f"*Rating:* {'⭐' * stars}\n\n"
-            f"{rating_text}{confidence_note}{rsi_text}\n\n"
-            f"📢 *Suggested Action:* {suggested_action}"
+            f"{rating_text}{confidence_warn}{rsi_text}\n\n"
+            f"📢 *Suggested Action:* {action_suggestion}"
         )
 
-        is_high_risk = stars < 3 or confidence < 55
-        logger.info(f"[RiskEngine] Evaluated {pattern}: {stars}⭐, {confidence:.1f}%")
-        return message, is_high_risk
+        high_risk = stars < 3 or confidence < 55
+        logger.info(f"[RiskEngine] Assessed {pattern}: {stars}⭐ | {confidence:.1f}%")
+        return message, high_risk
 
     except Exception as e:
-        logger.error(f"[RiskEngine Critical] {e}")
-        return "⚠️ *Risk Analysis Failed.* _Trade at your own risk._", True
+        logger.error(f"[RiskEngine Error] {e}")
+        return "⚠️ *Risk Assessment Failed.* Proceed with Caution.", True
 
-
-# === Risk/Reward Analyzer v3.0 ===
+# === Dynamic Risk/Reward Analyzer ===
 def analyze_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
     """
-    Dynamische RRR Analyse. Verwendet letzte 20 Kerzen.
+    Calculates a smart Risk/Reward Ratio based on last 20 candles.
     Args:
-        df (pd.DataFrame): OHLCV
+        df (pd.DataFrame): Market data
         action (str): "Long 📈" or "Short 📉"
     Returns:
-        dict with stop loss, target, RRR etc.
+        dict: RRR data
     """
     if df is None or df.empty or action not in ("Long 📈", "Short 📉"):
         return None
@@ -115,14 +117,13 @@ def analyze_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
         }
 
     except Exception as e:
-        logger.error(f"[RiskEngine RRR] Critical failure: {e}")
+        logger.error(f"[RiskEngine RRR Error] {e}")
         return None
 
-
-# === Lightweight Calculator ===
+# === Lightweight Risk Calculator ===
 def basic_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
     """
-    Simple RRR-Messung ohne Entry Price.
+    Simple Risk/Reward Ratio calculation.
     """
     if df is None or df.empty or action not in ["Long", "Short"]:
         return None
@@ -138,30 +139,29 @@ def basic_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
         if action == "Long":
             risk = ((close - low) / close) * 100
             reward = ((high - close) / close) * 100
-            stop_loss = low
-            target = high
         else:
             risk = ((high - close) / close) * 100
             reward = ((close - low) / close) * 100
-            stop_loss = high
-            target = low
+
+        if risk <= 0:
+            return None
 
         return {
             "risk_percent": round(risk, 2),
             "reward_percent": round(reward, 2),
-            "risk_reward_ratio": round(reward / risk, 2) if risk > 0 else 0.0,
-            "stop_loss": round(stop_loss, 2),
-            "target": round(target, 2),
+            "risk_reward_ratio": round(reward / risk, 2),
+            "stop_loss": round(low if action == "Long" else high, 4),
+            "target": round(high if action == "Long" else low, 4),
         }
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"[RiskEngine Basic RRR Error] {e}")
         return None
 
-
-# === Estimator mit Entry Price ===
+# === Advanced Entry-based Estimator ===
 def estimate_rr_with_entry(df: pd.DataFrame, entry_price: float, direction: str) -> dict:
     """
-    Entry-basierte RRR-Schätzung mit Fallbacks.
+    Estimates Risk/Reward based on custom entry point.
     """
     if df is None or df.empty or entry_price <= 0 or direction.lower() not in {"long", "short"}:
         return {"risk": None, "reward": None, "rr_ratio": None}
@@ -189,5 +189,6 @@ def estimate_rr_with_entry(df: pd.DataFrame, entry_price: float, direction: str)
             "rr_ratio": round(reward / risk, 2)
         }
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"[RiskEngine Estimate RRR Error] {e}")
         return {"risk": None, "reward": None, "rr_ratio": None}
