@@ -2,7 +2,7 @@
 
 """
 A.R.K. Command Handler – NASA Signature Build 2025
-Handles bilingual user commands with ultra stability and dynamic market responses.
+Handles bilingual user commands with ultra-stability and strategic real-time responses.
 """
 
 from telegram import Update
@@ -26,7 +26,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         await update.message.reply_text(text, parse_mode="Markdown")
         logger.info(f"✅ [Command] /start executed by {user} ({update.effective_chat.id})")
-
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/start Handler Error")
 
@@ -38,7 +37,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         await update.message.reply_text(text, parse_mode="Markdown")
         logger.info(f"✅ [Command] /help executed.")
-
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/help Handler Error")
 
@@ -58,7 +56,7 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
 
         if result:
             move = result.get("combined_action", "Unknown")
-            confidence = result.get("avg_confidence", 0)
+            confidence = result.get("avg_confidence", 0.0)
             stars = result.get("signal_category", "⭐")
 
             message = (
@@ -69,50 +67,68 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
             )
 
             await update.message.reply_text(message, parse_mode="Markdown")
-            logger.info(f"✅ [Command] /analyse successful for {symbol}")
-
+            logger.info(f"✅ [Command] /analyse success for {symbol}")
         else:
-            await update.message.reply_text(f"❌ No valid analysis found for {symbol}.", parse_mode="Markdown")
-            logger.warning(f"⚠️ [Command] /analyse failed for {symbol}")
+            await update.message.reply_text(f"❌ No valid analysis found for *{symbol}*.", parse_mode="Markdown")
+            logger.warning(f"⚠️ [Command] /analyse no data for {symbol}")
 
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/analyse Handler Error")
 
 # === /signal ===
 async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("⚡ *Live signals are delivered automatically.*", parse_mode="Markdown")
+    try:
+        await update.message.reply_text("⚡ *Live signals are delivered automatically during active trading sessions.*", parse_mode="Markdown")
+        logger.info(f"✅ [Command] /signal triggered by {update.effective_chat.id}")
+    except Exception as e:
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/signal Handler Error")
 
 # === /status ===
 async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("📊 *Status report is currently under development.*", parse_mode="Markdown")
+    try:
+        await update.message.reply_text("📊 *Status report feature is currently under development.*", parse_mode="Markdown")
+        logger.info(f"✅ [Command] /status triggered by {update.effective_chat.id}")
+    except Exception as e:
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/status Handler Error")
 
 # === /uptime ===
 async def uptime_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    uptime = get_uptime()
-    await update.message.reply_text(f"⏱️ *Uptime:* `{uptime}`", parse_mode="Markdown")
+    try:
+        uptime = get_uptime()
+        await update.message.reply_text(f"⏱️ *Uptime:* `{uptime}`", parse_mode="Markdown")
+        logger.info(f"✅ [Command] /uptime triggered by {update.effective_chat.id}")
+    except Exception as e:
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/uptime Handler Error")
 
 # === /setlanguage ===
 async def set_language_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         if not context.args:
-            await update.message.reply_text("❗ Specify a language code: en or de", parse_mode="Markdown")
+            await update.message.reply_text("❗ Please specify a language code: en or de", parse_mode="Markdown")
             return
 
         lang = context.args[0].lower()
         if lang not in ["en", "de"]:
-            await update.message.reply_text("❗ Supported: en, de", parse_mode="Markdown")
+            await update.message.reply_text("❗ Supported languages are: en, de", parse_mode="Markdown")
             return
 
         from bot.utils.language import set_language
         set_language(update.effective_chat.id, lang)
 
         await update.message.reply_text(get_text("set_language", lang), parse_mode="Markdown")
+        logger.info(f"✅ [Command] /setlanguage switched to {lang}")
 
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/setlanguage Handler Error")
 
 # === /shutdown ===
 async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    lang = get_language(update.effective_chat.id) or "en"
-    await update.message.reply_text(get_text("shutdown", lang), parse_mode="Markdown")
-    await context.application.stop()
+    try:
+        lang = get_language(update.effective_chat.id) or "en"
+        await update.message.reply_text(get_text("shutdown", lang), parse_mode="Markdown")
+
+        await context.application.stop()
+        logger.info(f"🛑 [Command] /shutdown triggered by {update.effective_chat.id}")
+
+    except Exception as e:
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/shutdown Handler Error")
