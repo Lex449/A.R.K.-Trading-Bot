@@ -1,48 +1,54 @@
+# bot/auto/heartbeat_manager.py
+
 """
-A.R.K. Heartbeat Manager – Ultra Stability Pulse System
-Keeps the system alive with timed heartbeat pings and recovery fallback.
+A.R.K. Heartbeat Manager – Pulse Alive System.
+Sends heartbeats to confirm the bot is alive.
 """
 
 import logging
-import asyncio
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from bot.utils.logger import setup_logger
-from bot.config.settings import get_settings
 
-# Logger Setup
+# Setup Logger
 logger = setup_logger(__name__)
-config = get_settings()
 
-async def heartbeat_loop(application):
+heartbeat_scheduler = AsyncIOScheduler()
+
+def start_heartbeat_manager(application, chat_id: int):
     """
-    Sends a heartbeat message every 60 minutes to confirm system health.
-    """
-    chat_id = int(config["TELEGRAM_CHAT_ID"])
-    bot = application.bot
-
-    logger.info("💓 [Heartbeat] Heartbeat loop started.")
-
-    while True:
-        try:
-            await bot.send_message(
-                chat_id=chat_id,
-                text="✅ *Heartbeat:* Bot läuft stabil und analysiert den Markt.",
-                parse_mode="Markdown",
-                disable_web_page_preview=True
-            )
-            logger.info("✅ [Heartbeat] Pulse sent successfully.")
-
-        except Exception as e:
-            logger.error(f"❌ [Heartbeat] Failed to send heartbeat: {e}")
-
-        await asyncio.sleep(3600)  # Sleep for 1 hour (3600 seconds)
-
-async def start_heartbeat_manager(application):
-    """
-    Launches the heartbeat background loop safely.
+    Starts the heartbeat scheduler at startup.
     """
     try:
-        asyncio.create_task(heartbeat_loop(application))
-        logger.info("✅ [Heartbeat Manager] Heartbeat system initialized.")
+        heartbeat_scheduler.remove_all_jobs()
+
+        heartbeat_scheduler.add_job(
+            send_heartbeat,
+            trigger=IntervalTrigger(minutes=60),
+            args=[application, chat_id],
+            id=f"heartbeat_ping_{chat_id}",
+            replace_existing=True,
+            name=f"Heartbeat Ping for Chat {chat_id}"
+        )
+
+        if not heartbeat_scheduler.running:
+            heartbeat_scheduler.start()
+
+        logger.info(f"✅ [HeartbeatManager] Heartbeat Scheduler started for chat_id {chat_id}.")
 
     except Exception as e:
-        logger.error(f"❌ [Heartbeat Manager] Failed to initialize heartbeat: {e}")
+        logger.error(f"❌ [HeartbeatManager] Failed to start Heartbeat Manager: {e}")
+
+async def send_heartbeat(application, chat_id: int):
+    """
+    Sends a simple heartbeat message.
+    """
+    try:
+        await application.bot.send_message(
+            chat_id=chat_id,
+            text="✅ *Heartbeat:* Bot läuft stabil. Alle Systeme aktiv.",
+            parse_mode="Markdown"
+        )
+        logger.info(f"✅ [Heartbeat] Ping sent to chat_id {chat_id}.")
+    except Exception as e:
+        logger.error(f"❌ [Heartbeat] Failed to send heartbeat: {e}")
