@@ -1,95 +1,118 @@
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite 2.5.
-Handles Candle Patterns, ATR Volatility, Risk-Reward Estimation, Deep Confidence Boosting – Modular, Scalable, Multilingual.
+A.R.K. Analysis Engine – Ultra Full Signal Suite 3.0
+Handles Candle Patterns, Volatility Detection, Risk-Reward Estimation,
+Volume Spike Detection, Trend Early Warning, Confidence Boosting – Modular, Scalable, Multilingual, Adaptive.
+
+Made for: Flawless Signal Mastery, Next-Gen Automation, and Institutional-Grade Risk Management.
 """
 
 import pandas as pd
 from bot.engine.pattern_detector import detect_patterns
 from bot.engine.volatility_detector import VolatilityDetector
-from bot.engine.risk_reward_analyzer import RiskRewardAnalyzer
+from bot.engine.risk_engine import RiskRewardAnalyzer
+from bot.engine.volume_spike_detector import detect_volume_spike
+from bot.engine.adaptive_trend_detector import detect_multifactor_trend
+from bot.engine.confidence_optimizer import optimize_confidence
+from bot.engine.signal_category_engine import categorize_signal
 from bot.engine.data_loader import fetch_market_data
-from bot.engine.deep_confidence_engine import adjust_confidence
+from bot.engine.data_auto_validator import validate_market_data
 from bot.utils.logger import setup_logger
 
-# Setup Logger
+# Logger Setup
 logger = setup_logger(__name__)
 
-# Instantiate Critical Engines
+# Engine Instanzen
 volatility_detector = VolatilityDetector()
-risk_reward_analyzer = RiskRewardAnalyzer()
+risk_analyzer = RiskRewardAnalyzer()
 
-async def analyze_symbol(symbol: str, chat_id: int = None) -> dict:
+async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
     """
-    Main Signal Analysis Function.
+    Core Ultra Signal Analyzer for A.R.K.
     """
 
     try:
-        # === 1. Load Data
+        # === 1. Daten Laden
         df = await fetch_market_data(symbol, chat_id=chat_id)
 
-        if df is None or len(df) < 20:
-            logger.warning(f"[Analysis Engine] Insufficient data for {symbol}. Skipping.")
+        if not validate_market_data(df):
+            logger.warning(f"🚫 [AnalysisEngine] Data validation failed for {symbol}. Skipping.")
             return None
 
-        # === 2. Detect Patterns
+        # === 2. Mustererkennung
         patterns = detect_patterns(df)
 
-        # === 3. Volatility Scan
+        # === 3. Volatilitätserkennung
         volatility_info = volatility_detector.detect_volatility_spike(df)
 
-        # === 4. Determine Action
-        combined_action = determine_action(patterns, volatility_info)
+        # === 4. Volumen Spike Detection
+        volume_info = detect_volume_spike(df)
 
-        # === 5. Estimate Risk-Reward
-        risk_reward_info = risk_reward_analyzer.estimate(df, combined_action) if combined_action in ("Long 📈", "Short 📉") else None
+        # === 5. Multifaktor Trend Erkennung
+        trend_info = detect_multifactor_trend(df)
 
-        # === 6. Confidence Calculation
-        raw_confidence = calculate_confidence(patterns)
-        boosted_confidence = adjust_confidence(raw_confidence)
+        # === 6. Bestimme Handlung
+        combined_action = determine_action(patterns, volatility_info, trend_info)
 
-        # === 7. Build Final Response
+        # === 7. Risiko-/Chance-Analyse
+        risk_reward_info = (
+            risk_analyzer.estimate(df, combined_action)
+            if combined_action in ("Long 📈", "Short 📉")
+            else None
+        )
+
+        # === 8. Confidence Optimierung
+        base_confidence = calculate_confidence(patterns)
+        final_confidence = optimize_confidence(base_confidence, volatility_info, trend_info)
+
+        # === 9. Signal-Kategorisierung
+        signal_category = categorize_signal(final_confidence)
+
+        # === 10. Finales Response-Building
         return {
             "symbol": symbol,
             "patterns": patterns,
-            "avg_confidence": boosted_confidence,
+            "avg_confidence": final_confidence,
             "combined_action": combined_action,
+            "signal_category": signal_category,
             "volatility_info": volatility_info,
+            "volume_info": volume_info,
+            "trend_info": trend_info,
             "risk_reward_info": risk_reward_info,
             "df": df,
         }
 
     except Exception as e:
-        logger.error(f"❌ [Analysis Engine] Critical error analyzing {symbol}: {e}")
+        logger.error(f"❌ [AnalysisEngine Critical Error] while analyzing {symbol}: {e}")
         return None
 
-def determine_action(patterns: list, volatility_info: dict) -> str:
+def determine_action(patterns: list, volatility_info: dict, trend_info: dict) -> str:
     """
-    Determines strategic trading action.
+    Determines the strategic trading direction.
     """
-    strong_patterns = [p for p in patterns if "Bullish" in p]
-    weak_patterns = [p for p in patterns if "Bearish" in p]
-    volatility_strength = volatility_info.get("current_move_percent", 0) if volatility_info else 0
 
-    if strong_patterns and volatility_strength >= 1.5:
+    strong_bullish = any(p["action"].startswith("Long") for p in patterns)
+    strong_bearish = any(p["action"].startswith("Short") for p in patterns)
+
+    volatility_spike = volatility_info.get("volatility_spike") if volatility_info else False
+    early_trend = trend_info.get("early_trend") if trend_info else None
+
+    if strong_bullish and (volatility_spike or early_trend == "bullish"):
         return "Long 📈"
-    elif weak_patterns and volatility_strength >= 1.5:
+    elif strong_bearish and (volatility_spike or early_trend == "bearish"):
         return "Short 📉"
     return "Neutral ⚪"
 
 def calculate_confidence(patterns: list) -> float:
     """
-    Calculates base confidence score.
+    Calculates the base confidence score from detected patterns.
     """
+
     if not patterns:
         return 0.0
 
-    score = 0
+    total = 0
     for p in patterns:
-        score += {
-            "⭐⭐⭐⭐⭐": 100,
-            "⭐⭐⭐⭐": 80,
-            "⭐⭐⭐": 60,
-            "⭐⭐": 40
-        }.get(p[p.find("⭐"):], 20)
+        total += p.get("confidence", 50)
 
-    return round(score / len(patterns), 2)
+    avg = total / len(patterns)
+    return round(avg, 2)
