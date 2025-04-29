@@ -1,37 +1,44 @@
 """
-A.R.K. Indicator Engine – Ultra Precision 3.0
-Calculates EMAs, RSI momentum, and dynamic trend detection for elite trading decisions.
+A.R.K. Indicator Engine – Ultra Adaptive 4.0
+Real-Time Momentum, Trend & RSI Fusion Scoring for Elite Trade Validation.
 
-Built for: Scalability, Fault Tolerance, and Strategic Signal Scoring.
+Optimized for: Ultra-Fast Decision Trees, Volatility-Adaptive Biasing, AI-Level Scoring Systems.
 """
 
 import pandas as pd
 import numpy as np
+from bot.utils.logger import setup_logger
 
-def evaluate_indicators(df: pd.DataFrame) -> tuple:
+# Setup structured logger
+logger = setup_logger(__name__)
+
+def evaluate_indicators(df: pd.DataFrame) -> tuple[float, str]:
     """
-    Evaluates market momentum based on EMA crossovers and RSI levels.
+    Evaluates momentum and trend bias using EMA crossovers and RSI-based fine-tuning.
 
     Args:
-        df (pd.DataFrame): DataFrame with 'o', 'h', 'l', 'c' columns (candlestick data).
+        df (pd.DataFrame): Candlestick DataFrame with 'o', 'h', 'l', 'c' columns.
 
     Returns:
-        tuple: (Indicator Score [0–100], Trend Direction: "Long 📈", "Short 📉", "Neutral ⚪")
+        tuple: (Indicator Strength Score 0–100, Trend Bias)
     """
 
     if df is None or df.empty or len(df) < 20:
-        return 50.0, "Neutral ⚪"  # Default if not enough data
+        logger.warning("⚠️ [IndicatorEngine] Insufficient data for indicator evaluation.")
+        return 50.0, "Neutral ⚪"
 
     try:
-        # === Calculate EMAs ===
-        df["EMA_9"] = df["c"].ewm(span=9, adjust=False).mean()
-        df["EMA_21"] = df["c"].ewm(span=21, adjust=False).mean()
+        close = df["c"]
 
-        last_close = df["c"].iloc[-1]
-        last_ema9 = df["EMA_9"].iloc[-1]
-        last_ema21 = df["EMA_21"].iloc[-1]
+        # === EMAs Calculation ===
+        ema_9 = close.ewm(span=9, adjust=False).mean()
+        ema_21 = close.ewm(span=21, adjust=False).mean()
 
-        # === Determine Trend ===
+        last_ema9 = ema_9.iloc[-1]
+        last_ema21 = ema_21.iloc[-1]
+        last_close = close.iloc[-1]
+
+        # === Basic Trend Bias ===
         if last_ema9 > last_ema21:
             trend = "Long 📈"
         elif last_ema9 < last_ema21:
@@ -39,36 +46,41 @@ def evaluate_indicators(df: pd.DataFrame) -> tuple:
         else:
             trend = "Neutral ⚪"
 
-        # === Calculate RSI ===
-        delta = df["c"].diff()
-        gain = np.maximum(delta, 0)
-        loss = np.abs(np.minimum(delta, 0))
+        # === RSI Calculation ===
+        delta = close.diff()
+        gain = delta.clip(lower=0)
+        loss = -delta.clip(upper=0)
 
-        avg_gain = pd.Series(gain).rolling(window=14, min_periods=14).mean().iloc[-1]
-        avg_loss = pd.Series(loss).rolling(window=14, min_periods=14).mean().iloc[-1]
+        avg_gain = gain.rolling(window=14, min_periods=14).mean().iloc[-1]
+        avg_loss = loss.rolling(window=14, min_periods=14).mean().iloc[-1]
 
-        rsi = 100.0 if avg_loss == 0 else 100 - (100 / (1 + (avg_gain / avg_loss)))
+        rsi = 100 if avg_loss == 0 else 100 - (100 / (1 + (avg_gain / avg_loss)))
 
-        # === Base Score ===
+        # === Indicator Score Assembly ===
         indicator_score = 50.0
 
-        # === EMA Influence ===
         if trend == "Long 📈":
             indicator_score += 20
         elif trend == "Short 📉":
             indicator_score -= 20
 
-        # === RSI Influence ===
         if rsi > 70:
-            indicator_score -= 10  # Overbought → Higher reversal risk
+            indicator_score -= 10  # Overbought = Risk for Longs
         elif rsi < 30:
-            indicator_score += 10  # Oversold → Higher bounce chance
+            indicator_score += 10  # Oversold = Potential Bounce
 
-        # === Finalize Score ===
-        indicator_score = round(max(0, min(100, indicator_score)), 2)
+        # Additional Minor Scoring Adjustments
+        if 60 < rsi < 70 and trend == "Long 📈":
+            indicator_score += 5
+        if 30 < rsi < 40 and trend == "Short 📉":
+            indicator_score += 5
+
+        indicator_score = round(np.clip(indicator_score, 0, 100), 2)
+
+        logger.info(f"📈 [IndicatorEngine] Score: {indicator_score} | Trend: {trend} | RSI: {rsi:.2f}")
 
         return indicator_score, trend
 
-    except Exception:
-        # Safe fallback
+    except Exception as e:
+        logger.error(f"❌ [IndicatorEngine Critical Error] {e}")
         return 50.0, "Neutral ⚪"
