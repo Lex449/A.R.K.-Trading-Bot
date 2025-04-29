@@ -7,7 +7,6 @@ Made in Bali. Engineered with German Precision.
 """
 
 import asyncio
-import logging
 from telegram.ext import ApplicationBuilder
 from bot.handlers.commands import (
     start, help_command, analyze_symbol_handler, signal_handler,
@@ -18,20 +17,22 @@ from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.startup.startup_task import execute_startup_tasks
 
-# Setup logger
+# Setup Logger and Settings
 logger = setup_logger(__name__)
 config = get_settings()
 
 async def main():
     """
-    A.R.K. Bot Initializer
+    A.R.K. Bot Initializer.
+    Launches core systems, loads environment, builds Telegram bot application.
     """
-    logger.info("🚀 A.R.K. is preparing for launch...")
 
-    # Application Build
+    logger.info("🚀 [Main] Launch sequence initiated...")
+
+    # === Build Application ===
     application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
 
-    # === Command Handlers ===
+    # === Register Command Handlers ===
     application.add_handler(start)
     application.add_handler(help_command)
     application.add_handler(analyze_symbol_handler)
@@ -41,19 +42,18 @@ async def main():
     application.add_handler(set_language_handler)
     application.add_handler(shutdown_handler)
 
-    # === Error Handler ===
+    # === Global Error Handler ===
     application.add_error_handler(global_error_handler)
 
-    # === Startup Tasks (Scheduler + Commands) ===
+    # === Startup Scheduler Tasks ===
     await execute_startup_tasks(application)
 
-    # === Start Polling ===
-    logger.info("✅ A.R.K. initialized successfully. Launching into action.")
+    # === Start Bot Polling ===
+    logger.info("✅ [Main] A.R.K. Bot ready. Entering full operational mode.")
     await application.run_polling()
-
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logger.warning("🛑 A.R.K. shutdown initiated manually.")
+        logger.warning("🛑 [Main] Shutdown sequence triggered manually.")
