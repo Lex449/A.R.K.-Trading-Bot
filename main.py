@@ -7,19 +7,10 @@ import asyncio
 import logging
 import nest_asyncio
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler
+from telegram.ext import ApplicationBuilder
 
 # === Handlers ===
-from bot.handlers.commands import (
-    start,
-    help_command,
-    analyze_symbol_handler,
-    signal_handler,
-    status_handler,
-    shutdown_handler,
-    uptime_handler,
-    set_language_handler
-)
+from bot.handlers.commands import command_handlers
 
 # === Startup Tasks ===
 from bot.startup.startup_tasks import startup_tasks
@@ -48,17 +39,11 @@ async def main():
 
     app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
 
-    # Register Commands
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("analyse", analyze_symbol_handler))
-    app.add_handler(CommandHandler("signal", signal_handler))
-    app.add_handler(CommandHandler("status", status_handler))
-    app.add_handler(CommandHandler("uptime", uptime_handler))
-    app.add_handler(CommandHandler("setlanguage", set_language_handler))
-    app.add_handler(CommandHandler("shutdown", shutdown_handler))
+    # Register All Command Handlers
+    for handler in command_handlers:
+        app.add_handler(handler)
 
-    # Register Error Handler
+    # Register Global Error Handler
     app.add_error_handler(global_error_handler)
 
     # Start Polling
