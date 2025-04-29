@@ -1,5 +1,7 @@
+# bot/engine/analysis_engine.py
+
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite 3.0
+A.R.K. Analysis Engine – Ultra Full Signal Suite 6.0
 Handles Candle Patterns, Volatility Detection, Risk-Reward Estimation,
 Volume Spike Detection, Trend Early Warning, Confidence Boosting – Modular, Scalable, Multilingual, Adaptive.
 
@@ -7,7 +9,7 @@ Made for: Flawless Signal Mastery, Next-Gen Automation, and Institutional-Grade 
 """
 
 import pandas as pd
-from bot.engine.pattern_detector import detect_patterns
+from bot.engine.pattern_analysis_engine import detect_patterns, evaluate_indicators
 from bot.engine.volatility_detector import VolatilityDetector
 from bot.engine.risk_engine import RiskRewardAnalyzer
 from bot.engine.volume_spike_detector import detect_volume_spike
@@ -50,30 +52,35 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         # === 5. Multifaktor Trend Erkennung
         trend_info = detect_multifactor_trend(df)
 
-        # === 6. Bestimme Handlung
+        # === 6. Indikatoren Evaluierung
+        indicator_score, trend_direction = evaluate_indicators(df)
+
+        # === 7. Bestimme Handlung
         combined_action = determine_action(patterns, volatility_info, trend_info)
 
-        # === 7. Risiko-/Chance-Analyse
+        # === 8. Risiko-/Chance-Analyse
         risk_reward_info = (
             risk_analyzer.estimate(df, combined_action)
             if combined_action in ("Long 📈", "Short 📉")
             else None
         )
 
-        # === 8. Confidence Optimierung
+        # === 9. Confidence Optimierung
         base_confidence = calculate_confidence(patterns)
         final_confidence = optimize_confidence(base_confidence, volatility_info, trend_info)
 
-        # === 9. Signal-Kategorisierung
+        # === 10. Signal-Kategorisierung
         signal_category = categorize_signal(final_confidence)
 
-        # === 10. Finales Response-Building
+        # === 11. Finales Response-Building
         result = {
             "symbol": symbol,
             "patterns": patterns,
             "avg_confidence": final_confidence,
             "combined_action": combined_action,
             "signal_category": signal_category,
+            "indicator_score": indicator_score,
+            "trend_direction": trend_direction,
             "volatility_info": volatility_info,
             "volume_info": volume_info,
             "trend_info": trend_info,
@@ -81,8 +88,7 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
             "df": df,
         }
 
-        logger.info(f"✅ [AnalysisEngine] Analysis complete for {symbol}. Action: {combined_action} | Confidence: {final_confidence}%")
-
+        logger.info(f"✅ [AnalysisEngine] {symbol} ready: {combined_action} | {final_confidence:.2f}% confidence.")
         return result
 
     except Exception as e:
@@ -114,9 +120,6 @@ def calculate_confidence(patterns: list) -> float:
     if not patterns:
         return 0.0
 
-    total = 0
-    for p in patterns:
-        total += p.get("confidence", 50)
-
+    total = sum(p.get("confidence", 50) for p in patterns)
     avg = total / len(patterns)
     return round(avg, 2)
