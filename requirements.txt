@@ -11,3 +11,4 @@ holidays==0.24
 httpx==0.24.1
 apscheduler==3.10.4
 yfinance==0.2.36
+psutil==5.9.8
