@@ -1,5 +1,3 @@
-# bot/engine/adaptive_trend_detector.py
-
 """
 A.R.K. Adaptive Trend Detector – Quantum Signal Upgrade 4.0
 Fusioniert RSI, EMAs, Slope-Analysis & Volatilitätsfilter zu einer Elite-Trend-Maschine.
@@ -14,9 +12,9 @@ from bot.utils.logger import setup_logger
 # Structured Logging
 logger = setup_logger(__name__)
 
-def detect_multifactor_trend(df: pd.DataFrame, rsi_period: int = 14, slope_window: int = 5, ma_fast: int = 9, ma_slow: int = 21) -> dict | None:
+def detect_adaptive_trend(df: pd.DataFrame, rsi_period: int = 14, slope_window: int = 5, ma_fast: int = 9, ma_slow: int = 21) -> dict | None:
     """
-    Detects strategic early trend shifts using multifactor confirmation logic.
+    Detects strategic early trend shifts using adaptive multifactor confirmation logic.
 
     Parameters:
         df (pd.DataFrame): Price data with 'c' (close).
