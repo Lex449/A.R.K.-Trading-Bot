@@ -1,3 +1,5 @@
+# bot/engine/adaptive_trend_detector.py
+
 """
 A.R.K. Adaptive Trend Detector – Quantum Signal Upgrade 4.0
 Fusioniert RSI, EMAs, Slope-Analysis & Volatilitätsfilter zu einer Elite-Trend-Maschine.
@@ -12,9 +14,9 @@ from bot.utils.logger import setup_logger
 # Structured Logging
 logger = setup_logger(__name__)
 
-def detect_adaptive_trend(df: pd.DataFrame, rsi_period: int = 14, slope_window: int = 5, ma_fast: int = 9, ma_slow: int = 21) -> dict | None:
+def detect_multifactor_trend(df: pd.DataFrame, rsi_period: int = 14, slope_window: int = 5, ma_fast: int = 9, ma_slow: int = 21) -> dict | None:
     """
-    Detects strategic early trend shifts using fourfold confirmation logic.
+    Detects strategic early trend shifts using multifactor confirmation logic.
 
     Parameters:
         df (pd.DataFrame): Price data with 'c' (close).
@@ -24,7 +26,7 @@ def detect_adaptive_trend(df: pd.DataFrame, rsi_period: int = 14, slope_window: 
         ma_slow (int): Slow EMA period.
 
     Returns:
-        dict | None: Structured trend detection data.
+        dict | None: Structured trend detection output.
     """
 
     if df is None or df.empty or "c" not in df.columns:
@@ -64,7 +66,7 @@ def detect_adaptive_trend(df: pd.DataFrame, rsi_period: int = 14, slope_window: 
         if bullish_conditions:
             logger.info(f"🚀 [TrendDetector] Early Bullish Signal – RSI: {current_rsi:.2f}, Slope: {slope:.4f}")
             return {
-                "trend": "bullish",
+                "early_trend": "bullish",
                 "rsi": round(current_rsi, 2),
                 "slope": round(slope, 4),
                 "ema_fast": round(last_fast, 4),
@@ -74,14 +76,13 @@ def detect_adaptive_trend(df: pd.DataFrame, rsi_period: int = 14, slope_window: 
         if bearish_conditions:
             logger.info(f"📉 [TrendDetector] Early Bearish Signal – RSI: {current_rsi:.2f}, Slope: {slope:.4f}")
             return {
-                "trend": "bearish",
+                "early_trend": "bearish",
                 "rsi": round(current_rsi, 2),
                 "slope": round(slope, 4),
                 "ema_fast": round(last_fast, 4),
                 "ema_slow": round(last_slow, 4)
             }
 
-        # No actionable trend
         return None
 
     except Exception as e:
