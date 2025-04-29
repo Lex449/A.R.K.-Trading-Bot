@@ -29,7 +29,13 @@ translations = {
         "avg_confidence": "Avg. Confidence",
         "summary_failed": "Summary generation failed.",
         "daily_recap": "Daily Recap",
-        "weekly_recap": "Weekly Recap"
+        "weekly_recap": "Weekly Recap",
+
+        "no_symbols_configured": "❌ No symbols configured for auto-analysis.",
+        "scan_start": "🔍 *Starting Auto-Analysis...*",
+        "no_signals_found": "ℹ️ *No trading signals detected during scan.*",
+        "scan_complete_success": "✅ *Auto-Analysis Completed Successfully!*",
+        "scan_complete_empty": "⚠️ *Scan completed – but no valid signals were generated.*"
     },
     "de": {
         "start": "👋 Hallo {user}! Willkommen bei *A.R.K. Trading Bot 2.0*.\nVerwende /help, um die Funktionen anzuzeigen.",
@@ -47,7 +53,13 @@ translations = {
         "avg_confidence": "Ø Vertrauensscore",
         "summary_failed": "Zusammenfassung fehlgeschlagen.",
         "daily_recap": "Tägliche Zusammenfassung",
-        "weekly_recap": "Wöchentliche Zusammenfassung"
+        "weekly_recap": "Wöchentliche Zusammenfassung",
+
+        "no_symbols_configured": "❌ Keine Symbole für die automatische Analyse konfiguriert.",
+        "scan_start": "🔍 *Starte automatische Analyse...*",
+        "no_signals_found": "ℹ️ *Keine Handelssignale während der Analyse gefunden.*",
+        "scan_complete_success": "✅ *Automatische Analyse erfolgreich abgeschlossen!*",
+        "scan_complete_empty": "⚠️ *Analyse abgeschlossen – aber es wurden keine gültigen Signale generiert.*"
     }
 }
 
