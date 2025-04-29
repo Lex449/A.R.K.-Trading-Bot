@@ -57,17 +57,42 @@ def update_performance(stars: int, confidence: float):
     _save_performance_data()
 
 def _save_performance_data():
-    """Internal: Save to file."""
+    """Internal: Saves current performance data to file."""
     try:
         with open(PERFORMANCE_FILE, "w", encoding="utf-8") as f:
             json.dump(performance_data, f, indent=4)
-        logger.info("💾 [Performance] Saved current performance data.")
+        logger.info("💾 [PerformanceTracker] Current performance saved.")
     except Exception as e:
-        logger.error(f"❌ [Performance] Failed to save: {e}")
+        logger.error(f"❌ [PerformanceTracker] Failed to save: {e}")
 
 # === Recap Builders ===
 
 def generate_daily_recap() -> str:
     """
-    Generates today's recap based on session start.
-   
+    Generates today's recap based on the session start.
+    Returns a bilingual formatted message.
+    """
+    total = performance_data.get("total_signals", 0)
+    strong = performance_data.get("strong_signals", 0)
+    moderate = performance_data.get("moderate_signals", 0)
+    weak = performance_data.get("weak_signals", 0)
+    avg_conf = performance_data.get("total_confidence", 0.0) / total if total > 0 else 0.0
+
+    if total == 0:
+        return "ℹ️ *No signals recorded today.*"
+
+    return (
+        "📊 *A.R.K. Daily Performance Summary*\n\n"
+        f"• Total Signals: `{total}`\n"
+        f"• 5⭐ Strong Signals: `{strong}`\n"
+        f"• 4⭐ Moderate Signals: `{moderate}`\n"
+        f"• ≤3⭐ Weak Signals: `{weak}`\n"
+        f"• Avg. Confidence: `{avg_conf:.2f}%`\n\n"
+        "_Keep pushing for elite precision. Tomorrow is another chance to dominate!_"
+    )
+
+def get_performance_summary() -> dict:
+    """
+    Returns the current in-memory performance data.
+    """
+    return performance_data
