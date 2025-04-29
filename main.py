@@ -1,5 +1,3 @@
-# bot/main.py
-
 """
 A.R.K. – Ultra Resilient Main Entry Point.
 Initialisiert den Telegram Bot, registriert alle Commands, startet alle Loops.
@@ -17,7 +15,7 @@ from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.startup.startup_task import execute_startup_tasks
 
-# === Logger and Settings Setup ===
+# === Logger & Settings Setup ===
 logger = setup_logger(__name__)
 config = get_settings()
 
@@ -27,28 +25,33 @@ async def main():
     """
     logger.info("🚀 [Main] Launch sequence initiated...")
 
-    # === Build Telegram Application ===
-    application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
+    try:
+        # === Build Telegram Application ===
+        application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
 
-    # === Register Core Command Handlers ===
-    application.add_handler(start)
-    application.add_handler(help_command)
-    application.add_handler(analyze_symbol_handler)
-    application.add_handler(signal_handler)
-    application.add_handler(status_handler)
-    application.add_handler(uptime_handler)
-    application.add_handler(set_language_handler)
-    application.add_handler(shutdown_handler)
+        # === Register Core Command Handlers ===
+        application.add_handler(start)
+        application.add_handler(help_command)
+        application.add_handler(analyze_symbol_handler)
+        application.add_handler(signal_handler)
+        application.add_handler(status_handler)
+        application.add_handler(uptime_handler)
+        application.add_handler(set_language_handler)
+        application.add_handler(shutdown_handler)
 
-    # === Register Global Error Handler ===
-    application.add_error_handler(global_error_handler)
+        # === Register Global Error Handler ===
+        application.add_error_handler(global_error_handler)
 
-    # === Run Startup Tasks (Schedulers, Health Checks etc.) ===
-    await execute_startup_tasks(application)
+        # === Run Startup Tasks (Schedulers, Health Checks etc.) ===
+        await execute_startup_tasks(application)
 
-    # === Start Polling Loop ===
-    logger.info("✅ [Main] A.R.K. Bot fully operational. Commencing live mode.")
-    await application.run_polling(poll_interval=1.0)
+        # === Start Polling Loop ===
+        logger.info("✅ [Main] A.R.K. Bot fully operational. Commencing live mode.")
+        await application.run_polling(poll_interval=1.0)
+
+    except Exception as e:
+        logger.critical(f"🔥 [Main] Critical Startup Failure: {e}")
+        raise
 
 if __name__ == "__main__":
     try:
