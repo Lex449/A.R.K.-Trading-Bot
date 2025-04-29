@@ -1,8 +1,8 @@
 # bot/handlers/commands.py
 
 """
-A.R.K. Command Handler – Ultra Premium NASA 2025 Build
-Bilingual Commands | Maximum Resilience | Instant Response | Human-grade interaction.
+A.R.K. Command Handler – NASA Signature Build 2025
+Handles bilingual user commands with ultra stability and dynamic market responses.
 """
 
 from telegram import Update
@@ -25,7 +25,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         text = get_text("start", lang).format(user=user)
 
         await update.message.reply_text(text, parse_mode="Markdown")
-        logger.info(f"✅ [Command] /start by {user} ({update.effective_chat.id})")
+        logger.info(f"✅ [Command] /start executed by {user} ({update.effective_chat.id})")
 
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/start Handler Error")
@@ -37,7 +37,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         text = get_text("help", lang)
 
         await update.message.reply_text(text, parse_mode="Markdown")
-        logger.info(f"✅ [Command] /help sent to {update.effective_chat.id}")
+        logger.info(f"✅ [Command] /help executed.")
 
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/help Handler Error")
@@ -57,9 +57,9 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
         result = await analyze_symbol(symbol)
 
         if result:
-            move = result.get("move", "Unknown")
-            confidence = result.get("confidence", 0)
-            stars = result.get("stars", "⭐")
+            move = result.get("combined_action", "Unknown")
+            confidence = result.get("avg_confidence", 0)
+            stars = result.get("signal_category", "⭐")
 
             message = (
                 f"📊 *{symbol} Analysis Completed*\n\n"
@@ -72,7 +72,7 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
             logger.info(f"✅ [Command] /analyse successful for {symbol}")
 
         else:
-            await update.message.reply_text(f"❌ No valid data found for {symbol}.", parse_mode="Markdown")
+            await update.message.reply_text(f"❌ No valid analysis found for {symbol}.", parse_mode="Markdown")
             logger.warning(f"⚠️ [Command] /analyse failed for {symbol}")
 
     except Exception as e:
@@ -80,61 +80,39 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
 
 # === /signal ===
 async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        await update.message.reply_text("⚡ *Real-time signals will appear here soon.*", parse_mode="Markdown")
-        logger.info(f"✅ [Command] /signal triggered by {update.effective_chat.id}")
-
-    except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/signal Handler Error")
+    await update.message.reply_text("⚡ *Live signals are delivered automatically.*", parse_mode="Markdown")
 
 # === /status ===
 async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        await update.message.reply_text("📊 *Status report generation is under construction.*", parse_mode="Markdown")
-        logger.info(f"✅ [Command] /status triggered by {update.effective_chat.id}")
-
-    except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/status Handler Error")
+    await update.message.reply_text("📊 *Status report is currently under development.*", parse_mode="Markdown")
 
 # === /uptime ===
 async def uptime_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        uptime = get_uptime()
-        await update.message.reply_text(f"⏱️ *Uptime:* `{uptime}`", parse_mode="Markdown")
-        logger.info(f"✅ [Command] /uptime requested by {update.effective_chat.id}")
-
-    except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/uptime Handler Error")
+    uptime = get_uptime()
+    await update.message.reply_text(f"⏱️ *Uptime:* `{uptime}`", parse_mode="Markdown")
 
 # === /setlanguage ===
 async def set_language_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         if not context.args:
-            await update.message.reply_text("❗ Please specify a language code: en or de", parse_mode="Markdown")
+            await update.message.reply_text("❗ Specify a language code: en or de", parse_mode="Markdown")
             return
 
         lang = context.args[0].lower()
         if lang not in ["en", "de"]:
-            await update.message.reply_text("❗ Supported languages: en, de", parse_mode="Markdown")
+            await update.message.reply_text("❗ Supported: en, de", parse_mode="Markdown")
             return
 
         from bot.utils.language import set_language
         set_language(update.effective_chat.id, lang)
 
         await update.message.reply_text(get_text("set_language", lang), parse_mode="Markdown")
-        logger.info(f"✅ [Command] /setlanguage to {lang} by {update.effective_chat.id}")
 
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/setlanguage Handler Error")
 
 # === /shutdown ===
 async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        lang = get_language(update.effective_chat.id) or "en"
-        await update.message.reply_text(get_text("shutdown", lang), parse_mode="Markdown")
-
-        logger.info(f"🛑 [Command] /shutdown triggered by {update.effective_chat.id}")
-        await context.application.stop()
-
-    except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/shutdown Handler Error")
+    lang = get_language(update.effective_chat.id) or "en"
+    await update.message.reply_text(get_text("shutdown", lang), parse_mode="Markdown")
+    await context.application.stop()
