@@ -1,76 +1,39 @@
 # bot/utils/logger.py
 
 """
-A.R.K. Ultra Logger – Production Grade Structured Logging.
-Designed for scaling, monitoring, and surgical debugging.
+A.R.K. Logger – Structured Precision Logging 2025
+Maximale Stabilität und Transparenz für alle Module.
 """
 
 import logging
-import sys
 import os
-from logging.handlers import TimedRotatingFileHandler
 
-def setup_logger(name: str, level: str = "INFO") -> logging.Logger:
+def setup_logger(name: str = "A.R.K. Logger") -> logging.Logger:
     """
-    Creates a fully structured, premium logger for modules.
-
-    Args:
-        name (str): Module or context name.
-        level (str): Logging level.
-
-    Returns:
-        logging.Logger: Configured logger instance.
+    Creates and returns a structured logger for the given module name.
+    Logs to console and (optionally) to a file if in production mode.
     """
     logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
 
-    if not logger.handlers:
-        # Create logs/ folder if missing
-        os.makedirs("logs", exist_ok=True)
+    # Prevent duplicated handlers
+    if logger.handlers:
+        return logger
 
-        # StreamHandler (Console Output)
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_formatter = logging.Formatter(
-            '[%(asctime)s] %(levelname)-8s | %(name)s | %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        stream_handler.setFormatter(stream_formatter)
+    # Console Handler
+    console_handler = logging.StreamHandler()
+    console_format = logging.Formatter("[%(asctime)s] %(levelname)-8s | %(name)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    console_handler.setFormatter(console_format)
+    logger.addHandler(console_handler)
 
-        # FileHandler (Daily rotating logs)
-        file_handler = TimedRotatingFileHandler(
-            filename="logs/ark_bot.log",
-            when="midnight",
-            interval=1,
-            backupCount=7,
-            encoding="utf-8"
-        )
-        file_formatter = logging.Formatter(
-            '%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        file_handler.setFormatter(file_formatter)
-
-        # Add both handlers
-        logger.addHandler(stream_handler)
+    # Optional: Log to file if environment is Production
+    environment = os.getenv("ENVIRONMENT", "Development")
+    if environment == "Production":
+        log_dir = "logs"
+        os.makedirs(log_dir, exist_ok=True)
+        file_handler = logging.FileHandler(os.path.join(log_dir, "bot.log"), encoding="utf-8")
+        file_format = logging.Formatter("[%(asctime)s] %(levelname)-8s | %(name)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        file_handler.setFormatter(file_format)
         logger.addHandler(file_handler)
-
-        # Avoid duplicate logs
-        logger.propagate = False
-
-    # Mapping for log levels
-    level_mapping = {
-        "DEBUG": logging.DEBUG,
-        "INFO": logging.INFO,
-        "WARNING": logging.WARNING,
-        "ERROR": logging.ERROR,
-        "CRITICAL": logging.CRITICAL,
-    }
-
-    # Set Logging Level
-    resolved_level = level_mapping.get(level.upper())
-    if resolved_level is None:
-        logger.warning(f"⚠️ [Logger] Invalid level '{level}' provided. Defaulting to INFO.")
-        resolved_level = logging.INFO
-
-    logger.setLevel(resolved_level)
 
     return logger
