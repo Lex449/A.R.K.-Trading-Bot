@@ -1,5 +1,3 @@
-# bot/startup/startup_task.py
-
 """
 A.R.K. Startup Task – Ultra Premium NASA Build 2025
 Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Startup-Ping.
@@ -21,10 +19,8 @@ from bot.utils.logger import setup_logger
 
 # === Logger & Settings Setup ===
 logger = setup_logger(__name__)
+logger.propagate = False  # optional: doppelte Logs vermeiden
 settings = get_settings()
-
-# === Telegram Bot Instanz ===
-bot = Bot(token=settings["BOT_TOKEN"])
 
 # === Core Startup Functions ===
 
@@ -52,7 +48,7 @@ def check_system_time():
         logger.critical(f"❌ [Startup] Systemzeitprüfung fehlgeschlagen: {e}")
         raise
 
-async def send_startup_ping():
+async def send_startup_ping(bot: Bot):
     """Sendet eine Benachrichtigung an den Admin über erfolgreichen Bot-Start."""
     try:
         await bot.send_message(
@@ -65,12 +61,16 @@ async def send_startup_ping():
         logger.error(f"❌ [Startup] Fehler beim Senden des Startup-Pings: {e}")
 
 async def launch_schedulers(application):
-    """Startet alle Hintergrund-Jobs."""
+    """Startet alle Hintergrund-Jobs mit sauberer Übergabe."""
     try:
+        bot = application.bot
+        chat_id = int(settings["TELEGRAM_CHAT_ID"])
+
         start_heartbeat_job(application)
         start_connection_watchdog(application)
-        start_news_scanner_job(application)
-        start_recap_scheduler(bot, int(settings["TELEGRAM_CHAT_ID"]))
+        start_news_scanner_job(bot, chat_id)
+        start_recap_scheduler(bot, chat_id)
+
         logger.info("✅ [Startup] Alle Scheduler aktiviert.")
     except Exception as e:
         logger.critical(f"🔥 [Startup] Fehler beim Start der Scheduler: {e}")
@@ -90,7 +90,7 @@ async def execute_startup_tasks(application):
         check_env_variables()
         check_system_time()
         await launch_schedulers(application)
-        await send_startup_ping()
+        await send_startup_ping(application.bot)
         logger.info("✅ [Startup] A.R.K. vollständig einsatzbereit.")
     except Exception as e:
         logger.critical(f"🔥 [Startup] Schwerwiegender Fehler beim Initialisieren: {e}")
