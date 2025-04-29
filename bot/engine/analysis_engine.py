@@ -68,7 +68,7 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         signal_category = categorize_signal(final_confidence)
 
         # === 10. Finales Response-Building
-        return {
+        result = {
             "symbol": symbol,
             "patterns": patterns,
             "avg_confidence": final_confidence,
@@ -81,6 +81,10 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
             "df": df,
         }
 
+        logger.info(f"✅ [AnalysisEngine] Analysis complete for {symbol}. Action: {combined_action} | Confidence: {final_confidence}%")
+
+        return result
+
     except Exception as e:
         logger.error(f"❌ [AnalysisEngine Critical Error] while analyzing {symbol}: {e}")
         return None
@@ -90,8 +94,8 @@ def determine_action(patterns: list, volatility_info: dict, trend_info: dict) ->
     Determines the strategic trading direction.
     """
 
-    strong_bullish = any(p["action"].startswith("Long") for p in patterns)
-    strong_bearish = any(p["action"].startswith("Short") for p in patterns)
+    strong_bullish = any(p.get("action", "").startswith("Long") for p in patterns)
+    strong_bearish = any(p.get("action", "").startswith("Short") for p in patterns)
 
     volatility_spike = volatility_info.get("volatility_spike") if volatility_info else False
     early_trend = trend_info.get("early_trend") if trend_info else None
