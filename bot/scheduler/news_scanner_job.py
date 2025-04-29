@@ -10,7 +10,7 @@ from telegram import Bot
 from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
 from bot.utils.error_reporter import report_error
-from bot.engine.news_scanner import detect_breaking_news, format_breaking_news
+from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news  # <<< KORRIGIERT
 
 # Logger & Config
 logger = setup_logger(__name__)
@@ -27,7 +27,7 @@ async def news_scan_task(bot: Bot, chat_id: int, symbols: list[str], lang: str =
     try:
         logger.info("📰 [NewsJob] Scanning for breaking news...")
 
-        breaking_news = await detect_breaking_news(symbols)
+        breaking_news = await detect_breaking_news()
 
         if breaking_news:
             message = await format_breaking_news(breaking_news, lang=lang)
