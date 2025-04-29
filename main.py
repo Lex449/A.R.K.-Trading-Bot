@@ -1,56 +1,59 @@
+# bot/main.py
+
 """
-A.R.K. Bot Main Entry – Ultra Stable Wall Street Version
+A.R.K. – Ultra Resilient Main Entry Point.
+Initialisiert den Telegram Bot, registriert alle Commands, startet alle Loops.
 Made in Bali. Engineered with German Precision.
 """
 
 import asyncio
 import logging
-import nest_asyncio
-from telegram import Update
 from telegram.ext import ApplicationBuilder
-
-# === Handlers ===
-from bot.handlers.commands import command_handlers
-
-# === Startup Tasks ===
-from bot.startup.startup_tasks import startup_tasks
-
-# === Utilities ===
+from bot.handlers.commands import (
+    start, help_command, analyze_symbol_handler, signal_handler,
+    status_handler, uptime_handler, set_language_handler, shutdown_handler
+)
 from bot.handlers.global_error_handler import global_error_handler
-from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
+from bot.utils.logger import setup_logger
+from bot.startup.startup_task import execute_startup_tasks
 
-# === Logger Setup ===
-setup_logger(__name__)
-
-# === Allow nested event loops (for Railway etc.) ===
-nest_asyncio.apply()
-
-# === Settings Load ===
+# Setup logger
+logger = setup_logger(__name__)
 config = get_settings()
-TOKEN = config["BOT_TOKEN"]
-CHAT_ID = int(config["TELEGRAM_CHAT_ID"])
 
 async def main():
     """
-    Main Bot Runner – Launch A.R.K. fully.
+    A.R.K. Bot Initializer
     """
-    logging.info("🚀 A.R.K. Trading Bot – Full Ultra Stability Mode activated.")
+    logger.info("🚀 A.R.K. is preparing for launch...")
 
-    app = ApplicationBuilder().token(TOKEN).post_init(startup_tasks).build()
+    # Application Build
+    application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
 
-    # Register All Command Handlers
-    for handler in command_handlers:
-        app.add_handler(handler)
+    # === Command Handlers ===
+    application.add_handler(start)
+    application.add_handler(help_command)
+    application.add_handler(analyze_symbol_handler)
+    application.add_handler(signal_handler)
+    application.add_handler(status_handler)
+    application.add_handler(uptime_handler)
+    application.add_handler(set_language_handler)
+    application.add_handler(shutdown_handler)
 
-    # Register Global Error Handler
-    app.add_error_handler(global_error_handler)
+    # === Error Handler ===
+    application.add_error_handler(global_error_handler)
 
-    # Start Polling
-    try:
-        await app.run_polling(allowed_updates=Update.ALL_TYPES)
-    except Exception as e:
-        logging.critical(f"🔥 [Main] Critical error occurred: {e}")
+    # === Startup Tasks (Scheduler + Commands) ===
+    await execute_startup_tasks(application)
+
+    # === Start Polling ===
+    logger.info("✅ A.R.K. initialized successfully. Launching into action.")
+    await application.run_polling()
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logger.warning("🛑 A.R.K. shutdown initiated manually.")
