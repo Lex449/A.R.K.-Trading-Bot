@@ -1,6 +1,9 @@
+# bot/auto/auto_signal_loop.py
+
 """
-A.R.K. Auto Signal Loop – Ultra Smart US Market Scanner 2025 Final.
-Analyzes only during US trading hours, heartbeat monitor, bilingual signals, ultra risk control.
+A.R.K. Auto Signal Loop – Ultra Smart US Market Scanner 2025 Final Edition
+Analyzes only during US trading hours, monitors system heartbeat, sends bilingual trading signals.
+Built for: Maximum Stability, Minimal Downtime, Institutional Scalability.
 """
 
 import asyncio
@@ -22,32 +25,32 @@ RUNNING = True
 
 async def auto_signal_loop(application):
     """
-    Core background loop that continuously analyzes live markets
-    during US session only and sends premium trading signals.
+    Core background loop that continuously analyzes market conditions
+    and dispatches signals during active US market sessions.
     """
 
-    logger.info("🚀 [AutoSignalLoop] Preparing ultra market signal loop...")
+    logger.info("🚀 [AutoSignalLoop] Initializing ultra-stable signal scanner...")
 
     while RUNNING:
         try:
-            # Heartbeat pulse
+            # === Heartbeat Check ===
             await send_heartbeat(application)
 
-            # Connection watchdog
+            # === Connection Watchdog ===
             connection_ok = await check_connection()
             if not connection_ok:
-                logger.warning("⚠️ [AutoSignalLoop] Connection unstable, retrying...")
+                logger.warning("⚠️ [AutoSignalLoop] Connection unstable. Retrying in 30 seconds...")
                 await asyncio.sleep(30)
                 continue
 
-            # === US Market Guard ===
+            # === Market Session Check ===
             if not is_us_market_open():
-                logger.info("⏳ [AutoSignalLoop] US Market closed. Analysis paused.")
-                await asyncio.sleep(120)  # Sleep 2 minutes during closed hours
+                logger.info("⏳ [AutoSignalLoop] US Market currently closed. Pausing analysis.")
+                await asyncio.sleep(120)
                 continue
 
-            # Perform Market Analysis
-            logger.info("📈 [AutoSignalLoop] Performing live market analysis...")
+            # === Market Analysis ===
+            logger.info("📈 [AutoSignalLoop] Running live market analysis...")
             analysis_results = await analyze_market()
 
             if analysis_results:
@@ -56,12 +59,12 @@ async def auto_signal_loop(application):
                         chat_id = int(config["TELEGRAM_CHAT_ID"])
                         lang = get_language(chat_id) or "en"
 
-                        # Build bilingual message
+                        # Signal Text
                         signal_text = get_text("signal_detected", lang).format(
                             symbol=result["symbol"],
-                            signal=result["signal"],
-                            confidence=result["confidence"],
-                            rating=result["stars"]
+                            signal=result["combined_action"],
+                            confidence=result["avg_confidence"],
+                            rating=result["signal_category"]
                         )
 
                         await application.bot.send_message(
@@ -70,18 +73,19 @@ async def auto_signal_loop(application):
                             parse_mode="Markdown"
                         )
 
-                        logger.info(f"✅ [AutoSignalLoop] Signal sent: {result['symbol']} ({result['signal']})")
+                        logger.info(f"✅ [AutoSignalLoop] Signal sent: {result['symbol']} ({result['combined_action']})")
 
-                    except Exception as e:
-                        logger.error(f"❌ [AutoSignalLoop] Error sending signal: {e}")
+                    except Exception as signal_error:
+                        logger.error(f"❌ [AutoSignalLoop] Signal dispatch failed: {signal_error}")
 
             else:
-                logger.info("ℹ️ [AutoSignalLoop] No valid signals detected this cycle.")
+                logger.info("ℹ️ [AutoSignalLoop] No valid trading signals detected in this cycle.")
 
-        except Exception as outer_error:
-            logger.error(f"🔥 [AutoSignalLoop] Critical auto loop error: {outer_error}")
+        except Exception as critical_error:
+            logger.error(f"🔥 [AutoSignalLoop] Critical runtime error: {critical_error}")
 
-        await asyncio.sleep(config.get("AUTO_SIGNAL_INTERVAL", 60))  # Cycle interval (default 60 sec)
+        # Sleep until next scan
+        await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
 
 async def stop_auto_signal_loop():
     """
@@ -89,4 +93,4 @@ async def stop_auto_signal_loop():
     """
     global RUNNING
     RUNNING = False
-    logger.info("🛑 [AutoSignalLoop] Stopping auto signal loop gracefully...")
+    logger.info("🛑 [AutoSignalLoop] Signal loop termination initiated successfully.")
