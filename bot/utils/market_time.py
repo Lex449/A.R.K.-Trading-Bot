@@ -1,8 +1,8 @@
 # bot/utils/market_time.py
 
 """
-A.R.K. Market Time Handler – Trading Session Management.
-Handles US trading session detection based on NYSE/Nasdaq hours and US public holidays.
+A.R.K. Market Time Handler – Ultra Premium Trading Session Management 2025.
+Handles NYSE/Nasdaq session detection including Pre-Market Warnings and US public holidays.
 """
 
 from datetime import datetime, time
@@ -13,60 +13,93 @@ from bot.utils.logger import setup_logger
 # Setup structured logger
 logger = setup_logger(__name__)
 
-# US public holidays (dynamic)
+# US Holidays
 us_holidays = holidays.US()
 
-def is_trading_day() -> bool:
+# Timezone for US Markets (New York Time)
+NY_TIMEZONE = pytz.timezone('America/New_York')
+
+def get_now_est() -> datetime:
     """
-    Checks if today is a valid US trading day.
-    - Monday to Friday
-    - Not a US public holiday
+    Returns the current datetime in US Eastern Time (New York).
+    """
+    return datetime.now(NY_TIMEZONE)
+
+def is_trading_day(now: datetime = None) -> bool:
+    """
+    Checks if today is a US trading day (Monday-Friday and not a US holiday).
+
+    Args:
+        now (datetime, optional): Specific time for testing, otherwise current.
 
     Returns:
-        bool: True if it's a trading day, otherwise False.
+        bool: True if it is a trading day, False otherwise.
     """
-    now = datetime.now(pytz.timezone('America/New_York'))
+    now = now or get_now_est()
     weekday = now.weekday()  # 0 = Monday, 6 = Sunday
     today = now.date()
 
-    if weekday in [0, 1, 2, 3, 4] and today not in us_holidays:
-        logger.debug(f"✅ [Market Time] Trading Day: {now.strftime('%A %Y-%m-%d')}")
+    if weekday < 5 and today not in us_holidays:
+        logger.debug(f"✅ [MarketTime] Trading Day detected: {now.strftime('%A %Y-%m-%d')}")
         return True
     else:
-        logger.debug(f"❌ [Market Time] Not a Trading Day: {now.strftime('%A %Y-%m-%d')}")
+        logger.debug(f"❌ [MarketTime] Non-Trading Day: {now.strftime('%A %Y-%m-%d')}")
         return False
 
-def is_trading_hours() -> bool:
+def is_trading_hours(now: datetime = None) -> bool:
     """
-    Checks if the current time is within regular NYSE/Nasdaq trading hours (09:30 - 16:00 ET).
+    Checks if the current time is within normal US trading hours (9:30 - 16:00 ET).
+
+    Args:
+        now (datetime, optional): Specific time for testing.
 
     Returns:
-        bool: True if inside trading hours, otherwise False.
+        bool: True if inside trading hours, False otherwise.
     """
-    now = datetime.now(pytz.timezone('America/New_York')).time()
+    now = now or get_now_est().time()
     market_open = time(9, 30)
     market_close = time(16, 0)
 
     if market_open <= now <= market_close:
-        logger.debug(f"✅ [Market Time] Trading Hours: {now}")
+        logger.debug(f"✅ [MarketTime] Within Trading Hours: {now}")
         return True
     else:
-        logger.debug(f"❌ [Market Time] Outside Trading Hours: {now}")
+        logger.debug(f"❌ [MarketTime] Outside Trading Hours: {now}")
         return False
 
-def is_pre_market_open_warning() -> bool:
+def is_pre_market_open_warning(now: datetime = None) -> bool:
     """
-    Checks if within the 15-minute warning window before NYSE opens (09:15 - 09:30 ET).
+    Checks if we are within the 15-minute Pre-Market window before NYSE opens.
+
+    Args:
+        now (datetime, optional): Specific time for testing.
 
     Returns:
-        bool: True if in pre-market warning window, otherwise False.
+        bool: True if within 9:15 - 9:30 ET window.
     """
-    now = datetime.now(pytz.timezone('America/New_York')).time()
+    now = now or get_now_est().time()
     warning_start = time(9, 15)
     market_open = time(9, 30)
 
     if warning_start <= now < market_open:
-        logger.info(f"⚠️ [Market Time] Pre-Market Warning Active: {now}")
+        logger.info(f"⚠️ [MarketTime] Pre-Market Warning Active: {now}")
         return True
     else:
         return False
+
+def get_market_status() -> str:
+    """
+    Returns the full market status ("open", "closed", "pre-market-warning").
+
+    Returns:
+        str: Status text
+    """
+    now = get_now_est()
+
+    if not is_trading_day(now):
+        return "closed (Holiday/Weekend)"
+    if is_pre_market_open_warning(now):
+        return "pre-market warning"
+    if is_trading_hours(now):
+        return "open"
+    return "closed (Outside Trading Hours)"
