@@ -1,157 +1,147 @@
-# bot/handlers/commands.py
-
 """
-A.R.K. Command Handler – Ultra Premium Build.
-Handles all user commands with full i18n support and safe error protection.
+A.R.K. Core Commands – Unified Command Center
+Made in Bali. Engineered with German Precision.
 """
 
-import logging
-import platform
-from datetime import datetime, timezone
 from telegram import Update
 from telegram.ext import ContextTypes
-from bot.utils.i18n import get_text
 from bot.utils.language import get_language
+from bot.utils.i18n import get_text
 from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
-from bot.utils.session_tracker import get_session_report
+from bot.engine.analysis_engine import analyze_symbol
 
-# Setup Structured Logger
+# Setup Logger
 logger = setup_logger(__name__)
 
-# === START Command ===
+# === /start Command ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         user = update.effective_user.first_name or "Trader"
         lang = get_language(update.effective_chat.id) or "en"
+        start_text = get_text("start", lang).format(user=user)
 
-        welcome_message = get_text("start", lang).format(user=user)
-        await update.message.reply_text(welcome_message, parse_mode="Markdown")
-
-        logger.info(f"✅ /start by {user} ({update.effective_chat.id})")
+        await update.message.reply_text(start_text, parse_mode="Markdown")
+        logger.info(f"✅ [Start] Triggered by {user}")
 
     except Exception as e:
-        logger.error(f"❌ [StartCommandError] {e}")
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/start command failure")
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/start Command Error")
 
-# === HELP Command ===
+# === /help Command ===
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         lang = get_language(update.effective_chat.id) or "en"
-
         help_text = get_text("help", lang)
-        await update.message.reply_text(help_text, parse_mode="Markdown")
 
-        logger.info(f"✅ /help used by {update.effective_chat.id}")
+        await update.message.reply_text(help_text, parse_mode="Markdown")
+        logger.info(f"✅ [Help] Triggered.")
 
     except Exception as e:
-        logger.error(f"❌ [HelpCommandError] {e}")
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/help command failure")
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/help Command Error")
 
-# === ANALYSE Command ===
+# === /analyse Command ===
 async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
-        lang = get_language(update.effective_chat.id) or "en"
-
         if not context.args:
-            await update.message.reply_text(get_text("analysis_no_symbol", lang), parse_mode="Markdown")
+            lang = get_language(update.effective_chat.id) or "en"
+            no_symbol_text = get_text("analysis_no_symbol", lang)
+            await update.message.reply_text(no_symbol_text, parse_mode="Markdown")
             return
 
         symbol = context.args[0].upper()
+        lang = get_language(update.effective_chat.id) or "en"
 
-        await update.message.reply_text(
-            f"🔍 *Analyzing Symbol:* `{symbol}`...",
-            parse_mode="Markdown"
-        )
-
-        # Lazy Import
-        from bot.engine.analysis_engine import analyze_symbol
+        await update.message.reply_text(f"🔎 Analyzing `{symbol}`...", parse_mode="Markdown")
         result = await analyze_symbol(symbol)
 
-        if result:
-            await update.message.reply_text(get_text("analysis_completed", lang), parse_mode="Markdown")
-        else:
-            await update.message.reply_text(f"⚠️ No data found for `{symbol}`.", parse_mode="Markdown")
+        if not result:
+            await update.message.reply_text("❌ No analysis result available.", parse_mode="Markdown")
+            return
 
-        logger.info(f"✅ /analyse {symbol} requested by {update.effective_chat.id}")
+        patterns = "\n".join(result.get("patterns", []))
+        move = result.get("move", "N/A")
+        volume_spike = result.get("volume_spike", False)
+
+        text = (
+            f"📈 *Analysis for {symbol}*\n\n"
+            f"• Movement: `{move}`\n"
+            f"• Volume Spike: `{volume_spike}`\n"
+            f"• Patterns:\n{patterns or 'None'}"
+        )
+
+        await update.message.reply_text(text, parse_mode="Markdown")
+        logger.info(f"✅ [Analyse] Analysis sent for {symbol}.")
 
     except Exception as e:
-        logger.error(f"❌ [AnalyseCommandError] {e}")
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/analyse command failure")
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/analyse Command Error")
 
-# === SETLANGUAGE Command ===
+# === /setlanguage Command ===
 async def set_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         if not context.args:
-            await update.message.reply_text("❌ Please specify a language: /setlanguage en or /setlanguage de")
+            await update.message.reply_text("❌ Please provide a language code: `/setlanguage en` or `/setlanguage de`", parse_mode="Markdown")
             return
 
-        lang = context.args[0].lower()
-
-        if lang not in ["en", "de"]:
-            await update.message.reply_text("❌ Unsupported language. Use 'en' or 'de'.")
+        new_lang = context.args[0].lower()
+        if new_lang not in ["en", "de"]:
+            await update.message.reply_text("❌ Invalid language. Use `en` or `de`.", parse_mode="Markdown")
             return
 
-        from bot.utils.language import set_language_for_chat
-        set_language_for_chat(update.effective_chat.id, lang)
+        from bot.utils.language import save_language
+        save_language(update.effective_chat.id, new_lang)
 
-        await update.message.reply_text(get_text("set_language", lang), parse_mode="Markdown")
-
-        logger.info(f"✅ Language set to {lang} for {update.effective_chat.id}")
+        success_message = get_text("set_language", new_lang)
+        await update.message.reply_text(success_message, parse_mode="Markdown")
+        logger.info(f"✅ [SetLanguage] Language set to {new_lang}.")
 
     except Exception as e:
-        logger.error(f"❌ [SetLanguageCommandError] {e}")
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/setlanguage command failure")
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/setlanguage Command Error")
 
-# === PING Command ===
-async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+# === /signal Command ===
+async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
-        await update.message.reply_text("🏓 Pong! System is alive.", parse_mode="Markdown")
-        logger.info(f"✅ /ping by {update.effective_chat.id}")
+        await update.message.reply_text("🚀 Signal engine is operating automatically.", parse_mode="Markdown")
+        logger.info(f"✅ [Signal] Triggered manually.")
 
     except Exception as e:
-        logger.error(f"❌ [PingCommandError] {e}")
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/ping command failure")
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/signal Command Error")
 
-# === UPTIME Command ===
-async def uptime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        now = datetime.utcnow().replace(tzinfo=timezone.utc)
-        system_uptime = now - datetime.fromtimestamp(psutil.boot_time(), tz=timezone.utc)
-
-        uptime_message = f"🕒 *Uptime:* {system_uptime.days}d {system_uptime.seconds // 3600}h {(system_uptime.seconds % 3600) // 60}m"
-        await update.message.reply_text(uptime_message, parse_mode="Markdown")
-
-        logger.info(f"✅ /uptime requested by {update.effective_chat.id}")
-
-    except Exception as e:
-        logger.error(f"❌ [UptimeCommandError] {e}")
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/uptime command failure")
-
-# === STATUS Command ===
+# === /status Command ===
 async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
-        session_report = get_session_report(update.effective_chat.id)
+        from bot.utils.session_tracker import get_session_summary
+        lang = get_language(update.effective_chat.id) or "en"
 
-        await update.message.reply_text(session_report, parse_mode="Markdown")
-        logger.info(f"✅ /status requested by {update.effective_chat.id}")
+        summary_text = get_session_summary(lang)
+
+        await update.message.reply_text(summary_text, parse_mode="Markdown")
+        logger.info(f"✅ [Status] Session summary sent.")
 
     except Exception as e:
-        logger.error(f"❌ [StatusCommandError] {e}")
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/status command failure")
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/status Command Error")
 
-# === SHUTDOWN Command ===
+# === /shutdown Command ===
 async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         lang = get_language(update.effective_chat.id) or "en"
-        shutdown_message = get_text("shutdown", lang)
+        shutdown_text = get_text("shutdown", lang)
 
-        await update.message.reply_text(shutdown_message, parse_mode="Markdown")
+        await update.message.reply_text(shutdown_text, parse_mode="Markdown")
+        logger.info(f"🛑 [Shutdown] Bot shutdown initiated.")
 
-        logger.warning(f"🛑 /shutdown triggered by {update.effective_chat.id}")
-        import os
-        os._exit(0)
+        await context.application.stop()
 
     except Exception as e:
-        logger.error(f"❌ [ShutdownCommandError] {e}")
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/shutdown command failure")
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/shutdown Command Error")
+
+# === /health Command (NEU!!) ===
+async def health_check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    try:
+        lang = get_language(update.effective_chat.id) or "en"
+        health_message = get_text("health_ok", lang)
+
+        await update.message.reply_text(health_message, parse_mode="Markdown")
+        logger.info(f"✅ [HealthCheck] System OK.")
+
+    except Exception as e:
+        await report_error(context.bot, update.effective_chat.id, e, context_info="/health Command Error")
