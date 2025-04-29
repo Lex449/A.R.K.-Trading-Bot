@@ -1,17 +1,21 @@
 """
 A.R.K. ATR Engine – Dynamic Volatility Intelligence 2025
-Calculates True Range Percentages and Detects Breakout Events.
+Fusioniert ATR-Berechnung und Spike-Erkennung in einer ultrastabilen Einheit.
 
-Built for: Ultra Precision, Adaptive Risk Management, Early Warning System.
+Ziele: Adaptive Risk Control, Early Breakout Detection, Hyper Performance Analytics.
 """
 
 import pandas as pd
 import numpy as np
+import logging
+
+# Setup Logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class ATREngine:
     """
-    A.R.K. ATR Engine
-    Computes ATR-based volatility measures for enhanced decision-making.
+    Handles all ATR-based volatility detection and dynamic spike alerts.
     """
 
     def __init__(self, period: int = 14, language: str = "en"):
@@ -19,6 +23,7 @@ class ATREngine:
         self.language = language.lower()
 
     def _localized_error(self, error_type: str) -> str:
+        """Localized error messages."""
         errors = {
             "invalid_df": {
                 "en": "Invalid DataFrame supplied for ATR calculation.",
@@ -33,49 +38,50 @@ class ATREngine:
 
     def calculate_atr_percent(self, df: pd.DataFrame) -> float:
         """
-        Calculates ATR relative to last closing price (%).
-
-        Args:
-            df (pd.DataFrame): DataFrame containing 'high', 'low', 'close'.
+        Calculates the Average True Range as percentage of last close.
 
         Returns:
-            float: ATR percentage vs close price.
+            float: ATR % or raises ValueError.
         """
         if df is None or len(df) < self.period or not all(col in df.columns for col in ["high", "low", "close"]):
             raise ValueError(self._localized_error("invalid_df"))
 
         try:
-            df["high_low"] = df["high"] - df["low"]
-            df["high_close"] = (df["high"] - df["close"].shift()).abs()
-            df["low_close"] = (df["low"] - df["close"].shift()).abs()
+            df["hl"] = df["high"] - df["low"]
+            df["hc"] = (df["high"] - df["close"].shift()).abs()
+            df["lc"] = (df["low"] - df["close"].shift()).abs()
+            df["tr"] = df[["hl", "hc", "lc"]].max(axis=1)
 
-            df["true_range"] = df[["high_low", "high_close", "low_close"]].max(axis=1)
+            atr = df["tr"].rolling(window=self.period, min_periods=1).mean().iloc[-1]
+            close = df["close"].iloc[-1]
 
-            atr_value = df["true_range"].rolling(window=self.period, min_periods=1).mean().iloc[-1]
-            last_close = df["close"].iloc[-1]
-
-            if last_close == 0:
+            if close == 0:
                 raise ValueError(self._localized_error("zero_close"))
 
-            atr_percent = (atr_value / last_close) * 100
-
-            return round(atr_percent, 2)
+            return round((atr / close) * 100, 2)
 
         finally:
-            df.drop(columns=["high_low", "high_close", "low_close", "true_range"], inplace=True, errors="ignore")
+            df.drop(columns=["hl", "hc", "lc", "tr"], inplace=True, errors="ignore")
 
-    def detect_volatility_spike(self, df: pd.DataFrame, threshold_multiplier: float = 1.8) -> bool:
+    def detect_volatility_spike(self, df: pd.DataFrame, threshold: float = 1.8) -> dict | None:
         """
-        Detects a volatility spike based on ATR threshold logic.
-
-        Args:
-            df (pd.DataFrame): Market data.
-            threshold_multiplier (float): Spike sensitivity threshold.
-
-        Returns:
-            bool: True if spike detected, else False.
+        Detects volatility spikes relative to ATR baseline.
+        Returns a detailed dict if spike detected, else None.
         """
-        atr_percent = self.calculate_atr_percent(df)
-        last_candle_move = ((df["high"].iloc[-1] - df["low"].iloc[-1]) / df["close"].iloc[-1]) * 100
+        try:
+            atr_pct = self.calculate_atr_percent(df)
+            move_pct = ((df["high"].iloc[-1] - df["low"].iloc[-1]) / df["close"].iloc[-1]) * 100
 
-        return last_candle_move > (atr_percent * threshold_multiplier)
+            if move_pct > (atr_pct * threshold):
+                logger.info(f"[ATR Spike] Detected: Move={move_pct:.2f}%, ATR={atr_pct:.2f}%")
+                return {
+                    "atr_percent": atr_pct,
+                    "move_percent": round(move_pct, 2),
+                    "spike": True
+                }
+            else:
+                return None
+
+        except Exception as e:
+            logger.error(f"[ATR Engine Error] {e}")
+            return None
