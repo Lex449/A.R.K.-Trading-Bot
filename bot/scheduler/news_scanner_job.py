@@ -10,7 +10,7 @@ from telegram import Bot
 from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
 from bot.utils.error_reporter import report_error
-from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news  # <<< KORRIGIERT
+from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news  # <<< Wichtig
 
 # Logger & Config
 logger = setup_logger(__name__)
@@ -52,11 +52,9 @@ def start_news_scheduler(bot: Bot, chat_id: int):
     Starts the news scan job for all configured symbols every 5 minutes.
     """
     try:
-        # Prepare symbols and language
         symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
         language = config.get("BOT_LANGUAGE", "en")
 
-        # Kill existing jobs if any
         news_scheduler.remove_all_jobs()
 
         news_scheduler.add_job(
@@ -76,3 +74,8 @@ def start_news_scheduler(bot: Bot, chat_id: int):
 
     except Exception as e:
         logger.critical(f"🔥 [NewsScheduler] Could not start: {e}")
+
+
+# === Legacy Wrapper for startup_task.py ===
+def start_news_scanner_job(bot: Bot, chat_id: int):
+    start_news_scheduler(bot, chat_id)
