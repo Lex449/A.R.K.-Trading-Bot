@@ -20,6 +20,9 @@ from bot.startup.startup_task import execute_startup_tasks
 logger = setup_logger(__name__)
 config = get_settings()
 
+# === Required for Railway / Jupyter-Like Environments ===
+nest_asyncio.apply()
+
 async def main():
     """
     Launches the complete A.R.K. Bot System.
@@ -55,6 +58,5 @@ async def main():
         raise
 
 if __name__ == "__main__":
-    # Fix: Prevent RuntimeError by patching event loop
-    nest_asyncio.apply()
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
