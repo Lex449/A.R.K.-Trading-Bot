@@ -65,10 +65,10 @@ async def launch_schedulers(application):
         bot = application.bot
         chat_id = int(settings["TELEGRAM_CHAT_ID"])
 
-        start_heartbeat_job(application, chat_id)  # <<< Hier Korrektur: chat_id wird übergeben
-        start_connection_watchdog(application)
-        start_news_scanner_job(bot, chat_id)
-        start_recap_scheduler(bot, chat_id)
+        start_heartbeat_job(bot, chat_id)             # ✅ Bot + Chat-ID korrekt übergeben
+        start_connection_watchdog(bot, chat_id)        # ✅ Bot + Chat-ID korrekt übergeben
+        start_news_scanner_job(bot, chat_id)            # ✅ Bot + Chat-ID korrekt übergeben
+        start_recap_scheduler(bot, chat_id)             # ✅ Bot + Chat-ID korrekt übergeben
 
         logger.info("✅ [Startup] Alle Scheduler erfolgreich aktiviert.")
     except Exception as e:
