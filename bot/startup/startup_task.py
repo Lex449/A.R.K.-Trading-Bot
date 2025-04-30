@@ -1,7 +1,8 @@
 """
-A.R.K. Startup Task – Ultra Premium NASA Build 2025.2
+A.R.K. Startup Task – Ultra Premium NASA Build 2025.3
 Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Telegram-Ping.
-Maximale Stabilität für 24/7 Betrieb auf Koenigsegg-Niveau.
+Jetzt inklusive Auto-Signal-Loop zur permanenten Marktscans.
+Made in Bali. Engineered with German Precision.
 """
 
 import os
@@ -18,7 +19,9 @@ from bot.scheduler.recap_scheduler import start_recap_scheduler
 from bot.scheduler.heartbeat_job import start_heartbeat_job
 from bot.scheduler.connection_watchdog_job import start_connection_watchdog
 from bot.scheduler.news_scanner_job import news_scanner_job
+from bot.auto.auto_signal_loop import auto_signal_loop  # ✅ NEU
 
+# === Setup ===
 logger = setup_logger(__name__)
 settings = get_settings()
 
@@ -89,6 +92,12 @@ async def launch_background_jobs(application):
         logger.info("✅ [Startup] News Scanner aktiviert.")
     except Exception as e:
         logger.error(f"❌ News Scanner Fehler: {e}")
+
+    try:
+        asyncio.create_task(auto_signal_loop(application))  # ✅ NEU
+        logger.info("✅ [Startup] Auto Signal Loop aktiviert.")
+    except Exception as e:
+        logger.error(f"❌ Auto Signal Loop Fehler: {e}")
 
 async def execute_startup_tasks(application):
     logger.info("🚀 [Startup] Initialisiere A.R.K. Master-System...")
