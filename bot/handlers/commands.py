@@ -11,6 +11,7 @@ from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
 from bot.utils.uptime_tracker import get_uptime
 from bot.engine.analysis_engine import analyze_symbol
+from bot.utils.usage_monitor import usage_monitor  # NEW
 
 logger = setup_logger(__name__)
 
@@ -152,3 +153,39 @@ async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         logger.info(f"🛑 [Command] /shutdown triggered")
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/shutdown Handler Error")
+
+# === /monitor ===
+async def monitor_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    try:
+        chat_id = update.effective_chat.id
+        lang = get_language(chat_id) or "en"
+
+        call_count = usage_monitor.get_call_count()
+        rate = usage_monitor.get_rate_per_minute()
+        duration = usage_monitor.get_elapsed_minutes()
+
+        if rate < 75:
+            emoji = "🟢"
+            comment = "Stable"
+        elif rate < 140:
+            emoji = "🟡"
+            comment = "Caution"
+        else:
+            emoji = "🔴"
+            comment = "CRITICAL"
+
+        message = (
+            f"{emoji} *API Usage Monitor*\n\n"
+            f"*Total Calls:* `{call_count}`\n"
+            f"*Uptime:* `{duration:.1f} min`\n"
+            f"*Calls/min:* `{rate:.2f}`\n"
+            f"*Status:* `{comment}`\n\n"
+            "_Auto-monitoring is active._"
+        )
+
+        await update.message.reply_text(message, parse_mode="Markdown")
+        logger.info(f"✅ [Command] /monitor executed")
+
+    except Exception as e:
+        logger.error(f"[Command] /monitor failed: {e}")
+        await update.message.reply_text("⚠️ Error while loading monitor status.")
