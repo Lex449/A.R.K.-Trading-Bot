@@ -62,3 +62,7 @@ async def news_scanner_job():
             logger.error(f"❌ [NewsScanner] Critical failure: {e}")
             await report_error(bot, chat_id, e, context_info="News Scanner Loop")
             await asyncio.sleep(60)
+
+# === Exported wrapper for startup ===
+def start_news_scanner_job(application):
+    asyncio.create_task(news_scanner_job())
