@@ -1,122 +1,77 @@
 """
-A.R.K. Startup Task – Ultra Premium NASA Build 2025.4  
-Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Telegram-Ping.  
-Jetzt inklusive Auto-Signal-Loop und Auto-Analysis Scheduler.
+A.R.K. Auto-Analysis Scheduler – Silent Loop Edition
+Startet alle 60 Sekunden einen vollständigen Markt-Scan – nur bei validem Signal wird gepostet.
 Made in Bali. Engineered with German Precision.
 """
 
-import os
-import asyncio
-from datetime import datetime
-import pytz
-from telegram import Bot
-from telegram.ext import Application, JobQueue
-from bot.config.settings import get_settings
+from telegram.ext import JobQueue, ContextTypes
+from bot.engine.analysis_engine import analyze_market
+from bot.utils.ultra_signal_builder import build_ultra_signal
+from bot.utils.session_tracker import update_session_tracker
 from bot.utils.logger import setup_logger
-from bot.utils.error_reporter import report_error
-from bot.utils.language import get_language
-from bot.utils.i18n import get_text
-from bot.scheduler.recap_scheduler import start_recap_scheduler
-from bot.scheduler.heartbeat_job import start_heartbeat_job
-from bot.scheduler.connection_watchdog_job import start_connection_watchdog
-from bot.scheduler.news_scanner_job import news_scanner_job
-from bot.auto.auto_signal_loop import auto_signal_loop
-from bot.scheduler.auto_analysis_scheduler import start_auto_analysis_scheduler  # ✅ NEU
+from bot.utils.api_bridge import record_call
+from bot.config.settings import get_settings
 
-# === Setup ===
 logger = setup_logger(__name__)
 settings = get_settings()
 
-def check_env_variables():
-    required = ["BOT_TOKEN", "TELEGRAM_CHAT_ID", "FINNHUB_API_KEY"]
-    missing = [v for v in required if not os.getenv(v)]
-    if missing:
-        logger.critical(f"❌ [Startup] Fehlende ENV-Variablen: {', '.join(missing)}")
-        raise EnvironmentError(f"Fehlende ENV: {', '.join(missing)}")
-    logger.info("✅ [Startup] ENV-Variablen erfolgreich geprüft.")
+def start_auto_analysis_scheduler(job_queue: JobQueue):
+    job_queue.run_repeating(
+        auto_analysis_silent,
+        interval=60,  # alle 60 Sekunden
+        first=10,
+        name="auto_analysis_scheduler"
+    )
+    logger.info("✅ [Scheduler] Silent Auto-Analysis Scheduler aktiviert.")
 
-def check_system_time():
-    utc_now = datetime.now(pytz.utc)
-    if utc_now.year < 2023:
-        logger.critical("❌ [Startup] Systemzeit ungültig.")
-        raise ValueError("Systemzeit ist falsch eingestellt.")
-    elif utc_now.year == 2023:
-        logger.warning("⚠️ [Startup] Systemzeit wirkt veraltet – prüfen empfohlen.")
-    logger.info(f"✅ [Startup] Systemzeit korrekt: {utc_now.isoformat()}")
-
-async def send_startup_ping(bot: Bot):
-    lang = get_language(settings["TELEGRAM_CHAT_ID"]) or "en"
-    try:
-        text = {
-            "en": "✅ *A.R.K. successfully launched!*\n\nSystems online. Ready to dominate.",
-            "de": "✅ *A.R.K. erfolgreich gestartet!*\n\nSysteme online. Bereit zur Dominanz."
-        }.get(lang, "✅ *A.R.K. ready.*")
-
-        menu = {
-            "en": "\n\n*Quick Menu:* `/analyse`  `/signal`  `/status`  `/monitor`  `/help`",
-            "de": "\n\n*Menü:* `/analyse`  `/signal`  `/status`  `/monitor`  `/help`"
-        }.get(lang, "")
-
-        await bot.send_message(
-            chat_id=settings["TELEGRAM_CHAT_ID"],
-            text=text + menu,
-            parse_mode="Markdown"
-        )
-        logger.info("✅ [Startup] Telegram-Startmeldung gesendet.")
-    except Exception as e:
-        logger.error(f"❌ [Startup] Fehler beim Ping: {e}")
-        await report_error(bot, settings["TELEGRAM_CHAT_ID"], e, context_info="Startup Ping")
-
-async def launch_background_jobs(application: Application):
-    bot = application.bot
-    job_queue: JobQueue = application.job_queue
+async def auto_analysis_silent(context: ContextTypes.DEFAULT_TYPE):
+    bot = context.bot
     chat_id = int(settings["TELEGRAM_CHAT_ID"])
+    symbols = settings.get("AUTO_SIGNAL_SYMBOLS", [])
+    language = settings.get("BOT_LANGUAGE", "en")
+
+    if not symbols:
+        logger.warning("⚠️ [AutoAnalysis] Keine Symbole konfiguriert.")
+        return
 
     try:
-        start_heartbeat_job(bot, chat_id)
-        logger.info("✅ [Startup] Heartbeat-Job aktiviert.")
-    except Exception as e:
-        logger.error(f"❌ Heartbeat-Job Fehler: {e}")
+        results = await analyze_market(symbols)
+        if not results:
+            logger.info("ℹ️ [AutoAnalysis] Keine validen Signale erkannt.")
+            return
 
-    try:
-        start_connection_watchdog(bot, chat_id)
-        logger.info("✅ [Startup] Connection Watchdog aktiviert.")
-    except Exception as e:
-        logger.error(f"❌ Connection Watchdog Fehler: {e}")
+        for result in results:
+            try:
+                action = result.get("combined_action", "Neutral ⚪")
+                confidence = result.get("avg_confidence", 0.0)
+                patterns = result.get("patterns", [])
 
-    try:
-        start_recap_scheduler(bot, chat_id)
-        logger.info("✅ [Startup] Recap Scheduler aktiviert.")
-    except Exception as e:
-        logger.error(f"❌ Recap Scheduler Fehler: {e}")
+                if action not in ["Long 📈", "Short 📉"] or confidence < 60:
+                    continue
 
-    try:
-        asyncio.create_task(news_scanner_job())
-        logger.info("✅ [Startup] News Scanner aktiviert.")
-    except Exception as e:
-        logger.error(f"❌ News Scanner Fehler: {e}")
+                valid_patterns = [p for p in patterns if p.get("stars", 0) >= 3]
+                if not valid_patterns:
+                    continue
 
-    try:
-        asyncio.create_task(auto_signal_loop(application))
-        logger.info("✅ [Startup] Auto Signal Loop aktiviert.")
-    except Exception as e:
-        logger.error(f"❌ Auto Signal Loop Fehler: {e}")
+                msg = build_ultra_signal(
+                    symbol=result["symbol"],
+                    move=action,
+                    volume_spike=result.get("volume_info"),
+                    atr_breakout=result.get("volatility_info"),
+                    risk_reward=result.get("risk_reward_info"),
+                    lang=language
+                )
 
-    try:
-        start_auto_analysis_scheduler(job_queue)
-        logger.info("✅ [Startup] Auto Analysis Scheduler aktiviert.")
-    except Exception as e:
-        logger.error(f"❌ Auto Analysis Scheduler Fehler: {e}")
+                if msg:
+                    await bot.send_message(chat_id=chat_id, text=msg, parse_mode="Markdown", disable_web_page_preview=True)
+                    update_session_tracker(
+                        signal_strength=len(valid_patterns),
+                        avg_confidence=confidence
+                    )
+                    record_call("auto_analysis")
 
-async def execute_startup_tasks(application: Application):
-    logger.info("🚀 [Startup] Initialisiere A.R.K. Master-System...")
+            except Exception as signal_err:
+                logger.error(f"❌ [AutoAnalysis] Signalfehler bei {result.get('symbol')}: {signal_err}")
 
-    try:
-        check_env_variables()
-        check_system_time()
-        await launch_background_jobs(application)
-        await send_startup_ping(application.bot)
-        logger.info("✅ [Startup] System vollständig bereit.")
     except Exception as e:
-        logger.critical(f"🔥 [Startup] Fehler beim Start: {e}")
-        raise
+        logger.exception(f"🔥 [AutoAnalysis] Globaler Fehler im Scheduler: {e}")
