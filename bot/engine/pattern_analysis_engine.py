@@ -1,3 +1,5 @@
+# bot/engine/pattern_analysis_engine.py
+
 """
 A.R.K. Pattern & Indicator Engine – Hyper Premium 6.0
 Combines Candlestick Mastery + Momentum Metrics + Smart Signal Filtering.
@@ -9,10 +11,9 @@ import pandas as pd
 import numpy as np
 from bot.utils.logger import setup_logger
 
-# Logger
 logger = setup_logger(__name__)
 
-# === Pattern Definition Table (Optimiert, Klassifiziert, Bewertet) ===
+# === Optimierte Pattern-Tabelle ===
 PATTERN_DEFINITIONS = {
     "Three White Soldiers": {"action": "Long 📈", "confidence": 85, "stars": 5},
     "Three Black Crows": {"action": "Short 📉", "confidence": 85, "stars": 5},
@@ -36,12 +37,11 @@ PATTERN_DEFINITIONS = {
     "Strong Bearish Momentum": {"action": "Short 📉", "confidence": 80, "stars": 4},
 }
 
-# === Pattern Detection Logic ===
 def detect_patterns(df: pd.DataFrame, min_confidence: int = 55) -> list:
     """
-    Detects and qualifies candlestick patterns based on enhanced definitions.
+    Detects qualified candlestick patterns based on latest market snapshot.
+    Returns only high-confidence patterns.
     """
-
     results = []
 
     if df is None or df.empty or len(df) < 3:
@@ -57,7 +57,7 @@ def detect_patterns(df: pd.DataFrame, min_confidence: int = 55) -> list:
         if candle_range == 0:
             return results
 
-        # === Single & Dual Candle Patterns ===
+        # === 1-2 Candle Patterns ===
         if body < 0.1 * candle_range:
             results.append({"pattern": "Doji", **PATTERN_DEFINITIONS["Doji"]})
         if last["c"] > last["o"] and last["o"] < prev["c"] and last["c"] > prev["o"]:
@@ -69,7 +69,7 @@ def detect_patterns(df: pd.DataFrame, min_confidence: int = 55) -> list:
         if last["h"] > max(last["c"], last["o"]) + body:
             results.append({"pattern": "Shooting Star", **PATTERN_DEFINITIONS["Shooting Star"]})
 
-        # === Triple Candle Patterns ===
+        # === 3 Candle Patterns ===
         if (
             prev2["c"] < prev2["o"] and
             abs(prev["c"] - prev["o"]) < (prev["h"] - prev["l"]) * 0.3 and
@@ -86,7 +86,7 @@ def detect_patterns(df: pd.DataFrame, min_confidence: int = 55) -> list:
         ):
             results.append({"pattern": "Evening Star", **PATTERN_DEFINITIONS["Evening Star"]})
 
-        # === Momentum Pattern Detection (10 Candle Trend) ===
+        # === Momentum Pattern über 10 Kerzen ===
         if len(df) >= 11:
             start_price = df["c"].iloc[-11]
             end_price = df["c"].iloc[-1]
@@ -97,21 +97,18 @@ def detect_patterns(df: pd.DataFrame, min_confidence: int = 55) -> list:
             elif change_pct <= -2.5:
                 results.append({"pattern": "Strong Bearish Momentum", **PATTERN_DEFINITIONS["Strong Bearish Momentum"]})
 
-        # === Final Qualification ===
         qualified = [p for p in results if p["confidence"] >= min_confidence]
-        logger.info(f"[PatternAnalysisEngine] Detected {len(qualified)} high-grade patterns.")
+        logger.info(f"[PatternAnalysisEngine] {len(qualified)} qualified patterns detected.")
         return qualified
 
     except Exception as e:
         logger.error(f"❌ [PatternAnalysisEngine Critical Error]: {e}")
         return []
 
-# === Indicator Evaluation ===
 def evaluate_indicators(df: pd.DataFrame) -> tuple:
     """
-    Evaluates EMA trends and RSI for enhanced momentum scoring.
+    Combines EMA crossover and RSI analysis into one score and direction.
     """
-
     if df is None or df.empty or len(df) < 20:
         return 50.0, "Neutral ⚪"
 
@@ -128,7 +125,6 @@ def evaluate_indicators(df: pd.DataFrame) -> tuple:
             "Neutral ⚪"
         )
 
-        # RSI
         delta = df["c"].diff()
         gain = np.maximum(delta, 0)
         loss = np.abs(np.minimum(delta, 0))
@@ -138,7 +134,6 @@ def evaluate_indicators(df: pd.DataFrame) -> tuple:
 
         rsi = 100.0 if avg_loss == 0 else 100 - (100 / (1 + (avg_gain / avg_loss)))
 
-        # Scoring
         score = 50
         if trend == "Long 📈":
             score += 20
@@ -150,9 +145,7 @@ def evaluate_indicators(df: pd.DataFrame) -> tuple:
         elif rsi > 70:
             score -= 10
 
-        score = round(max(0, min(score, 100)), 2)
-
-        return score, trend
+        return round(max(0, min(score, 100)), 2), trend
 
     except Exception as e:
         logger.error(f"❌ [IndicatorEvaluator Error]: {e}")
