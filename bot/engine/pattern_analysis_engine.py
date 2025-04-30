@@ -1,6 +1,7 @@
 """
 A.R.K. Pattern & Indicator Engine – Hyper Premium 6.1
 Reworked for realistic Signal Detection. Flexible, Robust, Market-Proven.
+Made in Bali. Engineered with German Precision.
 """
 
 import pandas as pd
