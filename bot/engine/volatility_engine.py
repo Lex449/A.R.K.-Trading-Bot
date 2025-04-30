@@ -1,8 +1,11 @@
+# bot/engine/volatility_engine.py
+
 """
 A.R.K. Volatility Engine – Ultra Adaptive Breakout & Risk Filter 2025
 Fusion aus Volatility Detector & Volatility Guard.
 
 Built for: Real-Time Spike Detection, Adaptive Confidence Tuning, Smart Risk Defense.
+Made in Bali. Engineered with German Precision.
 """
 
 import pandas as pd
@@ -89,42 +92,4 @@ class VolatilityEngine:
         if not candles or len(candles) < 10:
             return False
 
-        try:
-            ranges = [
-                ((candle["high"] - candle["low"]) / candle["low"]) * 100
-                for candle in candles[-10:]
-                if candle.get("high") and candle.get("low") and candle["high"] > candle["low"]
-            ]
-
-            if not ranges:
-                return False
-
-            avg_volatility = statistics.mean(ranges)
-            std_dev_volatility = statistics.stdev(ranges) if len(ranges) > 1 else 0
-
-            return avg_volatility > 1.2 or std_dev_volatility > 0.6
-
-        except Exception:
-            return False
-
-    def adjust_confidence_for_volatility(self, confidence: float, high_volatility: bool) -> float:
-        """
-        Adjusts signal confidence dynamically based on volatility context.
-
-        Args:
-            confidence (float): Original signal confidence.
-            high_volatility (bool): Volatility status.
-
-        Returns:
-            float
-        """
-        try:
-            if high_volatility:
-                adjusted = confidence * 0.85  # Defensive in high volatility
-            else:
-                adjusted = confidence * 1.07  # Aggressive in stable market
-
-            return round(max(0.0, min(adjusted, 100.0)), 2)
-
-        except Exception:
-            return confidence
+        try
