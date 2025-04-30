@@ -11,7 +11,7 @@ from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
 from bot.utils.uptime_tracker import get_uptime
 from bot.engine.analysis_engine import analyze_symbol
-from bot.utils.api_bridge import monitor as usage_monitor  # ✅ EINHEITLICH nutzen
+from bot.utils.api_bridge import monitor as usage_monitor  # ✅ Einheitlicher Zugriff
 
 logger = setup_logger(__name__)
 
@@ -109,7 +109,7 @@ async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         await update.message.reply_text(
-            "📊 *System Status:* Operational.\nMore details coming soon.*",
+            "📊 *System Status:* Operational.\n*More details coming soon.*",
             parse_mode="Markdown"
         )
         logger.info(f"✅ [Command] /status executed")
