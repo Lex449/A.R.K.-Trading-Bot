@@ -1,6 +1,9 @@
+# bot/auto/auto_signal_loop.py
+
 """
 A.R.K. Auto Signal Loop – Ultra Smart US Market Scanner 2025 Final Elite Edition
-Analyzes only during US trading hours, monitors heartbeat, sends bilingual ultra signals.
+Analyzes only during US trading hours + 30min pre-market window,
+monitors heartbeat, usage monitor, and dispatches bilingual ultra signals.
 Built for: Stability, Precision, Institutional Scalability.
 """
 
@@ -11,7 +14,8 @@ from bot.engine.analysis_engine import analyze_symbol
 from bot.utils.logger import setup_logger
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
-from bot.utils.market_session_guard import is_us_market_open
+from bot.utils.market_session_guard import is_us_market_open, minutes_until_market_open
+from bot.utils.usage_monitor import record_call
 from bot.config.settings import get_settings
 
 # Logger & Config
@@ -24,7 +28,8 @@ RUNNING = True
 async def auto_signal_loop(application):
     """
     Core background loop that continuously analyzes market conditions
-    during active US trading sessions and dispatches premium signals.
+    during active US trading sessions (plus pre-market buffer)
+    and dispatches premium multilingual signals.
     """
 
     logger.info("🚀 [AutoSignalLoop] Launching ultra-stable auto signal loop...")
@@ -38,24 +43,26 @@ async def auto_signal_loop(application):
 
     while RUNNING:
         try:
-            # Heartbeat & Connection
+            # === System Health Check ===
             await send_heartbeat(application)
             if not await check_connection():
                 logger.warning("⚠️ [AutoSignalLoop] Connection unstable. Retrying after 30s...")
                 await asyncio.sleep(30)
                 continue
 
-            # US Market Session Guard
-            if not is_us_market_open():
-                logger.info("⏳ [AutoSignalLoop] US market is closed. Next check in 2 minutes.")
+            # === Market Timing Logic ===
+            if not is_us_market_open() and minutes_until_market_open() > 30:
+                logger.info("⏳ [AutoSignalLoop] Market closed. Check again in 2 min.")
                 await asyncio.sleep(120)
                 continue
 
-            logger.info("📈 [AutoSignalLoop] Performing live analysis of configured symbols...")
+            logger.info("📈 [AutoSignalLoop] Performing live analysis...")
 
             for symbol in symbols:
                 try:
                     result = await analyze_symbol(symbol)
+                    record_call("finnhub")  # API Monitoring
+
                     if result and result.get("combined_action") in ["Long 📈", "Short 📉"]:
                         lang = get_language(chat_id) or "en"
 
@@ -75,15 +82,15 @@ async def auto_signal_loop(application):
                             parse_mode="Markdown"
                         )
 
-                        logger.info(f"✅ [AutoSignalLoop] Signal dispatched: {result['symbol']} ({result['combined_action']})")
+                        logger.info(f"✅ [AutoSignalLoop] Signal sent: {result['symbol']} ({result['combined_action']})")
 
                 except Exception as symbol_error:
-                    logger.error(f"❌ [AutoSignalLoop] Error analyzing {symbol}: {symbol_error}")
+                    logger.error(f"❌ [AutoSignalLoop] Error for {symbol}: {symbol_error}")
 
-            logger.info("✅ [AutoSignalLoop] Cycle completed. Sleeping until next scan...")
+            logger.info("✅ [AutoSignalLoop] Cycle complete. Sleeping before next run...")
 
-        except Exception as cycle_error:
-            logger.error(f"🔥 [AutoSignalLoop] Critical loop error: {cycle_error}")
+        except Exception as loop_error:
+            logger.error(f"🔥 [AutoSignalLoop] Critical loop failure: {loop_error}")
 
         await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
 
