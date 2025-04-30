@@ -1,5 +1,3 @@
-# bot/engine/data_loader.py
-
 """
 A.R.K. Data Loader – Ultra Resilient Dual Source Market Fetcher 6.0
 Primary: Finnhub API | Secondary: Yahoo Finance Backup
@@ -16,7 +14,7 @@ from bot.config.settings import get_settings
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.logger import setup_logger
-from bot.utils.usage_monitor import record_call  # <- Neu
+from bot.handlers.commands import record_call  # <- Adjusted import path
 
 # Logger & Settings
 logger = setup_logger(__name__)
