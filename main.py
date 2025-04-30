@@ -23,6 +23,7 @@ from bot.handlers.global_error_handler import global_error_handler
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.startup.startup_task import execute_startup_tasks
+from bot.auto.auto_signal_loop import auto_signal_loop  # <<< Wichtig
 
 # === Logger & Settings ===
 logger = setup_logger(__name__)
@@ -66,10 +67,13 @@ async def main():
         # 4. Globaler Error-Handler
         application.add_error_handler(global_error_handler)
 
-        # 5. Startup Tasks: Ping, Watchdog, Scheduler
+        # 5. Startup Tasks
         await execute_startup_tasks(application)
 
-        # 6. Polling starten
+        # 6. Auto Signal Loop aktivieren (dauerhafte Analyse)
+        asyncio.create_task(auto_signal_loop(application))
+
+        # 7. Polling starten
         logger.info("✅ [Main] A.R.K. Bot online. Awaiting user interaction...")
         await application.run_polling(poll_interval=1.0)
 
