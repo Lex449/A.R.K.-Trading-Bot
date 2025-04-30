@@ -16,6 +16,7 @@ from bot.config.settings import get_settings
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.logger import setup_logger
+from bot.utils.usage_monitor import record_call  # <- Neu
 
 # Logger & Settings
 logger = setup_logger(__name__)
@@ -51,6 +52,9 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
 
                 if data.get("s") != "ok" or not all(k in data for k in ["o", "h", "l", "c", "v", "t"]):
                     raise ValueError("Finnhub response incomplete or invalid structure")
+
+                # === Monitor API usage ===
+                record_call()
 
                 df = pd.DataFrame({
                     "t": pd.to_datetime(data["t"], unit="s"),
