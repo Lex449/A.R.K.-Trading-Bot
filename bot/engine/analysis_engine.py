@@ -1,10 +1,10 @@
 # bot/engine/analysis_engine.py
 
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite 6.2 Aggressive Build
-Handles Patterns, Trend, Volume, Volatility, Risk-Reward, Confidence Boost – Modular, Scalable, Premium-Grade.
-Jetzt mit Kursanzeige, aggressiver Auswertung und höherer Signalbereitschaft.
+A.R.K. Analysis Engine – Ultra Full Signal Suite 10.0
+Fusion aus Pattern, Trend, Volumen, Volatilität, RRR, Confidence Scaling & Category Scoring.
 
+Ziel: Lückenlose Signalvalidierung, präzise Entscheidungsbasis, Masterclass-Effizienz.
 Made in Bali. Engineered with German Precision.
 """
 
@@ -17,31 +17,32 @@ from bot.engine.signal_category_engine import categorize_signal
 from bot.engine.data_loader import fetch_market_data
 from bot.engine.data_auto_validator import validate_market_data
 from bot.engine.risk_engine import analyze_risk_reward
+from bot.engine.signal_rating_engine import rate_signal
 from bot.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
     """
-    Ultra Signal Analyzer mit maximaler Sensitivität und Marktdaten-Output.
-    Liefert alle relevanten Metriken für Live-Signale auf Premium-Level.
+    Führt eine vollständige Analyse eines Symbols durch.
+    Gibt strukturierte Daten für Signalaufbau, Bewertung und Dispatch zurück.
     """
+
     try:
         df = await fetch_market_data(symbol, chat_id=chat_id)
         if not validate_market_data(df):
             logger.warning(f"🚫 [AnalysisEngine] Data validation failed for {symbol}.")
             return None
 
-        last_price = df["c"].iloc[-1]  # aktueller Kurs
+        last_price = df["c"].iloc[-1]
 
-        # === Submodule: Analyse & Bewertung ===
+        # === Analyse-Module ===
         patterns = detect_patterns(df)
         volume_info = detect_volume_spike(df)
         trend_info = detect_adaptive_trend(df)
         indicator_score, trend_direction = evaluate_indicators(df)
 
         combined_action = determine_action(patterns, trend_info, indicator_score)
-
         risk_reward_info = (
             analyze_risk_reward(df, combined_action)
             if combined_action in ("Long 📈", "Short 📉")
@@ -51,13 +52,14 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         base_confidence = calculate_confidence(patterns)
         adjusted_confidence = optimize_confidence(base_confidence, trend_info)
 
-        # === Confidence Push bei klarem Setup ===
         if combined_action != "Neutral ⚪":
             adjusted_confidence += 10
-        adjusted_confidence = min(100.0, adjusted_confidence)
+        adjusted_confidence = min(adjusted_confidence, 100.0)
 
         signal_category = categorize_signal(adjusted_confidence)
+        signal_score = rate_signal(patterns, volatility_info=volume_info, trend_info=trend_info)
 
+        # === Final Result ===
         result = {
             "symbol": symbol,
             "last_price": round(last_price, 2),
@@ -65,17 +67,18 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
             "avg_confidence": adjusted_confidence,
             "combined_action": combined_action,
             "signal_category": signal_category,
+            "signal_score": signal_score,
             "indicator_score": indicator_score,
             "trend_direction": trend_direction,
             "volume_info": volume_info,
             "trend_info": trend_info,
             "risk_reward_info": risk_reward_info,
-            "df": df,
+            "df": df
         }
 
         logger.info(
-            f"✅ [AnalysisEngine] {symbol} → {combined_action} | "
-            f"Price: {last_price:.2f} | Confidence: {adjusted_confidence:.2f}%"
+            f"✅ [AnalysisEngine] {symbol} | Action: {combined_action} | "
+            f"Price: {last_price:.2f} | Confidence: {adjusted_confidence:.1f}% | Score: {signal_score}/100"
         )
         return result
 
@@ -85,11 +88,11 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
 
 def determine_action(patterns: list, trend_info: dict, indicator_score: float) -> str:
     """
-    Kombiniert Pattern, Trend und Indikatorbewertung zu einer finalen Aktion.
+    Kombiniert Pattern + Trendanalyse + Indikatorwerte zu einem klaren Handlungsvorschlag.
     """
     bullish = any(p.get("action", "").startswith("Long") for p in patterns)
     bearish = any(p.get("action", "").startswith("Short") for p in patterns)
-    trend = trend_info.get("trend") if trend_info else None
+    trend = trend_info.get("early_trend") if trend_info else None
 
     if (bullish and trend == "bullish") or (indicator_score > 60 and trend == "bullish"):
         return "Long 📈"
@@ -99,9 +102,9 @@ def determine_action(patterns: list, trend_info: dict, indicator_score: float) -
 
 def calculate_confidence(patterns: list) -> float:
     """
-    Berechnet durchschnittliches Confidence-Level aus Pattern-Bewertungen.
+    Aggregiert die Confidence-Werte der Pattern zu einer Basisschätzung.
     """
     if not patterns:
         return 0.0
-    total_confidence = sum(p.get("confidence", 60) for p in patterns)
-    return round(total_confidence / len(patterns), 2)
+    total = sum(p.get("confidence", 60) for p in patterns)
+    return round(total / len(patterns), 2)
