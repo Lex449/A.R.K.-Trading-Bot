@@ -1,7 +1,7 @@
 """
-A.R.K. Startup Task – Ultra Premium NASA Build 2025.3  
+A.R.K. Startup Task – Ultra Premium NASA Build 2025.4  
 Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Telegram-Ping.  
-Jetzt inklusive Auto-Signal-Loop zur permanenten Marktscans.  
+Jetzt inklusive Auto-Signal-Loop und Auto-Analysis Scheduler.
 Made in Bali. Engineered with German Precision.
 """
 
@@ -10,7 +10,7 @@ import asyncio
 from datetime import datetime
 import pytz
 from telegram import Bot
-from telegram.ext import Application
+from telegram.ext import Application, JobQueue
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
@@ -21,8 +21,7 @@ from bot.scheduler.heartbeat_job import start_heartbeat_job
 from bot.scheduler.connection_watchdog_job import start_connection_watchdog
 from bot.scheduler.news_scanner_job import news_scanner_job
 from bot.auto.auto_signal_loop import auto_signal_loop
-from bot.auto.auto_analysis import auto_analysis  # NEU
-from telegram.ext import JobQueue  # NEU
+from bot.scheduler.auto_analysis_scheduler import start_auto_analysis_scheduler  # ✅ NEU
 
 # === Setup ===
 logger = setup_logger(__name__)
@@ -104,12 +103,7 @@ async def launch_background_jobs(application: Application):
         logger.error(f"❌ Auto Signal Loop Fehler: {e}")
 
     try:
-        job_queue.run_repeating(
-            auto_analysis,
-            interval=300,  # alle 5 Minuten
-            first=45,
-            name="auto_analysis_scheduler"
-        )
+        start_auto_analysis_scheduler(job_queue)
         logger.info("✅ [Startup] Auto Analysis Scheduler aktiviert.")
     except Exception as e:
         logger.error(f"❌ Auto Analysis Scheduler Fehler: {e}")
