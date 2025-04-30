@@ -18,6 +18,7 @@ from bot.utils.market_session_guard import is_us_market_open, minutes_until_mark
 from bot.utils.api_bridge import record_call, monitor as usage_monitor
 from bot.config.settings import get_settings
 
+# === Setup ===
 logger = setup_logger(__name__)
 config = get_settings()
 RUNNING = True
@@ -29,13 +30,18 @@ def build_signal_bar(conf: float, bars: int = 20) -> str:
 
 async def auto_signal_loop(application):
     logger.info("🚀 [AutoSignalLoop] Ultra Loop gestartet.")
-    symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
+
+    # === Symbole aus .env lesen und in Liste umwandeln ===
+    symbols_raw = config.get("AUTO_SIGNAL_SYMBOLS", "")
+    symbols = [s.strip().upper() for s in symbols_raw.split(",") if s.strip()]
     chat_id = int(config.get("TELEGRAM_CHAT_ID", 0))
     interval = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
 
     if not symbols:
-        logger.critical("❌ [AutoSignalLoop] Keine Symbole gefunden. Check .env!")
+        logger.critical("❌ [AutoSignalLoop] Keine Symbole gefunden. Check .env → AUTO_SIGNAL_SYMBOLS.")
         return
+
+    logger.info(f"📊 [AutoSignalLoop] {len(symbols)} Symbole geladen: {symbols[:5]}...")
 
     while RUNNING:
         try:
@@ -46,8 +52,7 @@ async def auto_signal_loop(application):
                 await asyncio.sleep(30)
                 continue
 
-            # Entfernt: Marktzeitprüfung – jetzt dauerhaft aktiv für maximale API-Nutzung
-
+            # Marktzeitprüfung wurde bewusst deaktiviert – 24/7 Analyse erzwingen
             logger.info(f"📡 [AutoSignalLoop] Analyse-Zyklus gestartet: {len(symbols)} Symbole...")
 
             tasks = [analyze_and_dispatch(application, symbol, chat_id) for symbol in symbols]
@@ -69,7 +74,7 @@ async def analyze_and_dispatch(application, symbol, chat_id):
         record_call(symbol)
 
         if result is None:
-            logger.warning(f"❌ Kein Analyseergebnis: {symbol} – wird protokolliert.")
+            logger.info(f"⚠️ [AutoSignalLoop] Kein verwertbares Signal: {symbol}")
             return
 
         action = result.get("combined_action", "Neutral ⚪")
@@ -79,7 +84,7 @@ async def analyze_and_dispatch(application, symbol, chat_id):
         price = result.get("last_price", "n/a")
 
         if action not in ["Long 📈", "Short 📉"]:
-            logger.info(f"⛔ Kein Long/Short-Signal für {symbol} → Action: {action}")
+            logger.info(f"⛔ Kein Signal bei {symbol} → Action: {action}")
             return
 
         if confidence < MIN_CONFIDENCE:
