@@ -1,7 +1,7 @@
 # bot/engine/data_loader.py
 
 """
-A.R.K. Data Loader – Ultra Resilient Dual Source Market Fetcher 6.0
+A.R.K. Data Loader – Ultra Resilient Dual Source Market Fetcher 6.5
 Primary: Finnhub API | Secondary: Yahoo Finance Backup
 Unbreakable Real-Time Data Integrity Engine. Multilingual Safety Reporting.
 
@@ -16,7 +16,7 @@ from bot.config.settings import get_settings
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.logger import setup_logger
-from bot.utils.api_bridge import record_call  # ✅ Clean import via bridge
+from bot.utils.api_bridge import record_call
 
 # Logger & Settings
 logger = setup_logger(__name__)
@@ -27,10 +27,6 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
     """
     Fetches OHLCV historical data.
     Priority: Finnhub → Fallback: Yahoo Finance
-
-    Args:
-        symbol (str): Market symbol (e.g. AAPL)
-        chat_id (int): Telegram ID for localized messages
 
     Returns:
         pd.DataFrame or None
@@ -51,9 +47,8 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
                 data = await response.json()
 
                 if data.get("s") != "ok" or not all(k in data for k in ["o", "h", "l", "c", "v", "t"]):
-                    raise ValueError("Finnhub response incomplete or invalid structure")
+                    raise ValueError("Finnhub returned invalid structure")
 
-                # === Monitor API usage ===
                 record_call()
 
                 df = pd.DataFrame({
@@ -65,10 +60,10 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
                     "v": data["v"]
                 }).set_index("t")
 
-                if df.empty or len(df) < 20:
-                    raise ValueError("Finnhub returned insufficient candle data")
+                if df.empty or len(df) < 20 or (df["c"].tail(10).nunique() <= 1):
+                    raise ValueError("Finnhub returned flat or insufficient data")
 
-                logger.info(f"✅ [DataLoader] Finnhub data fetched successfully: {symbol}")
+                logger.info(f"✅ [DataLoader] Finnhub data fetched: {symbol}")
                 return df.astype(float)
 
     except Exception as e_primary:
@@ -81,8 +76,8 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
         ticker = yf.Ticker(symbol)
         hist = ticker.history(period="5d", interval="5m")
 
-        if hist.empty or len(hist) < 20:
-            raise ValueError("Yahoo returned insufficient candle data")
+        if hist.empty or len(hist) < 20 or (hist["Close"].tail(10).nunique() <= 1):
+            raise ValueError("Yahoo returned flat or insufficient data")
 
         hist = hist.rename(columns={
             "Open": "o",
@@ -95,7 +90,7 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
         df = hist[["o", "h", "l", "c", "v"]].copy()
         df.index.name = "t"
 
-        logger.info(f"✅ [DataLoader] Yahoo Finance data fetched successfully: {symbol}")
+        logger.info(f"✅ [DataLoader] Yahoo fallback used: {symbol}")
         return df.astype(float)
 
     except Exception as e_backup:
