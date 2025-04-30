@@ -1,5 +1,3 @@
-# bot/engine/risk_engine.py
-
 """
 A.R.K. Risk Engine – Ultra Precision Signal Evaluator 9.1
 Strategic RRR Analytics + Dynamic Signal Assessment + Watchlist Tiering ab 50 %.
