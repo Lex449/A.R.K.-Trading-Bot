@@ -1,55 +1,65 @@
+# bot/utils/telegram_utils.py
+
 """
 A.R.K. Telegram Utilities – Ultra Premium API Interaction Layer.
 Handles secure fetching of updates and diagnostics from the Telegram Bot API.
-Built for Maximum Stability and Future API Expansion.
+Built for Maximum Stability, Logging Intelligence & Future API Expansion.
+
+Made in Bali. Engineered with German Precision.
 """
 
 import requests
+from typing import Optional
 from bot.utils.logger import setup_logger
 
-# Setup Structured Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 
-# Telegram API Base URL
+# Telegram API base endpoint
 TELEGRAM_API_BASE = "https://api.telegram.org"
 
-def get_updates_from_telegram(bot_token: str) -> dict | None:
+# === GET UPDATES ===
+def get_updates_from_telegram(bot_token: str, timeout: int = 8) -> Optional[dict]:
     """
-    Fetches latest updates from the Telegram Bot API.
+    Securely fetches updates from the Telegram Bot API.
 
     Args:
-        bot_token (str): The Bot Token provided by BotFather.
+        bot_token (str): Telegram bot token from BotFather.
+        timeout (int): Timeout for the request in seconds.
 
     Returns:
-        dict | None: JSON payload if successful, None otherwise.
+        dict | None: Parsed response or None on failure.
     """
+
     url = f"{TELEGRAM_API_BASE}/bot{bot_token}/getUpdates"
     headers = {"Accept": "application/json"}
 
     try:
-        response = requests.get(url, headers=headers, timeout=8)
+        logger.debug(f"[TelegramAPI] Requesting updates from: {url}")
+        response = requests.get(url, headers=headers, timeout=timeout)
 
-        if response.ok:
-            logger.info(f"✅ [Telegram API] Updates fetched successfully.")
-            return response.json()
-        else:
+        if not response.ok:
             logger.warning(
-                f"⚠️ [Telegram API] Non-200 response: {response.status_code} – {response.text}"
+                f"⚠️ [TelegramAPI] HTTP {response.status_code} – {response.text}"
             )
             return None
 
+        json_data = response.json()
+
+        if not json_data.get("ok", False):
+            logger.warning(f"⚠️ [TelegramAPI] API returned ok=False → {json_data}")
+            return None
+
+        logger.info("✅ [TelegramAPI] Updates successfully received.")
+        return json_data
+
     except requests.exceptions.Timeout:
-        logger.error("⏳ [Telegram API] Timeout after 8 seconds.")
-        return None
-
+        logger.error(f"⏳ [TelegramAPI] Timeout after {timeout} seconds.")
     except requests.exceptions.ConnectionError as e:
-        logger.error(f"🔌 [Telegram API] Connection error: {e}")
-        return None
-
+        logger.error(f"🔌 [TelegramAPI] Connection Error: {e}")
     except requests.exceptions.RequestException as e:
-        logger.error(f"🚨 [Telegram API] Request error: {e}")
-        return None
-
+        logger.error(f"🚨 [TelegramAPI] Request Exception: {e}")
     except Exception as e:
-        logger.critical(f"🔥 [Telegram API] Unexpected Fatal Error: {e}")
-        return None
+        logger.critical(f"🔥 [TelegramAPI] Unexpected Fatal Error: {e}")
+
+    return None
