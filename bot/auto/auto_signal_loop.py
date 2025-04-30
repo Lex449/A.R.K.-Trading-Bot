@@ -30,6 +30,7 @@ async def auto_signal_loop(application):
     logger.info("🚀 [AutoSignalLoop] Launching ultra-stable auto signal loop...")
 
     symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
+    chat_id = int(config.get("TELEGRAM_CHAT_ID", 0))
 
     if not symbols:
         logger.error("❌ [AutoSignalLoop] No symbols configured for auto analysis.")
@@ -37,37 +38,35 @@ async def auto_signal_loop(application):
 
     while RUNNING:
         try:
-            # Heartbeat Pulse
+            # Heartbeat & Connection
             await send_heartbeat(application)
-
-            # Connection Watchdog
-            connection_ok = await check_connection()
-            if not connection_ok:
+            if not await check_connection():
                 logger.warning("⚠️ [AutoSignalLoop] Connection unstable. Retrying after 30s...")
                 await asyncio.sleep(30)
                 continue
 
             # US Market Session Guard
             if not is_us_market_open():
-                logger.info("⏳ [AutoSignalLoop] US Market closed. Sleeping...")
+                logger.info("⏳ [AutoSignalLoop] US market is closed. Next check in 2 minutes.")
                 await asyncio.sleep(120)
                 continue
 
-            logger.info("📈 [AutoSignalLoop] Performing live symbol analysis...")
+            logger.info("📈 [AutoSignalLoop] Performing live analysis of configured symbols...")
 
             for symbol in symbols:
                 try:
                     result = await analyze_symbol(symbol)
-
                     if result and result.get("combined_action") in ["Long 📈", "Short 📉"]:
-                        chat_id = int(config["TELEGRAM_CHAT_ID"])
                         lang = get_language(chat_id) or "en"
 
-                        signal_text = get_text("signal_detected", lang).format(
-                            symbol=result["symbol"],
-                            signal=result["combined_action"],
-                            confidence=result["avg_confidence"],
-                            rating=result["signal_category"]
+                        signal_text = (
+                            f"📡 *A.R.K. Live Signal Detected!*\n\n"
+                            f"*Symbol:* `{result['symbol']}`\n"
+                            f"*Direction:* {result['combined_action']}\n"
+                            f"*Confidence:* `{result['avg_confidence']:.1f}%`\n"
+                            f"*Rating:* {result['signal_category']}\n"
+                            f"*Price:* `${result['last_price']}`\n\n"
+                            f"_Stay sharp. Opportunity never sleeps._"
                         )
 
                         await application.bot.send_message(
@@ -81,7 +80,7 @@ async def auto_signal_loop(application):
                 except Exception as symbol_error:
                     logger.error(f"❌ [AutoSignalLoop] Error analyzing {symbol}: {symbol_error}")
 
-            logger.info("✅ [AutoSignalLoop] Cycle completed. Sleeping until next scan.")
+            logger.info("✅ [AutoSignalLoop] Cycle completed. Sleeping until next scan...")
 
         except Exception as cycle_error:
             logger.error(f"🔥 [AutoSignalLoop] Critical loop error: {cycle_error}")
