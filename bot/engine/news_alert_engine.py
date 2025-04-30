@@ -1,7 +1,7 @@
 # bot/engine/news_alert_engine.py
 
 """
-A.R.K. Breaking News Engine – Ultra Reactive Intelligence 7.0
+A.R.K. Breaking News Engine – Ultra Reactive Intelligence 7.5
 Real-Time Detection of Market-Moving Headlines with Adaptive Keyword Power Scoring.
 
 Designed for: High-Frequency News Trading, Institutional Timing, Telegram Instant Alerts.
@@ -26,8 +26,8 @@ FINNHUB_URL = f"https://finnhub.io/api/v1/news?category=general&token={FINNHUB_K
 YAHOO_RSS = "https://feeds.finance.yahoo.com/rss/2.0/headline?s={symbol}&region=US&lang=en-US"
 
 # === Scoring Settings ===
-POWER_THRESHOLD = 8
-MAX_AGE_MINUTES = 20
+POWER_THRESHOLD = 6.5  # Lockerer eingestellt
+MAX_AGE_MINUTES = 30   # Erweitert für langsame Publisher
 
 # === News Fetchers ===
 async def fetch_finnhub_news() -> list:
@@ -100,7 +100,7 @@ def _is_breaking_headline(headline: str, keywords: list, power_map: dict) -> boo
     for word in keywords:
         if word in lower:
             base = 4
-            bonus = power_map.get(word, 0) * 0.5
+            bonus = power_map.get(word, 0) * 0.6  # minimal mehr Boost
             score += base + bonus
 
     logger.debug(f"[News Scoring] {headline} → Score: {score:.2f}")
