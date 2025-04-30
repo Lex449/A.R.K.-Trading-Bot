@@ -1,10 +1,7 @@
-# bot/engine/signal_category_engine.py
-
 """
-A.R.K. Signal Category Engine – Ultra Precision Classification 5.5
-Transforms signal scores (0–100) into meaningful, professional-grade trading categories.
+A.R.K. Signal Category Engine – Masterclass v5.6
+Maps confidence scores (0–100) to ultra-clear signal categories with strategic clarity.
 
-Built for: Instant Signal Understanding, Smart Risk Adjustment, and Institutional-Grade Trading Discipline.
 Made in Bali. Engineered with German Precision.
 """
 
@@ -14,51 +11,44 @@ logger = setup_logger(__name__)
 
 def categorize_signal(score: float) -> str:
     """
-    Maps the numeric signal score (0–100) into a strategic trading category.
+    Converts a signal score into a Markdown-formatted category label.
 
     Args:
-        score (float): Signal quality/confidence score.
+        score (float): Signal quality/confidence score (0–100)
 
     Returns:
-        str: Markdown-friendly category label with emoji.
+        str: Markdown string with emoji label.
     """
     try:
         if score >= 95:
-            category = "🏆 *God Tier Setup* – _Institutional Grade_"
+            category = "🏆 *God Tier Setup* – _Institutional Grade Entry_"
         elif score >= 90:
-            category = "🚀 *Ultra Setup* – _Elite Opportunity_"
+            category = "🚀 *Ultra Setup* – _Elite Momentum Detected_"
         elif score >= 80:
-            category = "📈 *Top Setup* – _Strong Momentum_"
+            category = "📈 *Top Setup* – _High Confidence Pattern_"
         elif score >= 70:
-            category = "✅ *High Probability* – _Favorable Trade Zone_"
+            category = "✅ *High Probability* – _Favorable Signal Cluster_"
         elif score >= 60:
-            category = "👀 *Moderate Setup* – _Needs Confirmation_"
+            category = "☑️ *Confirmed Opportunity* – _Slight Risk Present_"
         elif score >= 50:
-            category = "⚠️ *Caution Zone* – _Uncertain Structure_"
+            category = "⚠️ *Caution Setup* – _Possible Entry, Needs Context_"
         elif score >= 40:
-            category = "🟡 *High Risk* – _Reactive Conditions_"
+            category = "🟡 *High Risk Zone* – _Structure Weak or Incomplete_"
         elif score >= 30:
-            category = "🔻 *Unfavorable* – _Avoid if Possible_"
+            category = "🔻 *Unfavorable* – _Likely Noise_"
         else:
-            category = "❌ *Do Not Trade* – _Noise or Breakdown_"
+            category = "❌ *No Trade* – _Insufficient Quality_"
 
-        logger.info(f"[SignalCategoryEngine] Score {score:.1f} → Category: {category}")
+        logger.info(f"[SignalCategoryEngine] Score {score:.1f} → {category}")
         return category
 
     except Exception as e:
         logger.error(f"❌ [SignalCategoryEngine] Critical Error: {e}")
-        return "❓ *Unknown Signal Classification*"
+        return "❓ *Unknown Classification*"
 
 def classify_signal_short(score: float) -> str:
     """
-    Returns only the short technical label (e.g. 'Top Setup', 'Caution', etc.)
-    For internal filtering, backend logic, or JSON responses.
-
-    Args:
-        score (float): Signal quality score.
-
-    Returns:
-        str: Technical short category
+    Internal tech label for logic or analytics.
     """
     try:
         if score >= 95:
@@ -70,13 +60,13 @@ def classify_signal_short(score: float) -> str:
         elif score >= 70:
             return "High"
         elif score >= 60:
-            return "Moderate"
+            return "Confirmed"
         elif score >= 50:
             return "Caution"
         elif score >= 40:
-            return "High Risk"
+            return "Risk"
         elif score >= 30:
-            return "Unfavorable"
+            return "Weak"
         else:
             return "Reject"
 
