@@ -1,5 +1,5 @@
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite v10.5
+A.R.K. Analysis Engine – Ultra Full Signal Suite v10.6
 Fusion aus Pattern, Trend, Volumen, Volatilität, RRR, Confidence Scaling & Category Scoring.
 Mit smarter Telegram-Analyseausgabe und dynamischer Rejection-Diagnose.
 Made in Bali. Engineered with German Precision.
@@ -19,21 +19,20 @@ from bot.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
+async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False) -> dict | None:
     try:
         df = await fetch_market_data(symbol, chat_id=chat_id)
         if df is None or not validate_market_data(df):
-            logger.warning(f"🚫 [AnalysisEngine] Data validation failed or no data returned for {symbol}.")
+            logger.warning(f"🚫 [AnalysisEngine] Data validation failed for {symbol}")
             if df is not None:
-                logger.debug(f"⚠️ [Debug] {symbol} → Close Prices (last 10): {df['c'].tail(10).tolist()}")
-            if chat_id:
+                logger.debug(f"⚠️ [Debug] {symbol} → Close Prices: {df['c'].tail(10).tolist()}")
+            if chat_id and not silent:
                 from bot import application
                 await application.bot.send_message(
                     chat_id=chat_id,
                     text=(
                         f"⚠️ *{symbol} konnte nicht analysiert werden:*\n"
-                        f"_Grund:_ Kursdaten nicht valide oder leer.\n\n"
-                        f"_API war aktiv – Symbol wurde übersprungen._"
+                        f"_Grund:_ Kursdaten ungültig oder leer."
                     ),
                     parse_mode="Markdown"
                 )
@@ -45,7 +44,6 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         trend_info = detect_adaptive_trend(df) or {}
         indicator_score, trend_direction = evaluate_indicators(df) or (0.0, "Neutral")
         combined_action = determine_action(patterns, trend_info, indicator_score)
-
         risk_reward_info = (
             analyze_risk_reward(df, combined_action)
             if combined_action in ("Long 📈", "Short 📉")
@@ -54,7 +52,6 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
 
         base_confidence = calculate_confidence(patterns)
         adjusted_confidence = optimize_confidence(base_confidence, trend_info)
-
         if combined_action in ["Long 📈", "Short 📉"]:
             adjusted_confidence += 10
         adjusted_confidence = min(adjusted_confidence, 100.0)
@@ -63,28 +60,25 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
 
         if adjusted_confidence < 50:
             flat_market = df["c"].tail(5).nunique() <= 1
-            if chat_id:
+            logger.info(
+                f"⛔ [AnalysisEngine] {symbol} skipped – Confidence: {adjusted_confidence:.1f}%, "
+                f"Patterns: {len(patterns)}, Score: {signal_score}, Trend: {trend_direction}"
+            )
+            if chat_id and not silent:
                 from bot import application
                 await application.bot.send_message(
                     chat_id=chat_id,
                     text=(
-                        f"⚠️ *{symbol} konnte nicht analysiert werden.*\n"
+                        f"⚠️ *{symbol} wurde übersprungen.*\n"
                         f"_Grund:_ Confidence zu niedrig (`{adjusted_confidence:.1f}%`)\n\n"
                         f"*Details:*\n"
-                        f"• Patterns: `{len(patterns)}` erkannt\n"
-                        f"• Signal Score: `{signal_score}/100`\n"
-                        f"• Indicator Score: `{indicator_score}`\n"
+                        f"• Patterns: `{len(patterns)}`\n"
+                        f"• Score: `{signal_score}/100`\n"
                         f"• Trend: {trend_direction}\n"
-                        f"• Flat Market: {'Ja' if flat_market else 'Nein'}\n"
-                        f"• Daten: {len(df)} Rows, NaNs: {df.isnull().mean().mean():.2%}"
+                        f"• Flat Market: {'Ja' if flat_market else 'Nein'}"
                     ),
                     parse_mode="Markdown"
                 )
-            logger.info(
-                f"⛔ [AnalysisEngine] {symbol} skipped – Confidence: {adjusted_confidence:.1f}%, "
-                f"Patterns: {len(patterns)}, Score: {signal_score}, IndicatorScore: {indicator_score}, "
-                f"Trend: {trend_direction}, FlatMarket: {flat_market}"
-            )
             return None
 
         signal_category = categorize_signal(adjusted_confidence)
@@ -106,19 +100,20 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         }
 
         logger.info(
-            f"✅ [AnalysisEngine] {symbol} | Action: {combined_action} | "
-            f"Price: {last_price:.2f} | Confidence: {adjusted_confidence:.1f}% | "
+            f"✅ [AnalysisEngine] {symbol} | {combined_action} | "
+            f"${last_price:.2f} | Confidence: {adjusted_confidence:.1f}% | "
             f"Score: {signal_score}/100 | Trend: {trend_direction}"
         )
         return result
 
     except Exception as e:
-        logger.exception(f"❌ [AnalysisEngine] Critical failure for {symbol}: {e}")
+        logger.exception(f"❌ [AnalysisEngine] Critical error for {symbol}: {e}")
         return None
 
 async def analyze_market(symbols: list[str]) -> list[dict]:
     import asyncio
-    results = await asyncio.gather(*(analyze_symbol(symbol) for symbol in symbols))
+    tasks = [analyze_symbol(symbol, silent=True) for symbol in symbols]
+    results = await asyncio.gather(*tasks)
     return [r for r in results if r]
 
 def determine_action(patterns: list, trend_info: dict, indicator_score: float) -> str:
