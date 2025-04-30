@@ -1,5 +1,3 @@
-# main.py
-
 """
 A.R.K. – Ultra Resilient Main Entry Point.
 Initialisiert den Telegram Bot, registriert alle Commands, startet alle Loops.
@@ -56,10 +54,7 @@ async def main():
         # === Register Global Error Handler ===
         application.add_error_handler(global_error_handler)
 
-        # === Start Internal Usage Monitor Loop ===
-        asyncio.create_task(start_usage_monitor_loop(application))  # ✅ NEU
-
-        # === Run Startup Pipeline ===
+        # === Run Startup Pipeline (Schedulers, Menü, Ping etc.) ===
         await execute_startup_tasks(application)
 
         # === Start Polling Loop ===
