@@ -1,15 +1,17 @@
+# bot/engine/atr_engine.py
+
 """
 A.R.K. ATR Engine – Dynamic Volatility Intelligence 2025
 Fusioniert ATR-Berechnung und Spike-Erkennung in einer ultrastabilen Einheit.
 
 Ziele: Adaptive Risk Control, Early Breakout Detection, Hyper Performance Analytics.
+Made in Bali. Engineered with German Precision.
 """
 
 import pandas as pd
 import numpy as np
 import logging
 
-# Setup Logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -22,28 +24,30 @@ class ATREngine:
         self.period = period
         self.language = language.lower()
 
-    def _localized_error(self, error_type: str) -> str:
-        """Localized error messages."""
-        errors = {
+    def _localized_error(self, key: str) -> str:
+        messages = {
             "invalid_df": {
-                "en": "Invalid DataFrame supplied for ATR calculation.",
-                "de": "Ungültiges DataFrame für ATR-Berechnung übergeben."
+                "en": "Invalid DataFrame for ATR calculation.",
+                "de": "Ungültiges DataFrame für ATR-Berechnung."
             },
             "zero_close": {
-                "en": "Last closing price is zero. ATR percentage undefined.",
-                "de": "Letzter Schlusskurs ist null. ATR-Prozent unbestimmbar."
+                "en": "Closing price is zero – cannot compute ATR%.",
+                "de": "Schlusskurs ist null – ATR% nicht berechenbar."
             }
         }
-        return errors.get(error_type, {}).get(self.language, "Unknown calculation error.")
+        return messages.get(key, {}).get(self.language, "Unknown error")
 
     def calculate_atr_percent(self, df: pd.DataFrame) -> float:
         """
-        Calculates the Average True Range as percentage of last close.
+        Calculates the Average True Range (ATR) as a percentage of the last close.
 
         Returns:
-            float: ATR % or raises ValueError.
+            float: ATR% rounded to 2 decimals.
         """
-        if df is None or len(df) < self.period or not all(col in df.columns for col in ["high", "low", "close"]):
+        if df is None or df.empty or len(df) < self.period:
+            raise ValueError(self._localized_error("invalid_df"))
+
+        if not all(col in df.columns for col in ["high", "low", "close"]):
             raise ValueError(self._localized_error("invalid_df"))
 
         try:
@@ -58,30 +62,40 @@ class ATREngine:
             if close == 0:
                 raise ValueError(self._localized_error("zero_close"))
 
-            return round((atr / close) * 100, 2)
+            atr_percent = (atr / close) * 100
+            return round(atr_percent, 2)
 
         finally:
             df.drop(columns=["hl", "hc", "lc", "tr"], inplace=True, errors="ignore")
 
     def detect_volatility_spike(self, df: pd.DataFrame, threshold: float = 1.8) -> dict | None:
         """
-        Detects volatility spikes relative to ATR baseline.
-        Returns a detailed dict if spike detected, else None.
+        Detects if current price move exceeds ATR-based expectation.
+
+        Returns:
+            dict: Details if spike detected, else None.
         """
         try:
             atr_pct = self.calculate_atr_percent(df)
-            move_pct = ((df["high"].iloc[-1] - df["low"].iloc[-1]) / df["close"].iloc[-1]) * 100
+            move_range = df["high"].iloc[-1] - df["low"].iloc[-1]
+            last_close = df["close"].iloc[-1]
+
+            if last_close <= 0 or move_range <= 0:
+                logger.warning("[ATREngine] Invalid move/close values for spike detection.")
+                return None
+
+            move_pct = (move_range / last_close) * 100
 
             if move_pct > (atr_pct * threshold):
-                logger.info(f"[ATR Spike] Detected: Move={move_pct:.2f}%, ATR={atr_pct:.2f}%")
+                logger.info(f"🌪️ [ATREngine] Spike detected: Move={move_pct:.2f}% > {atr_pct * threshold:.2f}%")
                 return {
-                    "atr_percent": atr_pct,
+                    "atr_percent": round(atr_pct, 2),
                     "move_percent": round(move_pct, 2),
                     "spike": True
                 }
-            else:
-                return None
+
+            return None
 
         except Exception as e:
-            logger.error(f"[ATR Engine Error] {e}")
+            logger.error(f"❌ [ATREngine Error] {e}")
             return None
