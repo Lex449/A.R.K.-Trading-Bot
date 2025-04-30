@@ -1,70 +1,84 @@
 """
 A.R.K. Ultra Signal Builder – Hyper Precision Trade Signal Generation
 Built for Deep Confidence, Dynamic Risk Profiling, and Adaptive Messaging.
+Made in Bali. Engineered with German Precision.
 """
 
 from bot.utils.i18n import get_text
 from bot.utils.logger import setup_logger
 
-# Setup Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 
-def build_ultra_signal(symbol: str,
-                       move=None,
-                       volume_spike: dict = None,
-                       atr_breakout: dict = None,
-                       risk_reward: dict = None,
-                       confidence: float = None,
-                       lang: str = "en") -> str:
+def build_ultra_signal(
+    symbol: str,
+    move: dict | str = None,
+    volume_spike: dict = None,
+    atr_breakout: dict = None,
+    risk_reward: dict = None,
+    confidence: float = None,
+    lang: str = "en"
+) -> str:
     """
-    Builds a premium, ultra-intelligent trading signal message.
-    """
+    Builds a multilingual ultra-intelligent trading signal message.
 
+    Args:
+        symbol (str): Trading symbol (e.g., AAPL)
+        move (dict|str): Movement info or summary
+        volume_spike (dict): Volume info from detector
+        atr_breakout (dict): ATR breakout info
+        risk_reward (dict): RRR output
+        confidence (float): Signal confidence
+        lang (str): Language code (en or de)
+
+    Returns:
+        str: Formatted signal message
+    """
     try:
         # === Header ===
-        header = f"🚀 *{get_text('signal_ultra_premium', lang)}*"
+        header = f"🚀 *{get_text('signal_ultra_premium', lang)}*\n"
 
-        # === Main Body ===
+        # === Core Body ===
         body = f"*Symbol:* `{symbol}`\n"
 
-        # === Movement Detection ===
+        # === Move Detection ===
         if move:
             if isinstance(move, dict):
-                move_type = move.get("type", "Early Move ⚡")
+                move_type = move.get("type", get_text("move_detected", lang))
                 move_percent = move.get("move_percent", 0.0)
-                body += f"*Movement:* `{move_percent:.2f}%` – {move_type}\n"
+                body += f"*Move:* `{move_percent:.2f}%` – {move_type}\n"
             elif isinstance(move, str):
                 body += f"*Move:* `{move}`\n"
 
         # === Volume Spike ===
-        if volume_spike and volume_spike.get("volume_spike"):
-            volume_percent = volume_spike.get("volume_percent", 0.0)
-            body += f"*Volume Spike:* 📈 `{volume_percent:.1f}%`\n"
+        if volume_spike and volume_spike.get("volume_spike", False):
+            volume_pct = volume_spike.get("volume_percent", 0.0)
+            body += f"*Volume Spike:* `{volume_pct:.1f}%` 📈\n"
 
         # === ATR Breakout ===
-        if atr_breakout and atr_breakout.get("atr_breakout"):
-            body += "*ATR Breakout:* ✅ Confirmed\n"
+        if atr_breakout and atr_breakout.get("atr_breakout", False):
+            body += f"*ATR Breakout:* ✅ {get_text('confirmed', lang)}\n"
 
-        # === Risk-Reward ===
+        # === Risk/Reward Output ===
         if risk_reward:
-            rr_ratio = risk_reward.get("risk_reward_ratio", "-")
-            stop_loss = risk_reward.get("stop_loss", "-")
-            target = risk_reward.get("target", "-")
+            rr = risk_reward.get("risk_reward_ratio", "-")
+            sl = risk_reward.get("stop_loss", "-")
+            tgt = risk_reward.get("target", "-")
             body += (
-                f"*Risk/Reward:* `{rr_ratio}:1`\n"
-                f"*Stop-Loss:* `{stop_loss}`\n"
-                f"*Target:* `{target}`\n"
+                f"*Risk/Reward:* `{rr}:1`\n"
+                f"*Stop-Loss:* `{sl}`\n"
+                f"*Target:* `{tgt}`\n"
             )
 
-        # === Confidence Score ===
+        # === Confidence ===
         if confidence is not None:
             body += f"*Confidence:* `{confidence:.1f}%`\n"
 
         # === Footer ===
-        footer = f"\n\n_{get_text('signal_footer', lang)}_"
+        footer = f"\n_{get_text('signal_footer', lang)}_"
 
-        return f"{header}\n\n{body}{footer}"
+        return f"{header}\n{body}{footer}"
 
     except Exception as e:
-        logger.error(f"[Ultra Signal Builder] Error building signal for {symbol}: {e}")
+        logger.error(f"❌ [UltraSignalBuilder] Signal build failed for {symbol}: {e}")
         return f"⚠️ Error building signal for `{symbol}`."
