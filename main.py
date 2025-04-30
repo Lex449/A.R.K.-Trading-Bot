@@ -70,9 +70,6 @@ async def main():
         # 5. Startup Tasks
         await execute_startup_tasks(application)
 
-        # 6. Auto Signal Loop aktivieren (dauerhafte Analyse)
-        asyncio.create_task(auto_signal_loop(application))
-
         # 7. Polling starten
         logger.info("✅ [Main] A.R.K. Bot online. Awaiting user interaction...")
         await application.run_polling(poll_interval=1.0)
