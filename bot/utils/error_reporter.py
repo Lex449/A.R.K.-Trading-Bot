@@ -1,5 +1,3 @@
-# bot/utils/error_reporter.py
-
 """
 A.R.K. Error Reporter – Intelligent Exception Management 2025.
 Automatically reports critical errors to the admin via Telegram and logs them locally.
@@ -16,25 +14,29 @@ config = get_settings()
 
 async def report_error(bot: Bot, chat_id: int, error: Exception, context_info: str = "Unknown Context") -> None:
     """
-    Reports an exception via Telegram and logs it locally.
+    Reports an exception via Telegram and logs it.
+
     Args:
         bot (Bot): The Telegram bot instance.
-        chat_id (int): The chat ID to send the report to.
-        error (Exception): The actual exception.
-        context_info (str): Additional context where the error happened.
+        chat_id (int): Admin chat ID for error reporting.
+        error (Exception): Exception object.
+        context_info (str): Context where error occurred.
     """
     try:
+        # Clean traceback and escape backticks
+        tb_clean = traceback.format_exc().replace('`', "'")
+        error_safe = str(error).replace('`', "'")
+        context_safe = context_info.replace('`', "'")
+
         error_text = (
             f"⚠️ *A.R.K. Error Report*\n\n"
-            f"*Context:* {context_info}\n"
-            f"*Error:* `{str(error)}`\n\n"
-            f"*Traceback:*\n```{traceback.format_exc()}```"
+            f"*Context:* `{context_safe}`\n"
+            f"*Error:* `{error_safe}`\n\n"
+            f"*Traceback:*\n```{tb_clean}```"
         )
 
-        # Send detailed error to admin
         await bot.send_message(chat_id=chat_id, text=error_text, parse_mode="Markdown")
-        logger.error(f"Error reported to Admin (Chat ID {chat_id}): {error_text}")
+        logger.error(f"[ErrorReporter] Exception reported: {error_safe} | Context: {context_safe}")
 
     except Exception as reporting_error:
-        # If even reporting fails
-        logger.critical(f"Critical Error while reporting error: {repr(reporting_error)}")
+        logger.critical(f"[ErrorReporter] Failed to send error report: {repr(reporting_error)}")
