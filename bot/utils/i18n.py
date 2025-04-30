@@ -1,5 +1,3 @@
-# bot/utils/i18n.py
-
 """
 A.R.K. Internationalization (i18n) Engine – Human-Grade Localization.
 Provides full multilingual translations for all core functions.
@@ -17,49 +15,55 @@ translations = {
         "start": "👋 Hello {user}! Welcome to *A.R.K. Trading Bot 2.0*.\nUse /help to see available features.",
         "help": "ℹ️ *Available Commands:* /start /help /analyse /signal /status /uptime /setlanguage /shutdown",
         "shutdown": "🛑 Bot is shutting down. See you soon!",
-        "analysis_no_symbol": "❌ Please provide a symbol. Example: /analyse AAPL",
         "set_language": "✅ Language updated successfully!",
-        "global_error_report": "⚠️ Unexpected error occurred:\n\n`{error}`",
-
+        "analysis_no_symbol": "❌ Please provide a symbol. Example: /analyse AAPL",
+        "no_analysis_data": "❌ No valid analysis found for *{symbol}*.",
+        "analyzing": "Analyzing",
+        "analysis_completed": "Analysis Completed",
+        "no_patterns_found": "No strong patterns found.",
+        "live_signal_info": "⚡ *Live signals are sent automatically during trading hours. No need to use /signal manually.*",
+        "summary_failed": "Summary generation failed.",
         "no_data_today": "No data recorded today.",
         "signals_total": "Total Signals",
         "strong_signals": "Strong Signals",
         "moderate_signals": "Moderate Signals",
         "weak_signals": "Weak Signals",
         "avg_confidence": "Avg. Confidence",
-        "summary_failed": "Summary generation failed.",
         "daily_recap": "Daily Recap",
         "weekly_recap": "Weekly Recap",
-
-        "no_symbols_configured": "❌ No symbols configured for auto-analysis.",
         "scan_start": "🔍 *Starting Auto-Analysis...*",
+        "no_symbols_configured": "❌ No symbols configured for auto-analysis.",
         "no_signals_found": "ℹ️ *No trading signals detected during scan.*",
         "scan_complete_success": "✅ *Auto-Analysis Completed Successfully!*",
-        "scan_complete_empty": "⚠️ *Scan completed – but no valid signals were generated.*"
+        "scan_complete_empty": "⚠️ *Scan completed – but no valid signals were generated.*",
+        "global_error_report": "⚠️ Unexpected error occurred:\n\n`{error}`"
     },
     "de": {
         "start": "👋 Hallo {user}! Willkommen bei *A.R.K. Trading Bot 2.0*.\nVerwende /help, um die Funktionen anzuzeigen.",
         "help": "ℹ️ *Verfügbare Befehle:* /start /help /analyse /signal /status /uptime /setlanguage /shutdown",
         "shutdown": "🛑 Bot wird heruntergefahren. Bis bald!",
-        "analysis_no_symbol": "❌ Bitte gib ein Symbol an. Beispiel: /analyse AAPL",
         "set_language": "✅ Sprache erfolgreich geändert!",
-        "global_error_report": "⚠️ Unerwarteter Fehler aufgetreten:\n\n`{error}`",
-
+        "analysis_no_symbol": "❌ Bitte gib ein Symbol an. Beispiel: /analyse AAPL",
+        "no_analysis_data": "❌ Keine gültige Analyse gefunden für *{symbol}*.",
+        "analyzing": "Analysiere",
+        "analysis_completed": "Analyse abgeschlossen",
+        "no_patterns_found": "Keine starken Muster erkannt.",
+        "live_signal_info": "⚡ *Live-Signale werden automatisch während der Handelszeiten gesendet. /signal ist nicht nötig.*",
+        "summary_failed": "Zusammenfassung fehlgeschlagen.",
         "no_data_today": "Keine Daten für heute erfasst.",
         "signals_total": "Signale insgesamt",
         "strong_signals": "Starke Signale",
         "moderate_signals": "Mittlere Signale",
         "weak_signals": "Schwache Signale",
         "avg_confidence": "Ø Vertrauensscore",
-        "summary_failed": "Zusammenfassung fehlgeschlagen.",
         "daily_recap": "Tägliche Zusammenfassung",
         "weekly_recap": "Wöchentliche Zusammenfassung",
-
-        "no_symbols_configured": "❌ Keine Symbole für die automatische Analyse konfiguriert.",
         "scan_start": "🔍 *Starte automatische Analyse...*",
+        "no_symbols_configured": "❌ Keine Symbole für die automatische Analyse konfiguriert.",
         "no_signals_found": "ℹ️ *Keine Handelssignale während der Analyse gefunden.*",
         "scan_complete_success": "✅ *Automatische Analyse erfolgreich abgeschlossen!*",
-        "scan_complete_empty": "⚠️ *Analyse abgeschlossen – aber es wurden keine gültigen Signale generiert.*"
+        "scan_complete_empty": "⚠️ *Analyse abgeschlossen – aber es wurden keine gültigen Signale generiert.*",
+        "global_error_report": "⚠️ Unerwarteter Fehler aufgetreten:\n\n`{error}`"
     }
 }
 
