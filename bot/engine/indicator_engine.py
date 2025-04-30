@@ -1,10 +1,8 @@
-# bot/engine/indicator_engine.py
-
 """
-A.R.K. Indicator Engine – Ultra Adaptive 5.0
-Real-Time Momentum, Trend & RSI Fusion Scoring for Elite Trade Validation.
+A.R.K. Indicator Engine – Ultra Adaptive 5.5
+Real-Time Momentum, Trend & RSI Fusion Scoring for Smart Signal Expansion.
 
-Optimized for: Ultra-Fast Decision Trees, Volatility-Adaptive Biasing, AI-Level Scoring Systems.
+Optimized for: Looser Confirmation Thresholds, More Signals, Still Stable Risk Profile.
 Made in Bali. Engineered with German Precision.
 """
 
@@ -24,7 +22,7 @@ def evaluate_indicators(df: pd.DataFrame) -> tuple[float, str]:
 
     if df is None or df.empty or len(df) < 20:
         logger.warning("⚠️ [IndicatorEngine] Insufficient candles for indicator analysis.")
-        return 50.0, "Neutral ⚪"
+        return 52.0, "Neutral ⚪"
 
     try:
         close = df["c"]
@@ -53,28 +51,36 @@ def evaluate_indicators(df: pd.DataFrame) -> tuple[float, str]:
 
         rsi = 100 if avg_loss == 0 else 100 - (100 / (1 + (avg_gain / avg_loss)))
 
-        # === Scoring System ===
+        # === Scoring ===
         score = 50.0
 
+        # Trend Bonus
         if trend == "Long 📈":
-            score += 20
+            score += 18
         elif trend == "Short 📉":
-            score -= 20
+            score -= 18
 
-        if rsi < 30:
-            score += 10
-        elif rsi > 70:
-            score -= 10
+        # RSI Expansion (Looser)
+        if rsi < 25:
+            score += 12
+        elif rsi > 75:
+            score -= 12
+        elif 45 <= rsi <= 55:
+            score += 3  # Neutral RSI is still usable
 
-        # Micro-Bias Scoring
+        # Micro-Bias Tuning
         if 60 < rsi < 70 and trend == "Long 📈":
-            score += 5
+            score += 6
         if 30 < rsi < 40 and trend == "Short 📉":
-            score += 5
+            score += 6
 
-        # Normalize score
+        # Trend + Neutral RSI Synergy
+        if 50 < rsi < 60 and trend == "Long 📈":
+            score += 4
+        if 40 < rsi < 50 and trend == "Short 📉":
+            score += 4
+
         final_score = round(np.clip(score, 0, 100), 2)
-
         logger.info(f"📊 [IndicatorEngine] Score: {final_score:.2f} | RSI: {rsi:.2f} | Trend: {trend}")
         return final_score, trend
 
