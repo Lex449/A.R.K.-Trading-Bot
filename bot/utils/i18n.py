@@ -36,7 +36,21 @@ translations = {
         "no_signals_found": "ℹ️ *No trading signals detected during scan.*",
         "scan_complete_success": "✅ *Auto-Analysis Completed Successfully!*",
         "scan_complete_empty": "⚠️ *Scan completed – but no valid signals were generated.*",
-        "global_error_report": "⚠️ Unexpected error occurred:\n\n`{error}`"
+        "global_error_report": "⚠️ Unexpected error occurred:\n\n`{error}`",
+
+        # === Notifications ===
+        "notification_title": "New {action} Signal",
+        "symbol": "Symbol",
+        "move": "Price Move",
+        "volume_spike": "Volume Spike",
+        "trend": "Trend",
+        "confidence": "Confidence",
+        "risk_reward": "Risk/Reward",
+        "notification_confidence_ultra": "⭐️ *Elite Setup* – This is as good as it gets.",
+        "notification_confidence_high": "🔍 *Strong Opportunity* – Validated by trend & volume.",
+        "notification_confidence_moderate": "⚠️ *Moderate Setup* – Needs caution or confirmation.",
+        "notification_confidence_low": "❌ *Weak Signal* – Avoid or monitor only.",
+        "notification_footer": "_Analyze responsibly. No FOMO – only precision._"
     },
     "de": {
         "start": "👋 Hallo {user}! Willkommen bei *A.R.K. Trading Bot 2.0*.\nVerwende /help, um die Funktionen anzuzeigen.",
@@ -63,7 +77,21 @@ translations = {
         "no_signals_found": "ℹ️ *Keine Handelssignale während der Analyse gefunden.*",
         "scan_complete_success": "✅ *Automatische Analyse erfolgreich abgeschlossen!*",
         "scan_complete_empty": "⚠️ *Analyse abgeschlossen – aber es wurden keine gültigen Signale generiert.*",
-        "global_error_report": "⚠️ Unerwarteter Fehler aufgetreten:\n\n`{error}`"
+        "global_error_report": "⚠️ Unerwarteter Fehler aufgetreten:\n\n`{error}`",
+
+        # === Notifications ===
+        "notification_title": "Neues {action} Signal",
+        "symbol": "Symbol",
+        "move": "Kursbewegung",
+        "volume_spike": "Volumenanstieg",
+        "trend": "Trend",
+        "confidence": "Vertrauen",
+        "risk_reward": "Chance/Risiko",
+        "notification_confidence_ultra": "⭐️ *Elite Setup* – Besser wird es nicht.",
+        "notification_confidence_high": "🔍 *Starke Gelegenheit* – Bestätigt durch Trend & Volumen.",
+        "notification_confidence_moderate": "⚠️ *Mittleres Setup* – Mit Vorsicht beobachten.",
+        "notification_confidence_low": "❌ *Schwaches Signal* – Meiden oder nur beobachten.",
+        "notification_footer": "_Handle mit Verstand. Kein FOMO – nur Präzision._"
     }
 }
 
