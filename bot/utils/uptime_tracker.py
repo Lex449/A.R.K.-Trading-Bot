@@ -15,15 +15,18 @@ def get_uptime() -> str:
     Calculates and returns the formatted uptime since bot initialization.
 
     Returns:
-        str: Uptime in the format "X days, HH:MM:SS"
+        str: Uptime in a clean human-readable format.
     """
 
     elapsed_seconds = int(time.monotonic() - _start_time)
-    uptime_duration = str(timedelta(seconds=elapsed_seconds))
+    uptime = str(timedelta(seconds=elapsed_seconds))
 
-    # Dynamic formatting: If <1 day, hide "0 days"
-    if uptime_duration.startswith("0:"):
-        hours_minutes_seconds = uptime_duration.split(", ")[-1]
-        return hours_minutes_seconds
-
-    return uptime_duration
+    # Parse result to display cleaner for < 1 day or < 1 hour
+    if "day" in uptime or "days" in uptime:
+        return uptime  # e.g., '1 day, 2:45:33'
+    elif elapsed_seconds < 3600:
+        minutes = elapsed_seconds // 60
+        seconds = elapsed_seconds % 60
+        return f"{minutes}m {seconds}s"
+    else:
+        return uptime  # e.g., '2:45:33'
