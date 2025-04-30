@@ -41,7 +41,10 @@ async def fetch_from_finnhub(symbol: str, resolution: str) -> pd.DataFrame:
                 "v": data["v"]
             }).set_index("t")
 
-            logger.debug(f"[Finnhub] {symbol} ({resolution}m) → Last Closes: {df['c'].tail(5).tolist()}")
+            logger.info(
+                f"✅ [Finnhub] Data received: {symbol} ({resolution}m) | "
+                f"Closes: {df['c'].tail(3).tolist()} | Total Rows: {len(df)}"
+            )
 
             record_call(symbol)
             return df.astype(float)
@@ -50,32 +53,42 @@ async def fetch_from_finnhub(symbol: str, resolution: str) -> pd.DataFrame:
 async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | None:
     lang = get_language(chat_id) if chat_id else "en"
 
+    # === Finnhub 5-Minuten-Scan ===
     try:
-        logger.info(f"[DataLoader] {get_text('fetching_data_primary', lang)} {symbol} (5m)...")
+        logger.info(f"⏳ [DataLoader] {get_text('fetching_data_primary', lang)} {symbol} (5m)...")
         return await fetch_from_finnhub(symbol, "5")
     except Exception as e1:
         logger.warning(f"⚠️ [DataLoader] Finnhub 5m failed for {symbol}: {e1}")
 
+    # === Finnhub 15-Minuten-Scan (Fallback) ===
     try:
-        logger.info(f"[DataLoader] Retrying {symbol} with 15m resolution...")
+        logger.info(f"⏳ [DataLoader] Retrying {symbol} with 15m resolution...")
         return await fetch_from_finnhub(symbol, "15")
     except Exception as e2:
         logger.warning(f"⚠️ [DataLoader] Finnhub 15m failed for {symbol}: {e2}")
 
-    # === Nur wenn beides fehlschlägt → Yahoo Fallback ===
+    # === Yahoo Finance als Notnagel ===
     try:
-        logger.info(f"[DataLoader] {get_text('fetching_data_backup', lang)} {symbol} (Yahoo)...")
+        logger.info(f"⏳ [DataLoader] {get_text('fetching_data_backup', lang)} {symbol} (Yahoo)...")
         ticker = yf.Ticker(symbol)
         hist = ticker.history(period="5d", interval="5m")
 
         hist = hist.rename(columns={
-            "Open": "o", "High": "h", "Low": "l", "Close": "c", "Volume": "v"
+            "Open": "o",
+            "High": "h",
+            "Low": "l",
+            "Close": "c",
+            "Volume": "v"
         })
 
         df = hist[["o", "h", "l", "c", "v"]].copy()
         df.index.name = "t"
 
-        logger.info(f"✅ [DataLoader] Yahoo used for {symbol}")
+        logger.info(
+            f"✅ [YahooBackup] {symbol} data pulled as fallback | "
+            f"Last Closes: {df['c'].tail(3).tolist()} | Rows: {len(df)}"
+        )
+
         return df.astype(float)
 
     except Exception as e3:
