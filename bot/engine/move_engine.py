@@ -17,7 +17,7 @@ from bot.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 class MoveEngine:
-    def __init__(self, move_threshold_percent: float = 1.5):
+    def __init__(self, move_threshold_percent: float = 1.0):  # etwas früher triggern
         self.move_threshold_percent = move_threshold_percent
 
     def detect_move(self, df: pd.DataFrame) -> dict | None:
@@ -55,7 +55,6 @@ class MoveEngine:
         """
         Sends a tactical real-time alert to Telegram with emotion + strategy.
         """
-
         try:
             move_pct = move_info.get("move_percent", 0.0)
             direction = move_info.get("direction", "long")
@@ -72,11 +71,14 @@ class MoveEngine:
             elif abs(move_pct) >= 1.5:
                 headline = "⚠️ *Early Market Acceleration*"
                 tone = "_Eyes on chart._"
+            elif abs(move_pct) >= 1.0:
+                headline = "⚡ *Pulse Move Forming*"
+                tone = "_Volatility waking up._"
             else:
-                headline = "⚡ *Initial Pulse Move*"
-                tone = "_Signal forming..._"
+                headline = "🔍 *Micro Pulse Detected*"
+                tone = "_Low-intensity move... stay ready._"
 
-            # Build core message
+            # Build message
             message = (
                 f"{headline}\n\n"
                 f"*Symbol:* `{symbol}`  {emoji}\n"
@@ -85,7 +87,6 @@ class MoveEngine:
                 f"*Timestamp:* `{ts}`\n"
             )
 
-            # Volatility overlay
             if volatility_info:
                 current = volatility_info.get("current_move_percent", 0.0)
                 avg = volatility_info.get("average_move_percent", 0.0)
@@ -95,13 +96,11 @@ class MoveEngine:
                     f"*ATR (14):* `{atr:.4f}`"
                 )
 
-            # RRR optional
             if rrr_info:
                 rrr = rrr_info.get("risk_reward_ratio", None)
                 if rrr:
                     message += f"\n*Projected RRR:* `{rrr:.2f}`"
 
-            # Footer: Mindset
             message += f"\n\n_{tone}_\n_🔔 Trade smart. Not first._"
 
             await bot.send_message(
