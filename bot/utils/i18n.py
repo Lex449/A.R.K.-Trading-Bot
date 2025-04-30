@@ -13,7 +13,7 @@ translations = {
     "en": {
         # === Startup & Commands ===
         "start": "👋 Hello {user}! Welcome to *A.R.K. Trading Bot 2.0*.\nUse /help to see available features.",
-        "help": "ℹ️ *Available Commands:* /start /help /analyse /signal /status /uptime /setlanguage /shutdown",
+        "help": "ℹ️ *Available Commands:* /start /help /analyse /signal /status /uptime /setlanguage /shutdown /monitor",
         "shutdown": "🛑 Bot is shutting down. See you soon!",
         "set_language": "✅ Language updated successfully!",
         "analysis_no_symbol": "❌ Please provide a symbol. Example: /analyse AAPL",
@@ -22,7 +22,7 @@ translations = {
         "analysis_completed": "Analysis Completed",
         "no_patterns_found": "No strong patterns found.",
         "live_signal_info": "⚡ *Live signals are sent automatically during trading hours. No need to use /signal manually.*",
-        
+
         # === Summary & Recaps ===
         "summary_failed": "Summary generation failed.",
         "no_data_today": "No data recorded today.",
@@ -72,12 +72,24 @@ translations = {
         "volatility_alert_move": "Price Move",
         "volatility_alert_volume": "Volume Spike",
         "volatility_alert_trend": "Trend Signal",
-        "volatility_alert_footer": "_Volatility creates opportunity. Stay focused._"
+        "volatility_alert_footer": "_Volatility creates opportunity. Stay focused._",
+
+        # === Monitor Command ===
+        "monitor_title": "🛰️ *API Usage Monitor*",
+        "monitor_calls": "Total Calls",
+        "monitor_uptime": "Uptime",
+        "monitor_rate": "Calls/min",
+        "monitor_status": "Status",
+        "monitor_status_green": "Stable",
+        "monitor_status_yellow": "Caution",
+        "monitor_status_red": "CRITICAL",
+        "monitor_footer": "_Auto-monitoring is active._",
+        "monitor_error": "⚠️ Error while loading monitor status."
     },
     "de": {
         # === Startup & Commands ===
         "start": "👋 Hallo {user}! Willkommen bei *A.R.K. Trading Bot 2.0*.\nVerwende /help, um die Funktionen anzuzeigen.",
-        "help": "ℹ️ *Verfügbare Befehle:* /start /help /analyse /signal /status /uptime /setlanguage /shutdown",
+        "help": "ℹ️ *Verfügbare Befehle:* /start /help /analyse /signal /status /uptime /setlanguage /shutdown /monitor",
         "shutdown": "🛑 Bot wird heruntergefahren. Bis bald!",
         "set_language": "✅ Sprache erfolgreich geändert!",
         "analysis_no_symbol": "❌ Bitte gib ein Symbol an. Beispiel: /analyse AAPL",
@@ -136,23 +148,25 @@ translations = {
         "volatility_alert_move": "Kursbewegung",
         "volatility_alert_volume": "Volumensprung",
         "volatility_alert_trend": "Trend-Signal",
-        "volatility_alert_footer": "_Volatilität schafft Chancen. Bleib fokussiert._"
+        "volatility_alert_footer": "_Volatilität schafft Chancen. Bleib fokussiert._",
+
+        # === Monitor Command ===
+        "monitor_title": "🛰️ *API-Nutzungsmonitor*",
+        "monitor_calls": "Gesamte Aufrufe",
+        "monitor_uptime": "Laufzeit",
+        "monitor_rate": "Aufrufe/Min",
+        "monitor_status": "Status",
+        "monitor_status_green": "Stabil",
+        "monitor_status_yellow": "Achtung",
+        "monitor_status_red": "KRITISCH",
+        "monitor_footer": "_Automatische Überwachung ist aktiv._",
+        "monitor_error": "⚠️ Fehler beim Laden des Monitorstatus."
     }
 }
 
 SUPPORTED_LANGUAGES = ["en", "de"]
 
 def get_text(key: str, lang: str = "en") -> str:
-    """
-    Fetches translated text safely.
-
-    Args:
-        key (str): Translation key.
-        lang (str): Language code.
-
-    Returns:
-        str: Localized text.
-    """
     try:
         if lang not in SUPPORTED_LANGUAGES:
             logger.warning(f"[i18n] Unsupported language '{lang}', fallback to English.")
