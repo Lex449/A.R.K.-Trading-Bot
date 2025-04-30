@@ -1,43 +1,48 @@
-# bot/utils/usage_monitor.py
-
 """
-A.R.K. API Usage Monitor – Real-Time NASA-Level Call Tracker.
-Monitors API usage per minute to prevent rate limits and overflows.
-Made in Bali. Engineered with German Precision.
+A.R.K. Monitor Command – Real-Time API Usage Status
+Displays current API usage rate and system call count.
 """
 
-from datetime import datetime
+from telegram import Update
+from telegram.ext import ContextTypes
+from bot.utils.usage_monitor import usage_monitor
+from bot.utils.language import get_language
+from bot.utils.i18n import get_text
+from bot.utils.logger import setup_logger
 
-class APIUsageMonitor:
-    def __init__(self):
-        self.reset()
+logger = setup_logger(__name__)
 
-    def reset(self):
-        self.call_count = 0
-        self.start_time = datetime.utcnow()
+async def monitor_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        chat_id = update.effective_chat.id
+        lang = get_language(chat_id)
 
-    def record_call(self):
-        self.call_count += 1
+        call_count = usage_monitor.get_call_count()
+        rate = usage_monitor.get_rate_per_minute()
+        duration = usage_monitor.get_elapsed_minutes()
 
-    def get_call_count(self):
-        return self.call_count
+        # Optional: Bewertung je nach Rate
+        if rate < 75:
+            emoji = "🟢"
+            comment = "Safe"
+        elif rate < 140:
+            emoji = "🟡"
+            comment = "Caution"
+        else:
+            emoji = "🔴"
+            comment = "CRITICAL – Reduce usage!"
 
-    def get_elapsed_minutes(self):
-        elapsed = datetime.utcnow() - self.start_time
-        return max(elapsed.total_seconds() / 60, 1e-6)  # Prevent division by 0
-
-    def get_rate_per_minute(self):
-        return round(self.call_count / self.get_elapsed_minutes(), 2)
-
-    def get_status_summary(self):
-        return (
-            f"API Calls: {self.call_count} | "
-            f"Duration: {self.get_elapsed_minutes():.1f} min | "
-            f"Rate: {self.get_rate_per_minute():.2f}/min"
+        msg = (
+            f"{emoji} *API Usage Monitor*\n\n"
+            f"*Total Calls:* `{call_count}`\n"
+            f"*Uptime:* `{duration:.1f} min`\n"
+            f"*Calls/min:* `{rate:.2f}`\n"
+            f"*Status:* `{comment}`\n\n"
+            "_Auto-monitoring is active._"
         )
 
-    def log_status(self):
-        print(self.get_status_summary())
+        await update.message.reply_text(msg, parse_mode="Markdown")
 
-# Global Singleton Instance
-usage_monitor = APIUsageMonitor()
+    except Exception as e:
+        logger.error(f"[MonitorCommand] Failed: {e}")
+        await update.message.reply_text("⚠️ Error loading monitor status.")
