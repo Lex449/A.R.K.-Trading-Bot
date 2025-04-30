@@ -1,96 +1,108 @@
-"""
-A.R.K. Move Engine – Real-Time Move Detection & Alert System 2025
-Fusion aus Move Detector, Move Alert Engine und Move Manager.
+# bot/engine/move_engine.py
 
-Designed for: Ultra-Fast Breakout Detection, High-Precision Alerts, No Spam.
+"""
+A.R.K. Move Engine – Ultra Real-Time Move Detection & Emotional Signal Alerts
+Jetzt mit Signalstärke, Volatilitätsfaktor, Mentorship-Messaging & Live Impact Formatierung.
+
+Built for: Tactical Breakout Response, Alert Psychology, Zero-Latency Precision.
+Made in Bali. Engineered with German Precision.
 """
 
 import pandas as pd
 import logging
 from telegram import Bot
+from datetime import datetime
 from bot.utils.logger import setup_logger
 
-# Setup structured logger
 logger = setup_logger(__name__)
 
 class MoveEngine:
-    """
-    Consolidated Move Detection, Analysis and Telegram Alert Dispatcher.
-    """
-
     def __init__(self, move_threshold_percent: float = 1.5):
         self.move_threshold_percent = move_threshold_percent
 
     def detect_move(self, df: pd.DataFrame) -> dict | None:
         """
-        Detects strong intraday candle-based moves based on open-close delta.
-
-        Returns:
-            dict or None
+        Detects strong move based on candle open/close movement.
         """
         if df is None or df.empty or not all(col in df.columns for col in ["o", "c"]):
+            logger.warning("[MoveEngine] DataFrame incomplete.")
             return None
 
         try:
-            latest_open = df["o"].iloc[-1]
-            latest_close = df["c"].iloc[-1]
+            o = df["o"].iloc[-1]
+            c = df["c"].iloc[-1]
+            if o <= 0 or c <= 0:
+                return None
 
-            if latest_open == 0:
-                return None  # Avoid division by zero
+            move_pct = ((c - o) / o) * 100
+            direction = "long" if move_pct > 0 else "short"
 
-            move_percent = ((latest_close - latest_open) / latest_open) * 100
-
-            if abs(move_percent) >= self.move_threshold_percent:
-                direction = "long" if move_percent > 0 else "short"
-                logger.info(f"✅ [MoveDetector] {direction.upper()} move detected: {move_percent:.2f}%")
+            if abs(move_pct) >= self.move_threshold_percent:
+                logger.info(f"✅ [MoveEngine] {direction.upper()} move: {move_pct:.2f}%")
                 return {
-                    "move_percent": round(move_percent, 2),
-                    "direction": direction
+                    "move_percent": round(move_pct, 2),
+                    "direction": direction,
+                    "timestamp": df.index[-1].strftime("%H:%M UTC")
                 }
 
             return None
 
         except Exception as e:
-            logger.error(f"❌ [MoveDetector Critical Error] {e}")
+            logger.error(f"❌ [MoveEngine Detection Error] {e}")
             return None
 
-    async def send_move_alert(self, bot: Bot, chat_id: int, symbol: str, move_info: dict, volatility_info: dict = None) -> None:
+    async def send_move_alert(self, bot: Bot, chat_id: int, symbol: str, move_info: dict, volatility_info: dict = None, rrr_info: dict = None) -> None:
         """
-        Sends a real-time alert to Telegram if a significant move is detected.
+        Sends a tactical real-time alert to Telegram with emotion + strategy.
         """
 
         try:
-            move_percent = move_info.get("move_percent", 0.0)
+            move_pct = move_info.get("move_percent", 0.0)
             direction = move_info.get("direction", "long")
+            ts = move_info.get("timestamp", datetime.utcnow().strftime("%H:%M UTC"))
+            emoji = "📈" if direction == "long" else "📉"
 
-            # Determine message header
-            if abs(move_percent) >= 2.5:
-                headline = "🚨 *Major Market Move!*"
-                emoji = "📈" if direction == "long" else "📉"
+            # Headline classification
+            if abs(move_pct) >= 3.5:
+                headline = "🧨 *MARKET EXPLOSION*"
+                tone = "_This is no drill._"
+            elif abs(move_pct) >= 2.5:
+                headline = "🚨 *Major Breakout Detected!*"
+                tone = "_Momentum is on fire._"
+            elif abs(move_pct) >= 1.5:
+                headline = "⚠️ *Early Market Acceleration*"
+                tone = "_Eyes on chart._"
             else:
-                headline = "⚡ *Early Move Detected*"
-                emoji = "⚡"
+                headline = "⚡ *Initial Pulse Move*"
+                tone = "_Signal forming..._"
 
-            # Base message
+            # Build core message
             message = (
                 f"{headline}\n\n"
-                f"*Symbol:* `{symbol}`\n"
-                f"*Movement:* `{move_percent:.2f}%` {emoji}\n"
+                f"*Symbol:* `{symbol}`  {emoji}\n"
+                f"*Direction:* `{direction.upper()}`\n"
+                f"*Movement:* `{move_pct:.2f}%`\n"
+                f"*Timestamp:* `{ts}`\n"
             )
 
-            # Volatility context
+            # Volatility overlay
             if volatility_info:
-                current_move = volatility_info.get("current_move_percent", 0.0)
-                average_move = volatility_info.get("average_move_percent", 0.0)
-                atr_value = volatility_info.get("current_atr", 0.0)
-
+                current = volatility_info.get("current_move_percent", 0.0)
+                avg = volatility_info.get("average_move_percent", 0.0)
+                atr = volatility_info.get("current_atr", 0.0)
                 message += (
-                    f"*Volatility Spike:* `{current_move:.2f}%` (Avg: `{average_move:.2f}%`)\n"
-                    f"*ATR (14):* `{atr_value:.2f}`\n"
+                    f"\n*Volatility Spike:* `{current:.2f}%` _(Avg: {avg:.2f}%)_\n"
+                    f"*ATR (14):* `{atr:.4f}`"
                 )
 
-            # Motivational Footer
-            message += "\n_🧠 Precision beats speed._"
+            # RRR optional
+            if rrr_info:
+                rrr = rrr_info.get("risk_reward_ratio", None)
+                if rrr:
+                    message += f"\n*Projected RRR:* `{rrr:.2f}`"
+
+            # Footer: Mindset
+            message += f"\n\n_{tone}_\n_🔔 Trade smart. Not first._"
 
             await bot.send_message(
                 chat_id=chat_id,
@@ -99,7 +111,7 @@ class MoveEngine:
                 disable_web_page_preview=True
             )
 
-            logger.info(f"✅ [MoveAlert] Sent move alert for {symbol}: {move_percent:.2f}%")
+            logger.info(f"✅ [MoveAlert] ALERT for {symbol}: {move_pct:.2f}% @ {ts}")
 
         except Exception as e:
-            logger.error(f"❌ [MoveAlert Critical Error] {e}")
+            logger.error(f"❌ [MoveAlert Error] {e}")
