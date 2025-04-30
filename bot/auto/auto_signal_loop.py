@@ -1,10 +1,7 @@
-# bot/auto/auto_signal_loop.py
-
 """
-A.R.K. Auto Signal Loop – Final Boss Ultra Premium Build 2025
-Smart Parallel US Market Scanner mit Deep Diagnostics, Rejection Insights und Live Signal Protocols.
-
-Built to uncover every failure point – so you never miss a trade again.
+A.R.K. Auto Signal Loop – Final Boss Ultra Premium Build 2025  
+Smart Parallel US Market Scanner mit Deep Diagnostics, Rejection Insights und Live Signal Protocols.  
+Built to uncover every failure point – so you never miss a trade again.  
 Made in Bali. Engineered with German Precision.
 """
 
@@ -49,10 +46,7 @@ async def auto_signal_loop(application):
                 await asyncio.sleep(30)
                 continue
 
-            if not is_us_market_open() and minutes_until_market_open() > 30:
-                logger.info("⏳ Markt geschlossen. Schlafmodus für 2min.")
-                await asyncio.sleep(120)
-                continue
+            # Entfernt: Marktzeitprüfung – jetzt dauerhaft aktiv für maximale API-Nutzung
 
             logger.info(f"📡 [AutoSignalLoop] Analyse-Zyklus gestartet: {len(symbols)} Symbole...")
 
@@ -75,7 +69,7 @@ async def analyze_and_dispatch(application, symbol, chat_id):
         record_call(symbol)
 
         if result is None:
-            logger.warning(f"❌ Kein gültiges Analyseergebnis: {symbol}")
+            logger.warning(f"❌ Kein Analyseergebnis: {symbol} – wird protokolliert.")
             return
 
         action = result.get("combined_action", "Neutral ⚪")
@@ -85,7 +79,7 @@ async def analyze_and_dispatch(application, symbol, chat_id):
         price = result.get("last_price", "n/a")
 
         if action not in ["Long 📈", "Short 📉"]:
-            logger.info(f"⛔ Kein Long/Short Signal für {symbol} → Action: {action}")
+            logger.info(f"⛔ Kein Long/Short-Signal für {symbol} → Action: {action}")
             return
 
         if confidence < MIN_CONFIDENCE:
