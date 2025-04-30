@@ -1,7 +1,7 @@
 # bot/engine/analysis_engine.py
 
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite 10.1
+A.R.K. Analysis Engine – Ultra Full Signal Suite 10.2
 Fusion aus Pattern, Trend, Volumen, Volatilität, RRR, Confidence Scaling & Category Scoring.
 
 Ziel: Opportunistische Signalvalidierung ab 50 %, Masterclass-Effizienz mit mehr Action.
@@ -29,17 +29,17 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
     """
     try:
         df = await fetch_market_data(symbol, chat_id=chat_id)
-        if not validate_market_data(df):
-            logger.warning(f"🚫 [AnalysisEngine] Data validation failed for {symbol}.")
+        if df is None or not validate_market_data(df):
+            logger.warning(f"🚫 [AnalysisEngine] Data validation failed or no data returned for {symbol}.")
             return None
 
         last_price = df["c"].iloc[-1]
 
         # === Analyse-Module ===
-        patterns = detect_patterns(df)
-        volume_info = detect_volume_spike(df)
-        trend_info = detect_adaptive_trend(df)
-        indicator_score, trend_direction = evaluate_indicators(df)
+        patterns = detect_patterns(df) or []
+        volume_info = detect_volume_spike(df) or {}
+        trend_info = detect_adaptive_trend(df) or {}
+        indicator_score, trend_direction = evaluate_indicators(df) or (0.0, "Neutral")
 
         combined_action = determine_action(patterns, trend_info, indicator_score)
         risk_reward_info = (
@@ -51,12 +51,10 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         base_confidence = calculate_confidence(patterns)
         adjusted_confidence = optimize_confidence(base_confidence, trend_info)
 
-        # Bonus wenn klarer Action-Typ
         if combined_action in ["Long 📈", "Short 📉"]:
             adjusted_confidence += 10
         adjusted_confidence = min(adjusted_confidence, 100.0)
 
-        # Neue Logik: Nur weitergeben, wenn Confidence >= 50
         if adjusted_confidence < 50:
             logger.info(f"⛔ [AnalysisEngine] {symbol} skipped – Confidence only {adjusted_confidence:.1f}%")
             return None
@@ -87,7 +85,7 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         return result
 
     except Exception as e:
-        logger.error(f"❌ [AnalysisEngine] Critical failure for {symbol}: {e}")
+        logger.exception(f"❌ [AnalysisEngine] Critical failure for {symbol}: {e}")
         return None
 
 def determine_action(patterns: list, trend_info: dict, indicator_score: float) -> str:
