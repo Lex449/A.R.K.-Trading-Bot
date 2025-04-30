@@ -1,7 +1,7 @@
 """
-A.R.K. Startup Task – Ultra Premium NASA Build 2025.3
-Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Telegram-Ping.
-Jetzt inklusive Auto-Signal-Loop zur permanenten Marktscans.
+A.R.K. Startup Task – Ultra Premium NASA Build 2025.3  
+Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Telegram-Ping.  
+Jetzt inklusive Auto-Signal-Loop zur permanenten Marktscans.  
 Made in Bali. Engineered with German Precision.
 """
 
@@ -10,6 +10,7 @@ import asyncio
 from datetime import datetime
 import pytz
 from telegram import Bot
+from telegram.ext import Application
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
@@ -19,7 +20,9 @@ from bot.scheduler.recap_scheduler import start_recap_scheduler
 from bot.scheduler.heartbeat_job import start_heartbeat_job
 from bot.scheduler.connection_watchdog_job import start_connection_watchdog
 from bot.scheduler.news_scanner_job import news_scanner_job
-from bot.auto.auto_signal_loop import auto_signal_loop  # ✅ NEU
+from bot.auto.auto_signal_loop import auto_signal_loop
+from bot.auto.auto_analysis import auto_analysis  # NEU
+from telegram.ext import JobQueue  # NEU
 
 # === Setup ===
 logger = setup_logger(__name__)
@@ -65,8 +68,9 @@ async def send_startup_ping(bot: Bot):
         logger.error(f"❌ [Startup] Fehler beim Ping: {e}")
         await report_error(bot, settings["TELEGRAM_CHAT_ID"], e, context_info="Startup Ping")
 
-async def launch_background_jobs(application):
+async def launch_background_jobs(application: Application):
     bot = application.bot
+    job_queue: JobQueue = application.job_queue
     chat_id = int(settings["TELEGRAM_CHAT_ID"])
 
     try:
@@ -94,12 +98,23 @@ async def launch_background_jobs(application):
         logger.error(f"❌ News Scanner Fehler: {e}")
 
     try:
-        asyncio.create_task(auto_signal_loop(application))  # ✅ NEU
+        asyncio.create_task(auto_signal_loop(application))
         logger.info("✅ [Startup] Auto Signal Loop aktiviert.")
     except Exception as e:
         logger.error(f"❌ Auto Signal Loop Fehler: {e}")
 
-async def execute_startup_tasks(application):
+    try:
+        job_queue.run_repeating(
+            auto_analysis,
+            interval=300,  # alle 5 Minuten
+            first=45,
+            name="auto_analysis_scheduler"
+        )
+        logger.info("✅ [Startup] Auto Analysis Scheduler aktiviert.")
+    except Exception as e:
+        logger.error(f"❌ Auto Analysis Scheduler Fehler: {e}")
+
+async def execute_startup_tasks(application: Application):
     logger.info("🚀 [Startup] Initialisiere A.R.K. Master-System...")
 
     try:
