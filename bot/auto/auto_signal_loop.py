@@ -1,3 +1,10 @@
+"""
+A.R.K. Auto Signal Loop – Final Boss Edition 2025
+Smart US Market Scanner mit Confidence-Schranke, Deep Logging und Signal-Visualisierung.
+
+Made in Bali. Engineered with German Precision.
+"""
+
 import asyncio
 import time
 from math import floor
@@ -64,13 +71,11 @@ async def auto_signal_loop(application):
                     if action not in ["Long 📈", "Short 📉"] or confidence < MIN_CONFIDENCE:
                         continue
 
-                    # Bar, runtime, signal stats
                     bar = build_signal_bar(confidence)
                     runtime_tag = f"⚙️ {runtime:.2f}s"
                     total = usage_monitor.get_call_count()
                     avg = usage_monitor.get_average_confidence()
 
-                    # Signal text
                     text = (
                         f"📡 *A.R.K. Live Signal!*\n\n"
                         f"*Symbol:* `{symbol}`\n"
@@ -80,7 +85,7 @@ async def auto_signal_loop(application):
                         f"*Rating:* {rating}\n"
                         f"*Price:* `${price}`\n"
                         f"*Signal Bar:* [{bar}]\n"
-                        f"{runtime_tag} – Signal #{total} of today\n"
+                        f"{runtime_tag} – Signal #{total} today\n"
                         f"_Ø Confidence: {avg:.1f}%_\n\n"
                         f"_Markets move fast. Be precise. Be ready._"
                     )
