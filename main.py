@@ -16,7 +16,7 @@ from bot.handlers.commands import (
     uptime_handler,
     set_language_handler,
     shutdown_handler,
-    monitor_handler  # ✅ NEU
+    monitor_handler
 )
 from bot.handlers.global_error_handler import global_error_handler
 from bot.config.settings import get_settings
@@ -49,13 +49,16 @@ async def main():
         application.add_handler(CommandHandler("uptime", uptime_handler))
         application.add_handler(CommandHandler("setlanguage", set_language_handler))
         application.add_handler(CommandHandler("shutdown", shutdown_handler))
-        application.add_handler(CommandHandler("monitor", monitor_handler))  # ✅ NEU
+        application.add_handler(CommandHandler("monitor", monitor_handler))
 
         # === Register Global Error Handler ===
         application.add_error_handler(global_error_handler)
 
         # === Run Startup Pipeline (Schedulers, Menü, Ping etc.) ===
         await execute_startup_tasks(application)
+
+        # === Remove Webhook if exists (Fix for polling conflict) ===
+        await application.bot.delete_webhook(drop_pending_updates=True)
 
         # === Start Polling Loop ===
         logger.info("✅ [Main] A.R.K. Bot fully operational. Commencing live mode.")
