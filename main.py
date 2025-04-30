@@ -23,7 +23,6 @@ from bot.handlers.commands import (
 from bot.handlers.global_error_handler import global_error_handler
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
-from bot.utils.usage_monitor import start_usage_monitor_loop  # ✅ NEU
 from bot.startup.startup_task import execute_startup_tasks
 
 # === Logger & Settings Setup ===
