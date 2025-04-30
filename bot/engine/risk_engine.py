@@ -1,10 +1,10 @@
 # bot/engine/risk_engine.py
 
 """
-A.R.K. Risk Engine – Ultra Precision Signal Evaluator 9.0
-Combines Tactical Risk Control, Adaptive Confidence Interpretation, and Strategic RRR Analytics.
+A.R.K. Risk Engine – Ultra Precision Signal Evaluator 9.1
+Strategic RRR Analytics + Dynamic Signal Assessment + Watchlist Tiering ab 50 %.
 
-Built for: Institutional-Grade Signal Validation, Real-Time Decision Support, and Mindset Clarity.
+Built for: Institutional-Grade Validation, Real-Time Clarity, and Adaptive Signal Triage.
 Made in Bali. Engineered with German Precision.
 """
 
@@ -17,22 +17,18 @@ logger.setLevel(logging.INFO)
 
 # === 1. Signal Assessment Engine ===
 async def assess_signal_risk(signal_data: dict) -> tuple:
-    """
-    Evaluates signal quality and formats a human-readable risk assessment.
-
-    Returns:
-        tuple: (Telegram-Formatted String, Is High Risk: bool)
-    """
     stars = signal_data.get("stars", 0)
     confidence = signal_data.get("confidence", 0.0)
     pattern = signal_data.get("pattern", "Unknown")
     rsi = signal_data.get("rsi", None)
 
     try:
-        risk_level = "✅ Elite Signal" if stars == 5 else \
-                     "✅ Strong Signal" if stars == 4 else \
-                     "⚠️ Moderate Signal" if stars == 3 else \
-                     "❌ Weak Signal"
+        risk_level = (
+            "✅ Elite Signal" if stars == 5 else
+            "✅ Strong Signal" if stars == 4 else
+            "⚠️ Moderate Signal" if stars == 3 else
+            "❌ Weak Signal"
+        )
 
         rsi_note = ""
         if isinstance(rsi, (int, float)):
@@ -43,8 +39,8 @@ async def assess_signal_risk(signal_data: dict) -> tuple:
 
         action_tip = (
             "🚀 *Prime Trade Candidate*" if stars >= 4 and confidence >= 75 else
-            "📈 *Potential Buy – Monitor closely*" if stars >= 4 and confidence >= 60 else
-            "👀 *Watchlist Only*" if stars == 3 and confidence >= 60 else
+            "📈 *Opportunity Detected*" if stars >= 3 and confidence >= 60 else
+            "👀 *Watchlist Entry – Use Filters*" if confidence >= 50 else
             "❌ *Avoid Trade – Risk Too High*"
         )
 
@@ -58,7 +54,7 @@ async def assess_signal_risk(signal_data: dict) -> tuple:
         )
 
         is_risky = stars < 3 or confidence < 55
-        logger.info(f"[RiskEngine] Assessed → {pattern} | {stars}⭐ | {confidence:.1f}% | High Risk: {is_risky}")
+        logger.info(f"[RiskEngine] {pattern} | {stars}⭐ | {confidence:.1f}% | High Risk: {is_risky}")
         return message, is_risky
 
     except Exception as e:
@@ -67,9 +63,6 @@ async def assess_signal_risk(signal_data: dict) -> tuple:
 
 # === 2. Smart Risk/Reward Analyzer ===
 def analyze_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
-    """
-    Calculates intelligent RRR based on last 20 candles + action bias.
-    """
     if df is None or df.empty or action not in ("Long 📈", "Short 📉"):
         return None
 
@@ -81,23 +74,21 @@ def analyze_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
         price = closes.iloc[-1]
         high = highs.max()
         low = lows.min()
-
         volatility = (high - low) / closes.mean()
 
         if action == "Long 📈":
             stop = low * 0.996
-            target = price * (1.012 if volatility > 0.02 else 1.015)
+            target = price * (1.02 if volatility > 0.03 else 1.015)
         else:
             stop = high * 1.004
-            target = price * (0.988 if volatility > 0.02 else 0.985)
+            target = price * (0.985 if volatility <= 0.02 else 0.98)
 
         risk = abs(price - stop)
         reward = abs(target - price)
-
         if risk == 0:
             return None
 
-        return {
+        result = {
             "current_price": round(price, 4),
             "stop_loss": round(stop, 4),
             "target": round(target, 4),
@@ -106,15 +97,15 @@ def analyze_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
             "risk_reward_ratio": round(reward / risk, 2)
         }
 
+        logger.info(f"[RRR] {action} | Price: {price:.2f} | SL: {stop:.2f} | TP: {target:.2f} | RRR: {result['risk_reward_ratio']}")
+        return result
+
     except Exception as e:
         logger.error(f"[RiskEngine RRR Error] {e}")
         return None
 
 # === 3. Minimalistic RRR Calculator ===
 def basic_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
-    """
-    Lightweight Risk/Reward calculator using only highs, lows and close.
-    """
     if df is None or df.empty or action not in ["Long", "Short"]:
         return None
 
@@ -150,9 +141,6 @@ def basic_risk_reward(df: pd.DataFrame, action: str) -> dict | None:
 
 # === 4. Entry-Based RRR Estimator ===
 def estimate_rr_with_entry(df: pd.DataFrame, entry_price: float, direction: str) -> dict:
-    """
-    Estimates Risk/Reward from a user-defined entry price.
-    """
     if df is None or df.empty or entry_price <= 0 or direction.lower() not in {"long", "short"}:
         return {"risk": None, "reward": None, "rr_ratio": None}
 
