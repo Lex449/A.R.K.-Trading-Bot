@@ -1,3 +1,5 @@
+# bot/auto/auto_signal_loop.py
+
 """
 A.R.K. Auto Signal Loop – Final Boss Edition 2025
 Smart US Market Scanner mit Confidence-Schranke, Deep Logging und Signal-Visualisierung.
@@ -60,6 +62,7 @@ async def auto_signal_loop(application):
                     record_call()
 
                     if not result:
+                        logger.debug(f"⚠️ No data for {symbol}")
                         continue
 
                     action = result.get("combined_action", "Neutral ⚪")
@@ -69,6 +72,7 @@ async def auto_signal_loop(application):
                     price = result.get("last_price", "n/a")
 
                     if action not in ["Long 📈", "Short 📉"] or confidence < MIN_CONFIDENCE:
+                        logger.debug(f"⏭️ {symbol} skipped – Action: {action}, Confidence: {confidence:.1f}%")
                         continue
 
                     bar = build_signal_bar(confidence)
@@ -76,6 +80,7 @@ async def auto_signal_loop(application):
                     total = usage_monitor.get_call_count()
                     avg = usage_monitor.get_average_confidence()
 
+                    lang = get_language(chat_id) or "en"
                     text = (
                         f"📡 *A.R.K. Live Signal!*\n\n"
                         f"*Symbol:* `{symbol}`\n"
@@ -100,16 +105,16 @@ async def auto_signal_loop(application):
                     logger.info(f"✅ Signal sent: {symbol} ({action})")
 
                 except Exception as e:
-                    logger.error(f"❌ Error on {symbol}: {e}")
+                    logger.exception(f"❌ [AutoSignalLoop] Error on {symbol}: {e}")
 
-            logger.info("✅ Cycle done. Sleeping...")
+            logger.info("✅ [AutoSignalLoop] Cycle done. Sleeping...")
+
         except Exception as e:
-            logger.error(f"🔥 Loop crashed: {e}")
+            logger.exception(f"🔥 [AutoSignalLoop] Loop crashed: {e}")
 
         await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
-
 
 async def stop_auto_signal_loop():
     global RUNNING
     RUNNING = False
-    logger.info("🛑 AutoSignalLoop stopped.")
+    logger.info("🛑 [AutoSignalLoop] Stopped.")
