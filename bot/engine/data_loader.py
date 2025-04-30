@@ -1,7 +1,9 @@
+# bot/engine/data_loader.py
+
 """
-A.R.K. Data Loader – Ultra Resilient Dual Source Market Fetcher 5.0
+A.R.K. Data Loader – Ultra Resilient Dual Source Market Fetcher 6.0
 Primary: Finnhub API | Secondary: Yahoo Finance Backup
-Unbreakable Real-Time Data Integrity Engine. Multilingual Safety Reporting. 
+Unbreakable Real-Time Data Integrity Engine. Multilingual Safety Reporting.
 
 Made in Bali. Engineered with German Precision.
 """
@@ -23,51 +25,52 @@ FINNHUB_TOKEN = config.get("FINNHUB_API_KEY")
 async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | None:
     """
     Fetches OHLCV historical data.
-    Priority: Finnhub → Backup: Yahoo Finance.
+    Priority: Finnhub → Fallback: Yahoo Finance
 
     Args:
-        symbol (str): Trading symbol (e.g., AAPL).
-        chat_id (int, optional): User's chat ID for language-specific logging.
+        symbol (str): Market symbol (e.g. AAPL)
+        chat_id (int): Telegram ID for localized messages
 
     Returns:
         pd.DataFrame or None
     """
     lang = get_language(chat_id) if chat_id else "en"
 
-    # === Attempt 1: Finnhub Primary Source ===
+    # === Attempt 1: Finnhub ===
     try:
         logger.info(f"[DataLoader] {get_text('fetching_data_primary', lang)} {symbol}...")
 
+        url = f"https://finnhub.io/api/v1/stock/candle?symbol={symbol}&resolution=5&count=300&token={FINNHUB_TOKEN}"
+
         async with aiohttp.ClientSession() as session:
-            url = f"https://finnhub.io/api/v1/stock/candle?symbol={symbol}&resolution=5&count=300&token={FINNHUB_TOKEN}"
             async with session.get(url, timeout=10) as response:
-                if response.status == 200:
-                    data = await response.json()
+                if response.status != 200:
+                    raise ConnectionError(f"Finnhub HTTP {response.status}")
 
-                    if data.get("s") != "ok" or not data.get("c"):
-                        raise ValueError(f"Invalid Finnhub response structure: {data}")
+                data = await response.json()
 
-                    df = pd.DataFrame({
-                        "t": pd.to_datetime(data["t"], unit="s"),
-                        "o": data["o"],
-                        "h": data["h"],
-                        "l": data["l"],
-                        "c": data["c"],
-                        "v": data["v"],
-                    }).set_index("t")
+                if data.get("s") != "ok" or not all(k in data for k in ["o", "h", "l", "c", "v", "t"]):
+                    raise ValueError("Finnhub response incomplete or invalid structure")
 
-                    if df.empty or len(df) < 20:
-                        raise ValueError("Finnhub returned insufficient data points.")
+                df = pd.DataFrame({
+                    "t": pd.to_datetime(data["t"], unit="s"),
+                    "o": data["o"],
+                    "h": data["h"],
+                    "l": data["l"],
+                    "c": data["c"],
+                    "v": data["v"]
+                }).set_index("t")
 
-                    logger.info(f"✅ [DataLoader] Finnhub data loaded successfully for {symbol}.")
-                    return df
+                if df.empty or len(df) < 20:
+                    raise ValueError("Finnhub returned insufficient candle data")
 
-                raise ConnectionError(f"Finnhub API error: HTTP {response.status}")
+                logger.info(f"✅ [DataLoader] Finnhub data fetched successfully: {symbol}")
+                return df.astype(float)
 
     except Exception as e_primary:
         logger.warning(f"⚠️ [DataLoader] {get_text('error_primary_source', lang)}: {e_primary}")
 
-    # === Attempt 2: Yahoo Finance Backup ===
+    # === Attempt 2: Yahoo Finance ===
     try:
         logger.info(f"[DataLoader] {get_text('fetching_data_backup', lang)} {symbol}...")
 
@@ -75,7 +78,7 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
         hist = ticker.history(period="5d", interval="5m")
 
         if hist.empty or len(hist) < 20:
-            raise ValueError("Yahoo Finance returned insufficient historical data.")
+            raise ValueError("Yahoo returned insufficient candle data")
 
         hist = hist.rename(columns={
             "Open": "o",
@@ -85,10 +88,11 @@ async def fetch_market_data(symbol: str, chat_id: int = None) -> pd.DataFrame | 
             "Volume": "v"
         })
 
-        df = hist[["o", "h", "l", "c", "v"]]
+        df = hist[["o", "h", "l", "c", "v"]].copy()
+        df.index.name = "t"
 
-        logger.info(f"✅ [DataLoader] Yahoo Finance data loaded successfully for {symbol}.")
-        return df
+        logger.info(f"✅ [DataLoader] Yahoo Finance data fetched successfully: {symbol}")
+        return df.astype(float)
 
     except Exception as e_backup:
         logger.error(f"❌ [DataLoader] {get_text('error_backup_source', lang)}: {e_backup}")
