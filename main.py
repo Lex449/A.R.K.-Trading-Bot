@@ -27,7 +27,7 @@ from bot.startup.startup_task import execute_startup_tasks
 logger = setup_logger(__name__)
 config = get_settings()
 
-# === Railway Compatibility Patch ===
+# === Railway Compatibility Patch (async loop fix) ===
 nest_asyncio.apply()
 
 async def main():
@@ -39,6 +39,9 @@ async def main():
     try:
         # === Build Telegram Application ===
         application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
+
+        # === Remove Webhook if previously set (Fix für polling conflict) ===
+        await application.bot.delete_webhook(drop_pending_updates=True)
 
         # === Register Command Handlers ===
         application.add_handler(CommandHandler("start", start))
@@ -54,11 +57,8 @@ async def main():
         # === Register Global Error Handler ===
         application.add_error_handler(global_error_handler)
 
-        # === Run Startup Pipeline (Schedulers, Menü, Ping etc.) ===
+        # === Run Startup Tasks (Scheduler, Watchdog, Ping, Menu etc.) ===
         await execute_startup_tasks(application)
-
-        # === Remove Webhook if exists (Fix for polling conflict) ===
-        await application.bot.delete_webhook(drop_pending_updates=True)
 
         # === Start Polling Loop ===
         logger.info("✅ [Main] A.R.K. Bot fully operational. Commencing live mode.")
