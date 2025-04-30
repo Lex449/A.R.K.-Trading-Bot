@@ -21,7 +21,17 @@ MARKET_OPEN = time(9, 30)
 MARKET_CLOSE = time(16, 0)
 
 # Optional – add public holidays here (format: YYYY-MM-DD)
-US_MARKET_HOLIDAYS = set()
+US_MARKET_HOLIDAYS = {
+    "2025-01-01",  # New Year's Day
+    "2025-01-20",  # Martin Luther King Jr. Day
+    "2025-02-17",  # Presidents' Day
+    "2025-04-18",  # Good Friday
+    "2025-05-26",  # Memorial Day
+    "2025-07-04",  # Independence Day
+    "2025-09-01",  # Labor Day
+    "2025-11-27",  # Thanksgiving Day
+    "2025-12-25",  # Christmas Day
+}
 
 def is_us_market_open() -> bool:
     """
@@ -68,4 +78,4 @@ def next_market_open_time() -> str:
             next_day += timedelta(days=1)
         next_open = next_day.replace(hour=9, minute=30, second=0, microsecond=0)
 
-    return next_open.strftime("%A %H:%M NY Time")
+    return next_open.strftime("%A %Y-%m-%d %H:%M NY Time")
