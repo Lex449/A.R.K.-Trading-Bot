@@ -113,9 +113,13 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         return result
 
     except Exception as e:
-        logger = setup_logger(__name__)
         logger.exception(f"❌ [AnalysisEngine] Critical failure for {symbol}: {e}")
         return None
+
+async def analyze_market(symbols: list[str]) -> list[dict]:
+    import asyncio
+    results = await asyncio.gather(*(analyze_symbol(symbol) for symbol in symbols))
+    return [r for r in results if r]
 
 def determine_action(patterns: list, trend_info: dict, indicator_score: float) -> str:
     bullish = any(p.get("action", "").startswith("Long") for p in patterns)
