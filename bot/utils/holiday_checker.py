@@ -1,8 +1,9 @@
-# bot/utils/holiday_checker.py
-
 """
-A.R.K. Holiday Checker – Smart Market Pause Detection.
-Checks if today is a US stock market holiday (static approximation).
+A.R.K. Holiday Checker – Smart Market Pause Detection 2025.
+Detects fixed and approximated US stock market holidays.
+
+Built for: API Protection, Efficiency Boost, Market-Aware Execution.
+Made in Bali. Engineered with German Precision.
 """
 
 from datetime import datetime
@@ -12,31 +13,35 @@ from bot.utils.logger import setup_logger
 # Setup structured logger
 logger = setup_logger(__name__)
 
-# Key US market holidays (static approximation for basic use)
-US_MARKET_HOLIDAYS = [
-    (1, 1),    # New Year's Day (Fixed)
-    (1, 15),   # Martin Luther King Jr. Day (Approximated as Jan 15)
-    (2, 19),   # Presidents' Day (Approximated as Feb 19)
-    (5, 27),   # Memorial Day (Approximated as May 27)
-    (7, 4),    # Independence Day (Fixed)
-    (9, 2),    # Labor Day (Approximated as Sep 2)
-    (11, 23),  # Thanksgiving Day (Approximated as Nov 23)
-    (12, 25),  # Christmas Day (Fixed)
-]
+# === Static Approximation of Major US Holidays ===
+US_MARKET_HOLIDAYS = {
+    (1, 1): "New Year's Day",
+    (1, 15): "Martin Luther King Jr. Day",
+    (2, 19): "Presidents' Day",
+    (5, 27): "Memorial Day",
+    (7, 4): "Independence Day",
+    (9, 2): "Labor Day",
+    (11, 23): "Thanksgiving Day",
+    (12, 25): "Christmas Day"
+}
 
-def is_us_holiday() -> bool:
+def is_us_holiday(now: datetime = None) -> bool:
     """
-    Determines if today matches a static US stock market holiday.
+    Checks if today matches one of the known US stock market holidays.
+
+    Args:
+        now (datetime, optional): Custom datetime (UTC). Defaults to now.
 
     Returns:
-        bool: True if today is considered a holiday, False otherwise.
+        bool: True if today is a holiday.
     """
-    today = datetime.utcnow()
-    today_tuple = (today.month, today.day)
+    now = now or datetime.utcnow()
+    today_tuple = (now.month, now.day)
 
     if today_tuple in US_MARKET_HOLIDAYS:
-        logger.info(f"🛑 [Holiday Checker] Market closed today: {today_tuple}")
+        holiday_name = US_MARKET_HOLIDAYS[today_tuple]
+        logger.info(f"🛑 [HolidayChecker] Holiday Detected: {holiday_name} ({today_tuple})")
         return True
-    else:
-        logger.debug(f"✅ [Holiday Checker] No holiday today: {today_tuple}")
-        return False
+
+    logger.debug(f"✅ [HolidayChecker] No holiday today: {today_tuple}")
+    return False
