@@ -22,7 +22,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         lang = get_language(update.effective_chat.id) or "en"
         text = get_text("start", lang).format(user=user)
 
-        await update.message.reply_text(text, parse_mode="Markdown")
+        menu_text = {
+            "en": "\n\n🧭 *Main Menu*\n"
+                  "`/analyse [SYMBOL]` – Full signal analysis\n"
+                  "`/signal` – Current signal\n"
+                  "`/status` – System status\n"
+                  "`/monitor` – API usage\n"
+                  "`/uptime` – Uptime info\n"
+                  "`/setlanguage en|de` – Set language\n"
+                  "`/help` – All commands",
+            "de": "\n\n🧭 *Hauptmenü*\n"
+                  "`/analyse [SYMBOL]` – Signal-Analyse starten\n"
+                  "`/signal` – Aktuelles Signal\n"
+                  "`/status` – Systemstatus\n"
+                  "`/monitor` – API-Verbrauch\n"
+                  "`/uptime` – Laufzeit anzeigen\n"
+                  "`/setlanguage de|en` – Sprache setzen\n"
+                  "`/help` – Alle Befehle"
+        }.get(lang, "")
+
+        await update.message.reply_text(text + menu_text, parse_mode="Markdown")
         logger.info(f"✅ [Command] /start executed by {user}")
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/start Handler Error")
@@ -32,7 +51,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     try:
         lang = get_language(update.effective_chat.id) or "en"
         text = get_text("help", lang)
-
         await update.message.reply_text(text, parse_mode="Markdown")
         logger.info(f"✅ [Command] /help executed")
     except Exception as e:
@@ -85,11 +103,9 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
 
             await update.message.reply_text(message, parse_mode="Markdown", disable_web_page_preview=True)
             logger.info(f"✅ [Command] /analyse → {symbol}")
-
         else:
             await update.message.reply_text(get_text("no_analysis_data", lang).format(symbol=symbol), parse_mode="Markdown")
             logger.warning(f"⚠️ [Command] /analyse no data for {symbol}")
-
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/analyse Handler Error")
 
@@ -97,10 +113,7 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
 async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         lang = get_language(update.effective_chat.id) or "en"
-        await update.message.reply_text(
-            get_text("live_signal_info", lang),
-            parse_mode="Markdown"
-        )
+        await update.message.reply_text(get_text("live_signal_info", lang), parse_mode="Markdown")
         logger.info(f"✅ [Command] /signal executed")
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/signal Handler Error")
@@ -108,10 +121,7 @@ async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 # === /status ===
 async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
-        await update.message.reply_text(
-            "📊 *System Status:* Operational.\n*More details coming soon.*",
-            parse_mode="Markdown"
-        )
+        await update.message.reply_text("📊 *System Status:* Operational.\n*More details coming soon.*", parse_mode="Markdown")
         logger.info(f"✅ [Command] /status executed")
     except Exception as e:
         await report_error(context.bot, update.effective_chat.id, e, context_info="/status Handler Error")
@@ -182,7 +192,6 @@ async def monitor_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         await update.message.reply_text(message, parse_mode="Markdown")
         logger.info(f"✅ [Command] /monitor executed")
-
     except Exception as e:
         logger.error(f"[Command] /monitor failed: {e}")
         await update.message.reply_text("⚠️ Error while loading monitor status.")
