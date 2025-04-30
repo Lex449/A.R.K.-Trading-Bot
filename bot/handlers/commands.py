@@ -5,6 +5,7 @@ Handles bilingual user commands with ultra-stability and strategic real-time res
 
 from telegram import Update
 from telegram.ext import ContextTypes
+from datetime import datetime
 from bot.utils.language import get_language, set_language
 from bot.utils.i18n import get_text
 from bot.utils.logger import setup_logger
@@ -13,6 +14,39 @@ from bot.utils.uptime_tracker import get_uptime
 from bot.engine.analysis_engine import analyze_symbol
 
 logger = setup_logger(__name__)
+
+# === Internal API Monitor ===
+class APIUsageMonitor:
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.call_count = 0
+        self.start_time = datetime.utcnow()
+
+    def record_call(self):
+        self.call_count += 1
+
+    def get_call_count(self):
+        return self.call_count
+
+    def get_elapsed_minutes(self):
+        elapsed = datetime.utcnow() - self.start_time
+        return max(elapsed.total_seconds() / 60, 1e-6)
+
+    def get_rate_per_minute(self):
+        return round(self.call_count / self.get_elapsed_minutes(), 2)
+
+    def get_status_summary(self):
+        return (
+            f"API Calls: {self.call_count} | "
+            f"Duration: {self.get_elapsed_minutes():.1f} min | "
+            f"Rate: {self.get_rate_per_minute():.2f}/min"
+        )
+
+# Global Monitor
+usage_monitor = APIUsageMonitor()
+record_call = usage_monitor.record_call  # For external use (e.g. data_loader)
 
 # === /start ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -147,7 +181,6 @@ async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     try:
         lang = get_language(update.effective_chat.id) or "en"
         await update.message.reply_text(get_text("shutdown", lang), parse_mode="Markdown")
-
         await context.application.stop()
         logger.info(f"🛑 [Command] /shutdown triggered")
     except Exception as e:
@@ -156,9 +189,7 @@ async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 # === /monitor ===
 async def monitor_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
-        chat_id = update.effective_chat.id
-        lang = get_language(chat_id) or "en"
-
+        lang = get_language(update.effective_chat.id) or "en"
         call_count = usage_monitor.get_call_count()
         rate = usage_monitor.get_rate_per_minute()
         duration = usage_monitor.get_elapsed_minutes()
