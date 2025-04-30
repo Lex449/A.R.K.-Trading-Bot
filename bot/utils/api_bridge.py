@@ -1,11 +1,12 @@
-# bot/utils/api_bridge.py
-
 """
 A.R.K. API Bridge – Safe Singleton Export Layer
 Verhindert zirkuläre Imports durch zentralen Zugriff auf geteilte Monitor-Instanzen.
 """
 
 from datetime import datetime
+from bot.utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 class APIUsageMonitor:
     def __init__(self):
@@ -15,8 +16,10 @@ class APIUsageMonitor:
         self.call_count = 0
         self.start_time = datetime.utcnow()
 
-    def record_call(self):
+    def record_call(self, source: str = None):
         self.call_count += 1
+        if source:
+            logger.info(f"📡 [API Monitor] Recorded call from: {source}")
 
     def get_call_count(self):
         return self.call_count
@@ -38,5 +41,5 @@ class APIUsageMonitor:
 # === Singleton Export ===
 monitor = APIUsageMonitor()
 
-def record_call():
-    monitor.record_call()
+def record_call(source: str = None):
+    monitor.record_call(source)
