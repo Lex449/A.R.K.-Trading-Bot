@@ -1,5 +1,3 @@
-# bot/engine/atr_engine.py
-
 """
 A.R.K. ATR Engine – Dynamic Volatility Intelligence 2025
 Fusioniert ATR-Berechnung und Spike-Erkennung in einer ultrastabilen Einheit.
@@ -47,10 +45,12 @@ class ATREngine:
         if df is None or df.empty or len(df) < self.period:
             raise ValueError(self._localized_error("invalid_df"))
 
-        if not all(col in df.columns for col in ["high", "low", "close"]):
+        required_cols = {"high", "low", "close"}
+        if not required_cols.issubset(df.columns):
             raise ValueError(self._localized_error("invalid_df"))
 
         try:
+            df = df.copy()  # Prevent mutation
             df["hl"] = df["high"] - df["low"]
             df["hc"] = (df["high"] - df["close"].shift()).abs()
             df["lc"] = (df["low"] - df["close"].shift()).abs()
@@ -59,14 +59,14 @@ class ATREngine:
             atr = df["tr"].rolling(window=self.period, min_periods=1).mean().iloc[-1]
             close = df["close"].iloc[-1]
 
-            if close == 0:
+            if close <= 0:
                 raise ValueError(self._localized_error("zero_close"))
 
-            atr_percent = (atr / close) * 100
-            return round(atr_percent, 2)
+            return round((atr / close) * 100, 2)
 
-        finally:
-            df.drop(columns=["hl", "hc", "lc", "tr"], inplace=True, errors="ignore")
+        except Exception as e:
+            logger.error(f"[ATREngine ATR Calculation Error] {e}")
+            raise
 
     def detect_volatility_spike(self, df: pd.DataFrame, threshold: float = 1.8) -> dict | None:
         """
@@ -77,9 +77,11 @@ class ATREngine:
         """
         try:
             atr_pct = self.calculate_atr_percent(df)
-            move_range = df["high"].iloc[-1] - df["low"].iloc[-1]
+            last_high = df["high"].iloc[-1]
+            last_low = df["low"].iloc[-1]
             last_close = df["close"].iloc[-1]
 
+            move_range = last_high - last_low
             if last_close <= 0 or move_range <= 0:
                 logger.warning("[ATREngine] Invalid move/close values for spike detection.")
                 return None
@@ -87,7 +89,7 @@ class ATREngine:
             move_pct = (move_range / last_close) * 100
 
             if move_pct > (atr_pct * threshold):
-                logger.info(f"🌪️ [ATREngine] Spike detected: Move={move_pct:.2f}% > {atr_pct * threshold:.2f}%")
+                logger.info(f"🌪️ [ATREngine] Spike detected: Move={move_pct:.2f}% > Threshold={atr_pct * threshold:.2f}%")
                 return {
                     "atr_percent": round(atr_pct, 2),
                     "move_percent": round(move_pct, 2),
@@ -97,5 +99,5 @@ class ATREngine:
             return None
 
         except Exception as e:
-            logger.error(f"❌ [ATREngine Error] {e}")
+            logger.error(f"❌ [ATREngine Detection Error] {e}")
             return None
