@@ -3,6 +3,7 @@ A.R.K. News Health Checker – Ultra Premium Stability Build 4.0
 Real-time monitoring and dynamic switching between Finnhub and Yahoo Finance based on service health.
 
 Built for: Fault Tolerance, Lightning Recovery, and 24/7 Signal Reliability.
+Made in Bali. Engineered with German Precision.
 """
 
 import aiohttp
@@ -36,9 +37,6 @@ async def check_finnhub_health(timeout_sec: int = 5) -> None:
 
     Args:
         timeout_sec (int): Timeout for the API health check.
-
-    Returns:
-        None
     """
     global _finnhub_healthy
 
@@ -51,10 +49,10 @@ async def check_finnhub_health(timeout_sec: int = 5) -> None:
                     _finnhub_healthy = True
                 else:
                     if _finnhub_healthy:
-                        logger.warning(f"⚠️ [News Health] Finnhub responded with {response.status}. Switching to Yahoo fallback.")
+                        logger.warning(f"⚠️ [News Health] Finnhub error {response.status}. Switching to Yahoo Finance.")
                     _finnhub_healthy = False
 
     except Exception as e:
         if _finnhub_healthy:
-            logger.error(f"❌ [News Health] Finnhub health check failed: {e}. Switching to Yahoo fallback.")
+            logger.error(f"❌ [News Health] Finnhub unavailable: {e}. Switching to Yahoo Finance fallback.")
         _finnhub_healthy = False
