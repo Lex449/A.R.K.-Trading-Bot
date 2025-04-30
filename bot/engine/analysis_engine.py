@@ -17,7 +17,7 @@ from bot.engine.signal_category_engine import categorize_signal
 from bot.engine.data_loader import fetch_market_data
 from bot.engine.data_auto_validator import validate_market_data
 from bot.engine.risk_engine import analyze_risk_reward
-from bot.engine.signal_rating_engine import rate_signal
+from bot.engine.signal_rating_improvement import rate_signal  # <- FIXED HERE
 from bot.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -27,7 +27,6 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
     Führt eine vollständige Analyse eines Symbols durch.
     Gibt strukturierte Daten für Signalaufbau, Bewertung und Dispatch zurück.
     """
-
     try:
         df = await fetch_market_data(symbol, chat_id=chat_id)
         if not validate_market_data(df):
