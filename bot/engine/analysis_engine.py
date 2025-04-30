@@ -1,10 +1,10 @@
 # bot/engine/analysis_engine.py
 
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite 10.2
+A.R.K. Analysis Engine – Ultra Full Signal Suite 10.3
 Fusion aus Pattern, Trend, Volumen, Volatilität, RRR, Confidence Scaling & Category Scoring.
+Mit zusätzlichem Debug-Modus zur Erkennung leerer oder flacher Datenquellen.
 
-Ziel: Opportunistische Signalvalidierung ab 50 %, Masterclass-Effizienz mit mehr Action.
 Made in Bali. Engineered with German Precision.
 """
 
@@ -31,6 +31,8 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
         df = await fetch_market_data(symbol, chat_id=chat_id)
         if df is None or not validate_market_data(df):
             logger.warning(f"🚫 [AnalysisEngine] Data validation failed or no data returned for {symbol}.")
+            if df is not None:
+                logger.debug(f"⚠️ [Debug] {symbol} → Raw Close Prices (last 10): {df['c'].tail(10).tolist()}")
             return None
 
         last_price = df["c"].iloc[-1]
@@ -57,6 +59,7 @@ async def analyze_symbol(symbol: str, chat_id: int = None) -> dict | None:
 
         if adjusted_confidence < 50:
             logger.info(f"⛔ [AnalysisEngine] {symbol} skipped – Confidence only {adjusted_confidence:.1f}%")
+            logger.debug(f"ℹ️ [Debug] {symbol} → Patterns: {patterns}, Score: {indicator_score}, Trend: {trend_direction}")
             return None
 
         signal_category = categorize_signal(adjusted_confidence)
