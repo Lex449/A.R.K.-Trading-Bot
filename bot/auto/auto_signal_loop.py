@@ -15,14 +15,14 @@ from bot.utils.logger import setup_logger
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
 from bot.utils.market_session_guard import is_us_market_open, minutes_until_market_open
-from bot.utils.usage_monitor import record_call
+from bot.utils.api_bridge import record_call  # ✅ Import über Bridge
 from bot.config.settings import get_settings
 
-# Logger & Config
+# === Logger & Config ===
 logger = setup_logger(__name__)
 config = get_settings()
 
-# Loop Control
+# === Loop Control ===
 RUNNING = True
 
 async def auto_signal_loop(application):
@@ -61,7 +61,7 @@ async def auto_signal_loop(application):
             for symbol in symbols:
                 try:
                     result = await analyze_symbol(symbol)
-                    record_call("finnhub")  # API Monitoring
+                    record_call()  # ✅ Finnhub API-Aufruf wird gezählt
 
                     if result and result.get("combined_action") in ["Long 📈", "Short 📉"]:
                         lang = get_language(chat_id) or "en"
@@ -69,9 +69,9 @@ async def auto_signal_loop(application):
                         signal_text = (
                             f"📡 *A.R.K. Live Signal Detected!*\n\n"
                             f"*Symbol:* `{result['symbol']}`\n"
-                            f"*Direction:* {result['combined_action']}\n"
+                            f"*Direction:* {result['combined_action']}`\n"
                             f"*Confidence:* `{result['avg_confidence']:.1f}%`\n"
-                            f"*Rating:* {result['signal_category']}\n"
+                            f"*Rating:* {result['signal_category']}`\n"
                             f"*Price:* `${result['last_price']}`\n\n"
                             f"_Stay sharp. Opportunity never sleeps._"
                         )
@@ -93,6 +93,7 @@ async def auto_signal_loop(application):
             logger.error(f"🔥 [AutoSignalLoop] Critical loop failure: {loop_error}")
 
         await asyncio.sleep(config.get("SIGNAL_CHECK_INTERVAL_SEC", 60))
+
 
 async def stop_auto_signal_loop():
     """
