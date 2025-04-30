@@ -7,6 +7,7 @@ Made in Bali. Engineered with German Precision.
 import asyncio
 import nest_asyncio
 from telegram.ext import ApplicationBuilder, CommandHandler
+from telegram import Bot
 from bot.handlers.commands import (
     start,
     help_command,
@@ -23,27 +24,35 @@ from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.startup.startup_task import execute_startup_tasks
 
-# === Logger & Settings Setup ===
+# === Logger & Settings ===
 logger = setup_logger(__name__)
 config = get_settings()
 
-# === Railway Compatibility Patch (async loop fix) ===
+# === Async Patch für Railway etc. ===
 nest_asyncio.apply()
 
+# === Ultra Resilient Webhook Cleanup ===
+async def force_webhook_cleanup():
+    try:
+        logger.info("⚙️ [Init] Attempting to remove existing webhook...")
+        bot = Bot(config["BOT_TOKEN"])
+        await bot.delete_webhook(drop_pending_updates=True)
+        logger.info("✅ [Init] Webhook successfully removed.")
+    except Exception as e:
+        logger.warning(f"⚠️ [Init] Webhook cleanup failed: {e}")
+
+# === Main Routine ===
 async def main():
-    """
-    Launches the complete A.R.K. Bot System.
-    """
     logger.info("🚀 [Main] Launch sequence initiated...")
 
     try:
-        # === Build Telegram Application ===
+        # 1. Zuerst: Webhook sicher entfernen
+        await force_webhook_cleanup()
+
+        # 2. Application starten
         application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
 
-        # === Remove Webhook if previously set (Fix für polling conflict) ===
-        await application.bot.delete_webhook(drop_pending_updates=True)
-
-        # === Register Command Handlers ===
+        # 3. Command Handler registrieren
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CommandHandler("analyse", analyze_symbol_handler))
@@ -54,20 +63,20 @@ async def main():
         application.add_handler(CommandHandler("shutdown", shutdown_handler))
         application.add_handler(CommandHandler("monitor", monitor_handler))
 
-        # === Register Global Error Handler ===
+        # 4. Globaler Error-Handler
         application.add_error_handler(global_error_handler)
 
-        # === Run Startup Tasks (Scheduler, Watchdog, Ping, Menu etc.) ===
+        # 5. Startup Tasks: Ping, Watchdog, Scheduler
         await execute_startup_tasks(application)
 
-        # === Start Polling Loop ===
-        logger.info("✅ [Main] A.R.K. Bot fully operational. Commencing live mode.")
+        # 6. Polling starten
+        logger.info("✅ [Main] A.R.K. Bot online. Awaiting user interaction...")
         await application.run_polling(poll_interval=1.0)
 
     except Exception as e:
-        logger.critical(f"🔥 [Main] Critical Startup Failure: {e}")
+        logger.critical(f"🔥 [Main] Critical Failure: {e}")
         raise
 
+# === Startpunkt ===
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())
