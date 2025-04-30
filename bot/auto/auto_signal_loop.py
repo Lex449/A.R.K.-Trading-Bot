@@ -1,7 +1,7 @@
 """
 A.R.K. Auto Signal Loop – Final Boss Ultra Premium Build 2025  
 Smart Parallel US Market Scanner mit Deep Diagnostics, Rejection Insights und Live Signal Protocols.  
-Built to uncover every failure point – so you never miss a trade again.  
+Built to uncover every failure point – you never miss a trade again.  
 Made in Bali. Engineered with German Precision.
 """
 
