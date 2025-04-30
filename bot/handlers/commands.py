@@ -11,7 +11,6 @@ from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
 from bot.utils.uptime_tracker import get_uptime
 from bot.engine.analysis_engine import analyze_symbol
-from bot.utils.usage_monitor import usage_monitor  # NEW
 
 logger = setup_logger(__name__)
 
