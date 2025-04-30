@@ -1,29 +1,29 @@
-# bot/auto/heartbeat_manager.py
-
 """
-A.R.K. Heartbeat Manager – Ultra Reliable Status Engine
-Sends real-time system health pings to ensure uptime & transparency.
+A.R.K. Heartbeat Manager – Ultra Reliable Status Engine 2025
+Sends real-time system pings with multilingual diagnostics and uptime clarity.
+Made in Bali. Engineered with German Precision.
 """
 
 from datetime import datetime
-import logging
 import platform
 import psutil
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
+from bot.utils.language import get_language
+from bot.utils.i18n import get_text
+from bot.config.settings import get_settings
 
-# Setup structured logger
+# Init Logger & Config
 logger = setup_logger(__name__)
 config = get_settings()
 
-# Global Scheduler
+# Shared Scheduler
 heartbeat_scheduler = AsyncIOScheduler()
 
 def start_heartbeat_manager(application, chat_id: int):
     """
-    Initializes the heartbeat job that runs every 60 minutes.
+    Starts the heartbeat monitoring scheduler (every 60 minutes).
     """
     try:
         heartbeat_scheduler.remove_all_jobs()
@@ -33,37 +33,39 @@ def start_heartbeat_manager(application, chat_id: int):
             trigger=IntervalTrigger(minutes=60),
             args=[application, chat_id],
             id=f"ultra_heartbeat_{chat_id}",
+            name=f"A.R.K. Heartbeat Job for Chat {chat_id}",
             replace_existing=True,
-            name=f"A.R.K. Heartbeat Manager for Chat {chat_id}",
             misfire_grace_time=300
         )
 
         if not heartbeat_scheduler.running:
             heartbeat_scheduler.start()
 
-        logger.info(f"✅ [HeartbeatManager] Scheduler started for chat_id {chat_id}.")
+        logger.info(f"✅ [HeartbeatManager] Scheduler activated for chat_id {chat_id}.")
 
     except Exception as e:
-        logger.error(f"❌ [HeartbeatManager] Failed to start: {e}")
+        logger.critical(f"🔥 [HeartbeatManager] Failed to initialize: {e}")
 
 async def send_heartbeat(application, chat_id: int):
     """
-    Sends a structured system heartbeat report.
+    Sends a multilingual heartbeat system status message.
     """
     try:
+        lang = get_language(chat_id)
+
         cpu = psutil.cpu_percent()
         ram = psutil.virtual_memory().percent
         system = platform.system()
-        timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+        now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
 
         message = (
-            "✅ *A.R.K. Heartbeat Report*\n\n"
-            f"*Status:* Stable\n"
-            f"*Time:* `{timestamp}`\n"
-            f"*CPU Usage:* `{cpu:.1f}%`\n"
-            f"*RAM Usage:* `{ram:.1f}%`\n"
-            f"*System:* `{system}`\n"
-            "_A.R.K. is watching the markets._"
+            f"✅ *{get_text('heartbeat_title', lang)}*\n\n"
+            f"*{get_text('status', lang)}:* `Stable`\n"
+            f"*{get_text('timestamp', lang)}:* `{now}`\n"
+            f"*{get_text('cpu', lang)}:* `{cpu:.1f}%`\n"
+            f"*{get_text('ram', lang)}:* `{ram:.1f}%`\n"
+            f"*{get_text('system', lang)}:* `{system}`\n\n"
+            f"_{get_text('heartbeat_footer', lang)}_"
         )
 
         await application.bot.send_message(
@@ -72,7 +74,8 @@ async def send_heartbeat(application, chat_id: int):
             parse_mode="Markdown",
             disable_web_page_preview=True
         )
-        logger.info(f"✅ [HeartbeatManager] Heartbeat sent to {chat_id}")
+
+        logger.info(f"✅ [HeartbeatManager] Report dispatched to {chat_id}")
 
     except Exception as e:
-        logger.error(f"❌ [HeartbeatManager] Failed to send heartbeat: {e}")
+        logger.error(f"❌ [HeartbeatManager] Failed to send report: {e}")
