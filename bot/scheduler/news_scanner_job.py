@@ -11,7 +11,7 @@ from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
 from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news
 from bot.utils.market_session_guard import is_us_market_open, minutes_until_market_open
-from bot.utils.usage_monitor import record_call  # Optional, falls verwendet
+from bot.utils.api_bridge import record_call  # ✅ Korrekte neue Quelle
 
 # === Setup ===
 logger = setup_logger(__name__)
