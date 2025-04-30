@@ -10,7 +10,7 @@ import os
 from collections import defaultdict
 from bot.utils.logger import setup_logger
 
-# === Setup ===
+# === Setup Logger ===
 logger = setup_logger(__name__)
 
 # === Static Critical Keywords (Elite Intelligence Set) ===
@@ -26,115 +26,97 @@ STATIC_KEYWORDS = [
     "market manipulation", "credit downgrade", "crypto meltdown", "sovereign debt default"
 ]
 
-# === Dynamic Runtime Keywords (AI Expansion) ===
+# === Dynamic Runtime Keywords ===
 DYNAMIC_KEYWORDS = set()
 
-# === Persistent Storage ===
+# === Persistent Storage Paths ===
 KEYWORD_FILE = "dynamic_keywords.json"
 POWER_FILE = "keyword_power.json"
 
-# === Keyword Power Tracking ===
-keyword_power = defaultdict(int)  # Counts how often keywords appear
+# === Keyword Power Score Tracking ===
+keyword_power = defaultdict(int)
 
-# === Load Dynamic Keywords ===
+# === Initialization ===
 def _load_dynamic_keywords():
-    global DYNAMIC_KEYWORDS
     if os.path.exists(KEYWORD_FILE):
         try:
             with open(KEYWORD_FILE, "r", encoding="utf-8") as f:
-                keywords = json.load(f)
-                if isinstance(keywords, list):
-                    DYNAMIC_KEYWORDS.update(k.lower() for k in keywords if isinstance(k, str))
-                    logger.info(f"✅ [KeywordEnricher] Loaded {len(DYNAMIC_KEYWORDS)} dynamic keywords.")
+                raw_keywords = json.load(f)
+                DYNAMIC_KEYWORDS.update(k.lower() for k in raw_keywords if isinstance(k, str))
+                logger.info(f"✅ [KeywordEnricher] Loaded {len(DYNAMIC_KEYWORDS)} dynamic keywords.")
         except Exception as e:
-            logger.warning(f"⚠️ [KeywordEnricher] Could not load dynamic keywords: {e}")
+            logger.warning(f"⚠️ [KeywordEnricher] Failed to load dynamic keywords: {e}")
 
-# === Load Power Data ===
 def _load_keyword_power():
-    global keyword_power
     if os.path.exists(POWER_FILE):
         try:
             with open(POWER_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 keyword_power.update(data)
-                logger.info(f"✅ [KeywordEnricher] Loaded keyword power data.")
+                logger.info("✅ [KeywordEnricher] Loaded keyword power data.")
         except Exception as e:
-            logger.warning(f"⚠️ [KeywordEnricher] Could not load keyword power data: {e}")
+            logger.warning(f"⚠️ [KeywordEnricher] Failed to load power data: {e}")
 
-# === Save Dynamic Keywords & Power ===
 def _save_dynamic_data():
     try:
         with open(KEYWORD_FILE, "w", encoding="utf-8") as f:
-            json.dump(list(DYNAMIC_KEYWORDS), f, indent=4)
+            json.dump(sorted(DYNAMIC_KEYWORDS), f, indent=4)
         with open(POWER_FILE, "w", encoding="utf-8") as f:
             json.dump(dict(keyword_power), f, indent=4)
-        logger.info(f"💾 [KeywordEnricher] Dynamic data saved successfully.")
+        logger.info("💾 [KeywordEnricher] Dynamic data saved.")
     except Exception as e:
         logger.error(f"❌ [KeywordEnricher] Failed to save dynamic data: {e}")
 
-# === Enrichment Engine ===
+# === Enrichment Core ===
 def enrich_keywords_from_news(news_headlines: list) -> None:
     """
-    Enriches keywords and updates power scores based on incoming news.
+    Analyzes news headlines and enriches dynamic keywords + power scores.
 
     Args:
-        news_headlines (list): List of fresh news headlines (str).
+        news_headlines (list): List of headline strings.
     """
-    global DYNAMIC_KEYWORDS
-
     try:
         for headline in news_headlines:
-            headline_lower = headline.lower()
+            text = headline.lower()
 
-            # === Trend Discovery ===
-            if "mass layoffs" in headline_lower or ("layoffs" in headline_lower and "massive" in headline_lower):
+            # === Discoverable Trends ===
+            if "mass layoffs" in text or ("layoffs" in text and "massive" in text):
                 DYNAMIC_KEYWORDS.add("mass layoffs")
-            if "ai" in headline_lower and ("revolution" in headline_lower or "explosion" in headline_lower):
+            if "ai" in text and ("revolution" in text or "explosion" in text):
                 DYNAMIC_KEYWORDS.add("ai revolution")
-            if "restructuring" in headline_lower:
+            if "restructuring" in text:
                 DYNAMIC_KEYWORDS.add("corporate restructuring")
-            if "sec probe" in headline_lower or "regulatory crackdown" in headline_lower:
+            if "sec probe" in text or "regulatory crackdown" in text:
                 DYNAMIC_KEYWORDS.add("sec crackdown")
-            if "bank failure" in headline_lower or "bank crisis" in headline_lower:
+            if "bank failure" in text or "bank crisis" in text:
                 DYNAMIC_KEYWORDS.add("bank crisis")
-            if "interest rate shock" in headline_lower or "unexpected hike" in headline_lower:
+            if "interest rate shock" in text or "unexpected hike" in text:
                 DYNAMIC_KEYWORDS.add("unexpected rate hike")
-            if "supply chain disruption" in headline_lower:
+            if "supply chain disruption" in text:
                 DYNAMIC_KEYWORDS.add("supply chain crisis")
-            if "cyber attack" in headline_lower:
+            if "cyber attack" in text:
                 DYNAMIC_KEYWORDS.add("cybersecurity breach")
 
-            # === Power Ranking (Dynamic Boost) ===
+            # === Power Scoring ===
             for keyword in get_all_keywords():
-                if keyword in headline_lower:
+                if keyword in text:
                     keyword_power[keyword] += 1
 
-        logger.info(f"🚀 [KeywordEnricher] Dynamic keywords updated: {list(DYNAMIC_KEYWORDS)}")
-        logger.info(f"📈 [KeywordEnricher] Keyword power ranking updated.")
-
+        logger.info(f"🚀 [KeywordEnricher] Keywords enriched. Power updated.")
         _save_dynamic_data()
 
     except Exception as e:
-        logger.error(f"❌ [KeywordEnricher] Failed to enrich keywords: {e}")
+        logger.error(f"❌ [KeywordEnricher] Enrichment failed: {e}")
 
-# === Fetch All Keywords ===
+# === API: Get Keyword Data ===
 def get_all_keywords() -> list:
-    """
-    Returns the full active keyword set (static + dynamic).
-    """
-    all_keywords = set(STATIC_KEYWORDS).union(DYNAMIC_KEYWORDS)
-    return sorted(all_keywords)
+    """Returns static + dynamic keyword list."""
+    return sorted(set(STATIC_KEYWORDS).union(DYNAMIC_KEYWORDS))
 
-# === Fetch Keyword Power Scores ===
 def get_keyword_power() -> dict:
-    """
-    Returns the current keyword power scores.
-
-    Returns:
-        dict: {keyword: occurrence_count}
-    """
+    """Returns current keyword frequency scores."""
     return dict(keyword_power)
 
-# === Initialization ===
+# === Load at startup ===
 _load_dynamic_keywords()
 _load_keyword_power()
