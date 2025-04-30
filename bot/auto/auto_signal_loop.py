@@ -1,9 +1,10 @@
 # bot/auto/auto_signal_loop.py
 
 """
-A.R.K. Auto Signal Loop – Final Boss Edition 2025
-Smart US Market Scanner mit Confidence-Schranke, Deep Logging und Signal-Visualisierung.
+A.R.K. Auto Signal Loop – Final Boss Ultra Premium Build 2025
+Smart Parallel US Market Scanner mit Deep Diagnostics, Rejection Insights und Live Signal Protocols.
 
+Built to uncover every failure point – so you never miss a trade again.
 Made in Bali. Engineered with German Precision.
 """
 
@@ -30,13 +31,13 @@ def build_signal_bar(conf: float, bars: int = 20) -> str:
     return "█" * filled + "░" * (bars - filled)
 
 async def auto_signal_loop(application):
-    logger.info("🚀 [AutoSignalLoop] Final Boss Loop gestartet.")
+    logger.info("🚀 [AutoSignalLoop] Ultra Loop gestartet.")
     symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
     chat_id = int(config.get("TELEGRAM_CHAT_ID", 0))
     interval = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
 
     if not symbols:
-        logger.critical("❌ [AutoSignalLoop] Keine Symbole in der Konfiguration.")
+        logger.critical("❌ [AutoSignalLoop] Keine Symbole gefunden. Check .env!")
         return
 
     while RUNNING:
@@ -44,36 +45,37 @@ async def auto_signal_loop(application):
             await send_heartbeat(application)
 
             if not await check_connection():
-                logger.warning("⚠️ Verbindung verloren. Retry in 30s.")
+                logger.warning("⚠️ [AutoSignalLoop] Telegram-Verbindung gestört. Retry in 30s.")
                 await asyncio.sleep(30)
                 continue
 
             if not is_us_market_open() and minutes_until_market_open() > 30:
-                logger.info("⏳ Markt geschlossen. Warte 2 Minuten.")
+                logger.info("⏳ Markt geschlossen. Schlafmodus für 2min.")
                 await asyncio.sleep(120)
                 continue
 
-            logger.info(f"📡 Starte parallele Analyse von {len(symbols)} Symbolen...")
+            logger.info(f"📡 [AutoSignalLoop] Analyse-Zyklus gestartet: {len(symbols)} Symbole...")
 
             tasks = [analyze_and_dispatch(application, symbol, chat_id) for symbol in symbols]
             await asyncio.gather(*tasks)
 
-            logger.info("✅ [AutoSignalLoop] Zyklus beendet. Wartezeit beginnt...")
+            logger.info("✅ [AutoSignalLoop] Zyklus abgeschlossen. Pause beginnt...")
 
         except Exception as e:
-            logger.exception(f"🔥 [AutoSignalLoop] Loop crashed: {e}")
+            logger.exception(f"🔥 [AutoSignalLoop] Totalabbruch: {e}")
 
         await asyncio.sleep(interval)
 
 async def analyze_and_dispatch(application, symbol, chat_id):
     try:
+        logger.debug(f"🔍 Beginne Analyse: {symbol}")
         start = time.perf_counter()
         result = await analyze_symbol(symbol, chat_id=chat_id)
         runtime = time.perf_counter() - start
-        record_call()
+        record_call(symbol)
 
-        if not result:
-            logger.debug(f"⚠️ Keine gültige Analyse für {symbol}")
+        if result is None:
+            logger.warning(f"❌ Kein gültiges Analyseergebnis: {symbol}")
             return
 
         action = result.get("combined_action", "Neutral ⚪")
@@ -82,16 +84,20 @@ async def analyze_and_dispatch(application, symbol, chat_id):
         rating = result.get("signal_category", "N/A")
         price = result.get("last_price", "n/a")
 
-        if action not in ["Long 📈", "Short 📉"] or confidence < MIN_CONFIDENCE:
-            logger.debug(f"⏭️ {symbol} übersprungen – Action: {action}, Confidence: {confidence:.1f}%")
+        if action not in ["Long 📈", "Short 📉"]:
+            logger.info(f"⛔ Kein Long/Short Signal für {symbol} → Action: {action}")
+            return
+
+        if confidence < MIN_CONFIDENCE:
+            logger.info(f"⛔ Confidence zu niedrig für {symbol}: {confidence:.1f}%")
             return
 
         bar = build_signal_bar(confidence)
         runtime_tag = f"⚙️ {runtime:.2f}s"
         total = usage_monitor.get_call_count()
         avg = usage_monitor.get_average_confidence()
-
         lang = get_language(chat_id) or "en"
+
         text = (
             f"📡 *A.R.K. Live Signal!*\n\n"
             f"*Symbol:* `{symbol}`\n"
@@ -113,7 +119,7 @@ async def analyze_and_dispatch(application, symbol, chat_id):
             disable_web_page_preview=True
         )
 
-        logger.info(f"✅ Signal versendet: {symbol} ({action})")
+        logger.info(f"✅ [AutoSignalLoop] Signal gesendet: {symbol} ({action})")
 
     except Exception as e:
         logger.exception(f"❌ Analysefehler bei {symbol}: {e}")
@@ -121,4 +127,4 @@ async def analyze_and_dispatch(application, symbol, chat_id):
 async def stop_auto_signal_loop():
     global RUNNING
     RUNNING = False
-    logger.info("🛑 AutoSignalLoop wurde gestoppt.")
+    logger.info("🛑 [AutoSignalLoop] Manuell gestoppt.")
