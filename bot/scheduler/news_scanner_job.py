@@ -1,81 +1,64 @@
 """
-A.R.K. News Scheduler – Breaking News Scanner 2025.
-Wacht über relevante Marktnews für alle Symbole aus deiner .env.
+A.R.K. News Scanner Job – Smart US Session Breakout Monitor.
+Scans for breaking market news only during trading hours or 30 min before.
+Built for: Efficiency, API Protection, Ultra Premium Alerts.
 """
 
 import asyncio
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 from telegram import Bot
-from bot.utils.logger import setup_logger
 from bot.config.settings import get_settings
+from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
-from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news  # <<< Wichtig
+from bot.engine.news_alert_engine import detect_breaking_news, format_breaking_news
+from bot.utils.market_session_guard import is_us_market_open, minutes_until_market_open
+from bot.utils.usage_monitor import record_call  # Optional, falls verwendet
 
-# Logger & Config
+# === Setup ===
 logger = setup_logger(__name__)
 config = get_settings()
 
-# News Scheduler Global
-news_scheduler = AsyncIOScheduler()
+bot_token = config["BOT_TOKEN"]
+chat_id = int(config["TELEGRAM_CHAT_ID"])
+language = config.get("BOT_LANGUAGE", "en")
 
-async def news_scan_task(bot: Bot, chat_id: int, symbols: list[str], lang: str = "en"):
+async def news_scanner_job():
     """
-    Performs a news scan for all configured symbols.
-    Sends alerts for breaking news.
+    Permanent loop that only scans when market is open or 30 minutes before.
     """
-    try:
-        logger.info("📰 [NewsJob] Scanning for breaking news...")
+    bot = Bot(token=bot_token)
 
-        breaking_news = await detect_breaking_news()
+    logger.info("🛰️ [NewsScanner] Initialized – waiting for market hours...")
 
-        if breaking_news:
-            message = await format_breaking_news(breaking_news, lang=lang)
+    while True:
+        try:
+            # === Market-Time Check ===
+            market_open = is_us_market_open()
+            pre_market = minutes_until_market_open() <= 30
 
-            if message:
-                await bot.send_message(
-                    chat_id=chat_id,
-                    text=message,
-                    parse_mode="Markdown",
-                    disable_web_page_preview=True
-                )
-                logger.info(f"✅ [NewsJob] Alert sent – {len(breaking_news)} news items detected.")
-        else:
-            logger.info("ℹ️ [NewsJob] No relevant news found.")
+            if market_open or pre_market:
+                logger.info("📰 [NewsScanner] Running news scan...")
+                record_call("finnhub")  # Falls dein Monitor aktiv ist
 
-    except Exception as e:
-        logger.error(f"❌ [NewsJob] Fatal Error: {e}")
-        await report_error(bot, chat_id, e, context_info="News Scheduler")
+                breaking_news = await detect_breaking_news()
+                if breaking_news:
+                    message = await format_breaking_news(breaking_news, lang=language)
+                    if message:
+                        await bot.send_message(
+                            chat_id=chat_id,
+                            text=message,
+                            parse_mode="Markdown",
+                            disable_web_page_preview=True
+                        )
+                        logger.info(f"✅ [NewsScanner] Sent alert – {len(breaking_news)} articles.")
+                else:
+                    logger.info("ℹ️ [NewsScanner] No relevant news found.")
 
-def start_news_scheduler(bot: Bot, chat_id: int):
-    """
-    Starts the news scan job for all configured symbols every 5 minutes.
-    """
-    try:
-        symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
-        language = config.get("BOT_LANGUAGE", "en")
+                await asyncio.sleep(300)  # 5 min cool-down
+            else:
+                logger.info("⏳ [NewsScanner] Market closed. Sleeping 10 min.")
+                await asyncio.sleep(600)
 
-        news_scheduler.remove_all_jobs()
-
-        news_scheduler.add_job(
-            news_scan_task,
-            trigger=IntervalTrigger(minutes=5),
-            args=[bot, chat_id, symbols, language],
-            id=f"breaking_news_scanner_{chat_id}",
-            replace_existing=True,
-            name=f"A.R.K. News Scanner for {chat_id}",
-            misfire_grace_time=120
-        )
-
-        if not news_scheduler.running:
-            news_scheduler.start()
-
-        logger.info(f"✅ [NewsScheduler] Started for chat {chat_id}, scanning {len(symbols)} symbols.")
-
-    except Exception as e:
-        logger.critical(f"🔥 [NewsScheduler] Could not start: {e}")
-
-
-# === Legacy Wrapper for startup_task.py ===
-def start_news_scanner_job(bot: Bot, chat_id: int):
-    start_news_scheduler(bot, chat_id)
+        except Exception as e:
+            logger.error(f"❌ [NewsScanner] Critical failure: {e}")
+            await report_error(bot, chat_id, e, context_info="News Scanner Loop")
+            await asyncio.sleep(60)
