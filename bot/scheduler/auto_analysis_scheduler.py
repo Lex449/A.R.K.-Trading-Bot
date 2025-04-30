@@ -1,20 +1,29 @@
 """
-A.R.K. Auto-Analysis Scheduler – Silent Loop Edition
-Startet alle 60 Sekunden einen vollständigen Markt-Scan – nur mit Signal-Output.
+A.R.K. Auto-Analysis Scheduler – Silent Precision Loop v2.0  
+Startet alle 60 Sekunden einen diskreten Marktscan – ohne Spam, nur bei relevanten Signalen.  
+Maximiert API-Auslastung ohne Telegram-Clutter.  
 Made in Bali. Engineered with German Precision.
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from bot.auto.auto_analysis import auto_analysis
 from bot.utils.logger import setup_logger
+from datetime import datetime
+import pytz
 
 logger = setup_logger(__name__)
 
 def start_auto_analysis_scheduler(application):
     try:
-        scheduler = AsyncIOScheduler()
-        scheduler.add_job(lambda: auto_analysis(application), "interval", seconds=60)
+        scheduler = AsyncIOScheduler(timezone=pytz.utc)
+        scheduler.add_job(
+            func=lambda: auto_analysis(application),
+            trigger=IntervalTrigger(seconds=60),
+            next_run_time=datetime.utcnow(),  # Sofortiger Start bei Launch
+            name="ARK Silent Auto-Analysis"
+        )
         scheduler.start()
-        logger.info("✅ [Scheduler] Auto-Analysis Scheduler gestartet.")
+        logger.info("✅ [Scheduler] Auto-Analysis Scheduler aktiviert – alle 60s mit sofortigem Initiallauf.")
     except Exception as e:
-        logger.error(f"❌ [Scheduler] Fehler beim Start des Auto-Analysis Schedulers: {e}")
+        logger.exception("❌ [Scheduler] Fehler beim Starten des Auto-Analysis Schedulers:")
