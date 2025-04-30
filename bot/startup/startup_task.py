@@ -1,6 +1,6 @@
 """
-A.R.K. Startup Task – Ultra Premium NASA Build 2025
-Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Telegram-Menü & Startup-Ping.
+A.R.K. Startup Task – Ultra Premium NASA Build 2025.2
+Initialisiert alle Kernsysteme: ENV-Check, Systemzeitprüfung, Scheduler-Launch, Telegram-Ping.
 Maximale Stabilität für 24/7 Betrieb auf Koenigsegg-Niveau.
 """
 
@@ -17,9 +17,8 @@ from bot.utils.i18n import get_text
 from bot.scheduler.recap_scheduler import start_recap_scheduler
 from bot.scheduler.heartbeat_job import start_heartbeat_job
 from bot.scheduler.connection_watchdog_job import start_connection_watchdog
-from bot.scheduler.news_scanner_job import news_scanner_job  # ✅ async Hintergrundprozess
+from bot.scheduler.news_scanner_job import news_scanner_job
 
-# === Setup ===
 logger = setup_logger(__name__)
 settings = get_settings()
 
@@ -36,6 +35,8 @@ def check_system_time():
     if utc_now.year < 2023:
         logger.critical("❌ [Startup] Systemzeit ungültig.")
         raise ValueError("Systemzeit ist falsch eingestellt.")
+    elif utc_now.year == 2023:
+        logger.warning("⚠️ [Startup] Systemzeit wirkt veraltet – prüfen empfohlen.")
     logger.info(f"✅ [Startup] Systemzeit korrekt: {utc_now.isoformat()}")
 
 async def send_startup_ping(bot: Bot):
@@ -65,12 +66,29 @@ async def launch_background_jobs(application):
     bot = application.bot
     chat_id = int(settings["TELEGRAM_CHAT_ID"])
 
-    start_heartbeat_job(bot, chat_id)
-    start_connection_watchdog(bot, chat_id)
-    start_recap_scheduler(bot, chat_id)
-    asyncio.create_task(news_scanner_job())
+    try:
+        start_heartbeat_job(bot, chat_id)
+        logger.info("✅ [Startup] Heartbeat-Job aktiviert.")
+    except Exception as e:
+        logger.error(f"❌ Heartbeat-Job Fehler: {e}")
 
-    logger.info("✅ [Startup] Alle Hintergrundjobs aktiviert.")
+    try:
+        start_connection_watchdog(bot, chat_id)
+        logger.info("✅ [Startup] Connection Watchdog aktiviert.")
+    except Exception as e:
+        logger.error(f"❌ Connection Watchdog Fehler: {e}")
+
+    try:
+        start_recap_scheduler(bot, chat_id)
+        logger.info("✅ [Startup] Recap Scheduler aktiviert.")
+    except Exception as e:
+        logger.error(f"❌ Recap Scheduler Fehler: {e}")
+
+    try:
+        asyncio.create_task(news_scanner_job())
+        logger.info("✅ [Startup] News Scanner aktiviert.")
+    except Exception as e:
+        logger.error(f"❌ News Scanner Fehler: {e}")
 
 async def execute_startup_tasks(application):
     logger.info("🚀 [Startup] Initialisiere A.R.K. Master-System...")
