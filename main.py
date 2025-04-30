@@ -10,8 +10,14 @@ import asyncio
 import nest_asyncio
 from telegram.ext import ApplicationBuilder, CommandHandler
 from bot.handlers.commands import (
-    start, help_command, analyze_symbol_handler, signal_handler,
-    status_handler, uptime_handler, set_language_handler, shutdown_handler,
+    start,
+    help_command,
+    analyze_symbol_handler,
+    signal_handler,
+    status_handler,
+    uptime_handler,
+    set_language_handler,
+    shutdown_handler,
     monitor_handler  # ✅ NEU
 )
 from bot.handlers.global_error_handler import global_error_handler
@@ -24,7 +30,7 @@ from bot.startup.startup_task import execute_startup_tasks
 logger = setup_logger(__name__)
 config = get_settings()
 
-# === Required for Railway / Jupyter-Like Environments ===
+# === Railway Compatibility Patch ===
 nest_asyncio.apply()
 
 async def main():
@@ -37,7 +43,7 @@ async def main():
         # === Build Telegram Application ===
         application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
 
-        # === Register Core Command Handlers ===
+        # === Register Command Handlers ===
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CommandHandler("analyse", analyze_symbol_handler))
@@ -51,10 +57,10 @@ async def main():
         # === Register Global Error Handler ===
         application.add_error_handler(global_error_handler)
 
-        # === Start API Usage Monitor ===
+        # === Start Internal Usage Monitor Loop ===
         asyncio.create_task(start_usage_monitor_loop(application))  # ✅ NEU
 
-        # === Run Startup Tasks (Schedulers, Health Checks etc.) ===
+        # === Run Startup Pipeline ===
         await execute_startup_tasks(application)
 
         # === Start Polling Loop ===
