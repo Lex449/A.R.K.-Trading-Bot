@@ -1,8 +1,7 @@
-# bot/utils/user_timezone_manager.py
-
 """
-A.R.K. User Timezone Manager – Ultra Global Build.
-Handles individual user-specific timezones with full validation and persistence.
+A.R.K. User Timezone Manager – Final Global Build.
+Handles user-specific timezones with full validation, logging, and persistence.
+Made in Bali. Engineered with German Precision.
 """
 
 import json
@@ -14,82 +13,86 @@ from bot.utils.logger import setup_logger
 # Setup structured logger
 logger = setup_logger(__name__)
 
-# === File to store user timezones ===
+# Constants
 USER_TIMEZONE_FILE = "user_timezones.json"
+DEFAULT_TIMEZONE = "UTC"
+
+# === Load on demand (not cached globally for write accuracy) ===
 
 def load_user_timezones() -> Dict[str, str]:
     """
-    Loads user timezone mappings from file.
+    Loads user timezone mappings from disk.
 
     Returns:
-        Dict[str, str]: Mapping of chat IDs to timezone strings.
+        Dict[str, str]: Mapping of chat_id (as str) → timezone string
     """
     if os.path.exists(USER_TIMEZONE_FILE):
         try:
             with open(USER_TIMEZONE_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                logger.info("[Timezone Manager] User timezones loaded successfully.")
+                logger.info("✅ [TimezoneManager] User timezones loaded.")
                 return data
         except Exception as e:
-            logger.warning(f"[Timezone Manager] Failed to load user timezones: {e}")
-            return {}
+            logger.warning(f"⚠️ [TimezoneManager] Failed to load file: {e}")
     return {}
 
 def save_user_timezones(data: Dict[str, str]) -> None:
     """
-    Saves user timezone mappings to file.
+    Saves timezone data to disk.
 
     Args:
-        data (Dict[str, str]): Mapping of chat IDs to timezone strings.
+        data (Dict[str, str]): Mapping of chat_id to timezone.
     """
     try:
         with open(USER_TIMEZONE_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-        logger.info("[Timezone Manager] User timezones saved successfully.")
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        logger.info("✅ [TimezoneManager] User timezones saved.")
     except Exception as e:
-        logger.error(f"[Timezone Manager] Failed to save user timezones: {e}")
+        logger.error(f"❌ [TimezoneManager] Failed to save timezones: {e}")
+
+def get_user_timezone(chat_id: int) -> str:
+    """
+    Gets the timezone for a user, or fallback to UTC.
+
+    Args:
+        chat_id (int): Telegram Chat ID.
+
+    Returns:
+        str: Valid timezone string.
+    """
+    data = load_user_timezones()
+    timezone = data.get(str(chat_id), DEFAULT_TIMEZONE)
+    if timezone not in all_timezones:
+        logger.warning(f"⚠️ [TimezoneManager] Invalid stored timezone for {chat_id}: {timezone}. Falling back to UTC.")
+        return DEFAULT_TIMEZONE
+    return timezone
 
 def set_user_timezone(chat_id: int, timezone: str) -> bool:
     """
-    Sets the timezone for a specific user.
+    Sets a valid timezone for the user.
 
     Args:
-        chat_id (int): Telegram chat ID.
-        timezone (str): Valid timezone string.
+        chat_id (int): Telegram Chat ID.
+        timezone (str): Timezone string from pytz.
 
     Returns:
-        bool: True if timezone set successfully, False otherwise.
+        bool: True if success, False otherwise.
     """
     if timezone not in all_timezones:
-        logger.warning(f"[Timezone Manager] Invalid timezone attempted: {timezone}")
+        logger.warning(f"⚠️ [TimezoneManager] Invalid timezone attempt: {timezone}")
         return False
 
     data = load_user_timezones()
     data[str(chat_id)] = timezone
     save_user_timezones(data)
-    logger.info(f"[Timezone Manager] Timezone set for user {chat_id}: {timezone}")
+    logger.info(f"✅ [TimezoneManager] Timezone set for {chat_id}: {timezone}")
     return True
-
-def get_user_timezone(chat_id: int) -> str:
-    """
-    Retrieves the timezone for a specific user.
-
-    Args:
-        chat_id (int): Telegram chat ID.
-
-    Returns:
-        str: Timezone string (default: "UTC").
-    """
-    data = load_user_timezones()
-    timezone = data.get(str(chat_id), "UTC")
-    logger.debug(f"[Timezone Manager] Retrieved timezone for {chat_id}: {timezone}")
-    return timezone
 
 def list_available_timezones() -> List[str]:
     """
-    Lists all available timezones.
+    Returns sorted list of all supported timezones.
 
     Returns:
-        List[str]: Sorted list of timezone names.
+        List[str]: Timezones.
     """
     return sorted(all_timezones)
