@@ -72,8 +72,9 @@ async def auto_analysis(application: Application):
                 logger.info(f"✅ [AutoAnalysis] Signal gesendet: {symbol} ({action})")
 
                 update_session_tracker(
-                    signal_strength=len(valid_patterns),
-                    avg_confidence=confidence
+                    valid_patterns_count=len(valid_patterns),
+                    avg_confidence=confidence,
+                    signal_strength=len(valid_patterns)
                 )
 
             await asyncio.sleep(1.0)
