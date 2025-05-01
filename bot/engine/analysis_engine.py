@@ -1,6 +1,7 @@
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite v10.6  
+A.R.K. Analysis Engine – Ultra Full Signal Suite v11.0  
 Fusion aus Pattern, Trend, Volumen, Volatilität, RRR, Confidence Scaling & Category Scoring.  
+Jetzt mit adaptivem Trend-Fallback & gelockerter Confidence-Schwelle.  
 Made in Bali. Engineered with German Precision.
 """
 
@@ -34,6 +35,11 @@ async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False)
         indicator_score, trend_direction = evaluate_indicators(df) or (0.0, "Neutral")
         combined_action = determine_action(patterns, trend_info, indicator_score)
 
+        # === Lockerung: Trend-Only fallback, falls keine Patterns vorhanden ===
+        if combined_action == "Neutral ⚪" and trend_direction in ["Long 📈", "Short 📉"] and indicator_score >= 65:
+            combined_action = trend_direction
+            logger.info(f"⚠️ [AnalysisEngine] {symbol} upgraded via Trend Fallback → {combined_action}")
+
         risk_reward_info = (
             analyze_risk_reward(df, combined_action)
             if combined_action in ("Long 📈", "Short 📉")
@@ -42,17 +48,24 @@ async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False)
 
         base_confidence = calculate_confidence(patterns)
         adjusted_confidence = optimize_confidence(base_confidence, trend_info)
+
+        # === Bonuspunkte für starke Trends, RSI, Pattern-Menge ===
         if combined_action in ["Long 📈", "Short 📉"]:
             adjusted_confidence += 10
+        if indicator_score >= 70:
+            adjusted_confidence += 5
+        if len(patterns) >= 2:
+            adjusted_confidence += 3
+
         adjusted_confidence = min(adjusted_confidence, 100.0)
 
         signal_score = rate_signal(patterns, volatility_info=volume_info, trend_info=trend_info)
+        signal_category = categorize_signal(adjusted_confidence)
 
-        if adjusted_confidence < 50:
+        # === Neue, gelockerte Schwelle: 40 statt 50 ===
+        if adjusted_confidence < 40:
             logger.info(f"⛔ [AnalysisEngine] {symbol} skipped – Confidence: {adjusted_confidence:.1f}%")
             return None
-
-        signal_category = categorize_signal(adjusted_confidence)
 
         result = {
             "symbol": symbol,
@@ -81,11 +94,13 @@ async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False)
         logger.exception(f"❌ [AnalysisEngine] Critical error for {symbol}: {e}")
         return None
 
+
 async def analyze_market(symbols: list[str]) -> list[dict]:
     import asyncio
     tasks = [analyze_symbol(symbol, silent=True) for symbol in symbols]
     results = await asyncio.gather(*tasks)
     return [r for r in results if r]
+
 
 def determine_action(patterns: list, trend_info: dict, indicator_score: float) -> str:
     bullish = any(p.get("action", "").startswith("Long") for p in patterns)
@@ -95,6 +110,7 @@ def determine_action(patterns: list, trend_info: dict, indicator_score: float) -
     elif bearish:
         return "Short 📉"
     return "Neutral ⚪"
+
 
 def calculate_confidence(patterns: list) -> float:
     if not patterns:
