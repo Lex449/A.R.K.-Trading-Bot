@@ -73,13 +73,10 @@ def _validate_session_structure():
         save_session_data()
 
 # === Runtime Functions ===
-def update_session_tracker(valid_patterns_count: int, avg_confidence: float):
+def update_session_tracker(valid_patterns_count: int, avg_confidence: float, **kwargs):
     """
     Updates the session with a new signal based on pattern strength and confidence.
-
-    Args:
-        valid_patterns_count (int): Number of strong patterns detected.
-        avg_confidence (float): Confidence score for the signal.
+    Accepts optional keyword arguments for extended stats (e.g., signal_strength=80).
     """
     try:
         _session_data["signals_total"] += 1
@@ -91,6 +88,13 @@ def update_session_tracker(valid_patterns_count: int, avg_confidence: float):
             _session_data["moderate_signals"] += 1
         else:
             _session_data["weak_signals"] += 1
+
+        for key, value in kwargs.items():
+            if isinstance(value, (int, float)):
+                if key not in _session_data:
+                    _session_data[key] = value
+                else:
+                    _session_data[key] += value
 
         save_session_data()
         logger.info("✅ [SessionTracker] Signal recorded successfully.")
