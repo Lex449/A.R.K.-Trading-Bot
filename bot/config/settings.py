@@ -1,16 +1,18 @@
 """
-A.R.K. Settings Loader – Ultra Diamond Build 3.1
-Lädt und validiert alle Umgebungsvariablen aus der .env Datei für maximale Stabilität.
+A.R.K. Settings Loader – Ultra Diamond Build 2025.4  
+Lädt und validiert alle Umgebungsvariablen aus der .env Datei für maximale Stabilität.  
+Inklusive Auto-Split für AUTO_SIGNAL_SYMBOLS als Liste.  
+Made in Bali. Engineered with German Precision.
 """
 
 import os
 from dotenv import load_dotenv
 from bot.utils.logger import setup_logger
 
-# Load environment variables early
+# Load .env early
 load_dotenv()
 
-# Logger
+# Setup structured logger
 logger = setup_logger(__name__)
 
 def get_settings() -> dict:
@@ -40,8 +42,11 @@ def get_settings() -> dict:
 
     # === Trading Setup ===
     interval = get_env_var("INTERVAL", default="1min")
-    auto_symbols_raw = get_env_var("AUTO_SIGNAL_SYMBOLS", default="")
-    auto_signal_symbols = [s.strip().upper() for s in auto_symbols_raw.split(",") if s.strip()]
+    raw_symbols = get_env_var("AUTO_SIGNAL_SYMBOLS", default="")
+    auto_signal_symbols = (
+        raw_symbols if isinstance(raw_symbols, list)
+        else [s.strip().upper() for s in raw_symbols.split(",") if s.strip()]
+    )
 
     # === General Bot Behavior ===
     environment = get_env_var("ENVIRONMENT", default="Production").capitalize()
