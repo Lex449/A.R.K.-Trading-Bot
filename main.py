@@ -80,3 +80,5 @@ async def main():
 # === Entry Point ===
 if __name__ == "__main__":
     asyncio.run(main())
+
+# trigger_hash: 01da2025  # ← Bei Bedarf ändern, um Railway-Deploy zu erzwingen
