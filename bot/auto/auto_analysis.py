@@ -1,13 +1,12 @@
 """
-A.R.K. Auto Market Scanner – Full Coverage Loop v3.0  
-Scannt ALLE Symbole aus .env alle 60 Sekunden – egal ob Signal entsteht.  
-Maximale API-Nutzung. Telegram bleibt spamfrei.  
+A.R.K. Auto Market Scanner – Full Coverage Loop v3.1  
+Scannt ALLE Symbole aus .env alle 60 Sekunden – mit voller API-Nutzung.  
+Kompatibel mit Railway + Application-Kontext.  
 Made in Bali! Engineered with German Precision.
 """
 
 import asyncio
-from telegram import Bot
-from telegram.ext import ContextTypes
+from telegram.ext import Application
 from bot.engine.analysis_engine import analyze_symbol
 from bot.utils.ultra_signal_builder import build_ultra_signal
 from bot.utils.session_tracker import update_session_tracker
@@ -18,8 +17,11 @@ from bot.config.settings import get_settings
 logger = setup_logger(__name__)
 config = get_settings()
 
-async def auto_analysis(context: ContextTypes.DEFAULT_TYPE):
-    bot: Bot = context.bot
+async def auto_analysis(application: Application):
+    """
+    Führt eine komplette Analyse aller Symbole aus AUTO_SIGNAL_SYMBOLS durch.
+    """
+    bot = application.bot
     chat_id = int(config["TELEGRAM_CHAT_ID"])
     language = config.get("BOT_LANGUAGE", "en")
     symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
