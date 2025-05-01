@@ -2,7 +2,7 @@
 A.R.K. Auto Market Scanner – Full Coverage Loop v3.0  
 Scannt ALLE Symbole aus .env alle 60 Sekunden – egal ob Signal entsteht.  
 Maximale API-Nutzung. Telegram bleibt spamfrei.  
-Made in Bali. Engineered with German Precision.
+Made in Bali! Engineered with German Precision.
 """
 
 import asyncio
