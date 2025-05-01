@@ -1,6 +1,7 @@
 """
 A.R.K. Command Handler – NASA Signature Build 2025
 Handles bilingual user commands with ultra-stability and strategic real-time responses.
+Made in Bali. Engineered with German Precision.
 """
 
 from telegram import Update
@@ -11,7 +12,7 @@ from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
 from bot.utils.uptime_tracker import get_uptime
 from bot.engine.analysis_engine import analyze_symbol
-from bot.utils.api_bridge import monitor as usage_monitor  # ✅ Einheitlicher Zugriff
+from bot.utils.api_bridge import monitor as usage_monitor
 
 logger = setup_logger(__name__)
 
@@ -22,45 +23,43 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         lang = get_language(update.effective_chat.id) or "en"
         text = get_text("start", lang).format(user=user)
 
-        menu_text = {
+        menu = {
             "en": "\n\n🧭 *Main Menu*\n"
-                  "`/analyse [SYMBOL]` – Full signal analysis\n"
-                  "`/signal` – Current signal\n"
+                  "`/analyse [SYMBOL]` – Full analysis\n"
+                  "`/signal` – Latest signal\n"
                   "`/status` – System status\n"
                   "`/monitor` – API usage\n"
-                  "`/uptime` – Uptime info\n"
-                  "`/setlanguage en|de` – Set language\n"
+                  "`/uptime` – Uptime check\n"
+                  "`/setlanguage en|de` – Switch language\n"
                   "`/help` – All commands",
             "de": "\n\n🧭 *Hauptmenü*\n"
-                  "`/analyse [SYMBOL]` – Signal-Analyse starten\n"
-                  "`/signal` – Aktuelles Signal\n"
+                  "`/analyse [SYMBOL]` – Analyse starten\n"
+                  "`/signal` – Letztes Signal\n"
                   "`/status` – Systemstatus\n"
                   "`/monitor` – API-Verbrauch\n"
-                  "`/uptime` – Laufzeit anzeigen\n"
-                  "`/setlanguage de|en` – Sprache setzen\n"
+                  "`/uptime` – Laufzeit prüfen\n"
+                  "`/setlanguage de|en` – Sprache wählen\n"
                   "`/help` – Alle Befehle"
         }.get(lang, "")
 
-        await update.message.reply_text(text + menu_text, parse_mode="Markdown")
-        logger.info(f"✅ [Command] /start executed by {user}")
+        await update.message.reply_text(text + menu, parse_mode="Markdown")
+        logger.info(f"✅ [Command] /start by {user}")
     except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/start Handler Error")
+        await report_error(context.bot, update.effective_chat.id, e, "/start Handler Error")
 
 # === /help ===
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         lang = get_language(update.effective_chat.id) or "en"
-        text = get_text("help", lang)
-        await update.message.reply_text(text, parse_mode="Markdown")
-        logger.info(f"✅ [Command] /help executed")
+        await update.message.reply_text(get_text("help", lang), parse_mode="Markdown")
+        logger.info("✅ [Command] /help")
     except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/help Handler Error")
+        await report_error(context.bot, update.effective_chat.id, e, "/help Handler Error")
 
 # === /analyse ===
 async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         lang = get_language(update.effective_chat.id) or "en"
-
         if not context.args:
             await update.message.reply_text(get_text("analysis_no_symbol", lang), parse_mode="Markdown")
             return
@@ -69,89 +68,86 @@ async def analyze_symbol_handler(update: Update, context: ContextTypes.DEFAULT_T
         await update.message.reply_text(f"🔍 {get_text('analyzing', lang)} *{symbol}*...", parse_mode="Markdown")
 
         result = await analyze_symbol(symbol, chat_id=update.effective_chat.id)
+        if not result:
+            await update.message.reply_text(get_text("no_analysis_data", lang).format(symbol=symbol), parse_mode="Markdown")
+            return
 
-        if result:
-            confidence = result.get("avg_confidence", 0.0)
-            move = result.get("combined_action", "Unknown")
-            category = result.get("signal_category", "⭐")
-            price = result.get("last_price", "n/a")
-            patterns = result.get("patterns", [])
-            rrr = result.get("risk_reward_info", {})
-            stars = "⭐" * int(round(confidence / 20))
+        confidence = result.get("avg_confidence", 0.0)
+        move = result.get("combined_action", "Unknown")
+        category = result.get("signal_category", "⭐")
+        price = result.get("last_price", "n/a")
+        patterns = result.get("patterns", [])
+        rrr = result.get("risk_reward_info", {})
+        stars = "⭐" * int(round(confidence / 20))
+        pattern_list = [f"`{p.get('pattern', 'N/A')}`" for p in patterns] or [get_text("no_patterns_found", lang)]
 
-            pattern_names = [f"`{p.get('pattern', 'N/A')}`" for p in patterns]
-            pattern_text = ", ".join(pattern_names) if pattern_names else get_text("no_patterns_found", lang)
+        message = (
+            f"📊 *{symbol} – {get_text('analysis_completed', lang)}*\n\n"
+            f"*Price:* `${price}`\n"
+            f"*Move:* `{move}`\n"
+            f"*Confidence:* `{confidence:.1f}%` {stars}\n"
+            f"*Rating:* {category}\n"
+            f"*Patterns:* {', '.join(pattern_list)}"
+        )
 
-            message = (
-                f"📊 *{symbol} – {get_text('analysis_completed', lang)}*\n\n"
-                f"*Current Price:* `${price}`\n"
-                f"*Move:* `{move}`\n"
-                f"*Confidence:* `{confidence:.1f}%` {stars}\n"
-                f"*Signal Rating:* {category}\n"
-                f"*Patterns:* {pattern_text}"
+        if rrr:
+            message += (
+                f"\n\n🎯 *Risk/Reward*\n"
+                f"• *Target:* `${rrr.get('target')}`\n"
+                f"• *Stop:* `${rrr.get('stop_loss')}`\n"
+                f"• *Ratio:* `{rrr.get('risk_reward_ratio')}`"
             )
 
-            if rrr:
-                message += (
-                    f"\n\n🎯 *Risk/Reward*\n"
-                    f"• *Target:* `${rrr.get('target')}`\n"
-                    f"• *Stop:* `${rrr.get('stop_loss')}`\n"
-                    f"• *RRR:* `{rrr.get('risk_reward_ratio')}`"
-                )
+        message += "\n\n_This is not financial advice._"
+        await update.message.reply_text(message, parse_mode="Markdown", disable_web_page_preview=True)
+        logger.info(f"✅ [Command] /analyse {symbol}")
 
-            message += "\n\n_This is not financial advice. Use discretion._"
-
-            await update.message.reply_text(message, parse_mode="Markdown", disable_web_page_preview=True)
-            logger.info(f"✅ [Command] /analyse → {symbol}")
-        else:
-            await update.message.reply_text(get_text("no_analysis_data", lang).format(symbol=symbol), parse_mode="Markdown")
-            logger.warning(f"⚠️ [Command] /analyse no data for {symbol}")
     except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/analyse Handler Error")
+        await report_error(context.bot, update.effective_chat.id, e, "/analyse Handler Error")
 
 # === /signal ===
 async def signal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         lang = get_language(update.effective_chat.id) or "en"
         await update.message.reply_text(get_text("live_signal_info", lang), parse_mode="Markdown")
-        logger.info(f"✅ [Command] /signal executed")
+        logger.info("✅ [Command] /signal")
     except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/signal Handler Error")
+        await report_error(context.bot, update.effective_chat.id, e, "/signal Handler Error")
 
 # === /status ===
 async def status_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
-        await update.message.reply_text("📊 *System Status:* Operational.\n*More details coming soon.*", parse_mode="Markdown")
-        logger.info(f"✅ [Command] /status executed")
+        await update.message.reply_text("📊 *System Status:* All systems operational.", parse_mode="Markdown")
+        logger.info("✅ [Command] /status")
     except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/status Handler Error")
+        await report_error(context.bot, update.effective_chat.id, e, "/status Handler Error")
 
 # === /uptime ===
 async def uptime_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         uptime = get_uptime()
         await update.message.reply_text(f"⏱️ *Uptime:* `{uptime}`", parse_mode="Markdown")
-        logger.info(f"✅ [Command] /uptime executed")
+        logger.info("✅ [Command] /uptime")
     except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/uptime Handler Error")
+        await report_error(context.bot, update.effective_chat.id, e, "/uptime Handler Error")
 
 # === /setlanguage ===
 async def set_language_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         if not context.args:
-            await update.message.reply_text("❗ Please specify a language: `en` or `de`", parse_mode="Markdown")
+            await update.message.reply_text("❗ Please use: `/setlanguage en` or `/setlanguage de`", parse_mode="Markdown")
             return
 
         lang = context.args[0].lower()
         if lang not in ["en", "de"]:
-            await update.message.reply_text("❗ Supported: `en`, `de`", parse_mode="Markdown")
+            await update.message.reply_text("❗ Supported languages: `en`, `de`", parse_mode="Markdown")
             return
 
         set_language(update.effective_chat.id, lang)
         await update.message.reply_text(get_text("set_language", lang), parse_mode="Markdown")
-        logger.info(f"✅ [Command] /setlanguage changed to {lang}")
+        logger.info(f"✅ [Command] /setlanguage → {lang}")
     except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/setlanguage Handler Error")
+        await report_error(context.bot, update.effective_chat.id, e, "/setlanguage Handler Error")
 
 # === /shutdown ===
 async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -159,39 +155,34 @@ async def shutdown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         lang = get_language(update.effective_chat.id) or "en"
         await update.message.reply_text(get_text("shutdown", lang), parse_mode="Markdown")
         await context.application.stop()
-        logger.info(f"🛑 [Command] /shutdown triggered")
+        logger.info("🛑 [Command] /shutdown")
     except Exception as e:
-        await report_error(context.bot, update.effective_chat.id, e, context_info="/shutdown Handler Error")
+        await report_error(context.bot, update.effective_chat.id, e, "/shutdown Handler Error")
 
 # === /monitor ===
 async def monitor_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         lang = get_language(update.effective_chat.id) or "en"
-        call_count = usage_monitor.get_call_count()
+        calls = usage_monitor.get_call_count()
+        minutes = usage_monitor.get_elapsed_minutes()
         rate = usage_monitor.get_rate_per_minute()
-        duration = usage_monitor.get_elapsed_minutes()
 
-        if rate < 75:
-            emoji = "🟢"
-            comment = "Stable"
-        elif rate < 140:
-            emoji = "🟡"
-            comment = "Caution"
-        else:
-            emoji = "🔴"
-            comment = "CRITICAL"
-
-        message = (
-            f"{emoji} *API Usage Monitor*\n\n"
-            f"*Total Calls:* `{call_count}`\n"
-            f"*Uptime:* `{duration:.1f} min`\n"
-            f"*Calls/min:* `{rate:.2f}`\n"
-            f"*Status:* `{comment}`\n\n"
-            "_Auto-monitoring is active._"
+        status = (
+            ("🟢", "Stable") if rate < 75 else
+            ("🟡", "Elevated") if rate < 140 else
+            ("🔴", "Critical")
         )
 
-        await update.message.reply_text(message, parse_mode="Markdown")
-        logger.info(f"✅ [Command] /monitor executed")
+        text = (
+            f"{status[0]} *API Monitor*\n\n"
+            f"• *Total Calls:* `{calls}`\n"
+            f"• *Runtime:* `{minutes:.1f} min`\n"
+            f"• *Rate:* `{rate:.2f} calls/min`\n"
+            f"• *Status:* `{status[1]}`\n\n"
+            "_All API usage tracked in real-time._"
+        )
+
+        await update.message.reply_text(text, parse_mode="Markdown")
+        logger.info("✅ [Command] /monitor")
     except Exception as e:
-        logger.error(f"[Command] /monitor failed: {e}")
-        await update.message.reply_text("⚠️ Error while loading monitor status.")
+        await report_error(context.bot, update.effective_chat.id, e, "/monitor Handler Error")
