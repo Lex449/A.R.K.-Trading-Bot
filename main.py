@@ -1,5 +1,5 @@
 """
-A.R.K. – Ultra Resilient Main Entry Point.
+A.R.K. Ultra Resilient Main Entry Point.
 Bereinigt Webhook, initialisiert Telegram Bot und startet alle Tasks.
 """
 
