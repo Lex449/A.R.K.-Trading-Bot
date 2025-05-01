@@ -23,22 +23,21 @@ from bot.handlers.global_error_handler import global_error_handler
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.startup.startup_task import execute_startup_tasks
-from bot.auto.auto_signal_loop import auto_signal_loop  # <<< Wichtig
 
 # === Logger & Settings ===
 logger = setup_logger(__name__)
 config = get_settings()
 
-# === Async Patch für Railway etc. ===
+# === Async Patch für Railway & Dev ===
 nest_asyncio.apply()
 
-# === Ultra Resilient Webhook Cleanup ===
+# === Webhook Cleanup – für Polling-Modus ===
 async def force_webhook_cleanup():
     try:
-        logger.info("⚙️ [Init] Attempting to remove existing webhook...")
+        logger.info("⚙️ [Init] Removing active webhook (if any)...")
         bot = Bot(config["BOT_TOKEN"])
         await bot.delete_webhook(drop_pending_updates=True)
-        logger.info("✅ [Init] Webhook successfully removed.")
+        logger.info("✅ [Init] Webhook removed. Polling mode ready.")
     except Exception as e:
         logger.warning(f"⚠️ [Init] Webhook cleanup failed: {e}")
 
@@ -47,10 +46,10 @@ async def main():
     logger.info("🚀 [Main] Launch sequence initiated...")
 
     try:
-        # 1. Zuerst: Webhook sicher entfernen
+        # 1. Webhook sicher entfernen (wichtig bei Railway & getUpdates)
         await force_webhook_cleanup()
 
-        # 2. Application starten
+        # 2. Bot-Instance bauen
         application = ApplicationBuilder().token(config["BOT_TOKEN"]).build()
 
         # 3. Command Handler registrieren
@@ -64,20 +63,20 @@ async def main():
         application.add_handler(CommandHandler("shutdown", shutdown_handler))
         application.add_handler(CommandHandler("monitor", monitor_handler))
 
-        # 4. Globaler Error-Handler
+        # 4. Globaler Error-Handler aktivieren
         application.add_error_handler(global_error_handler)
 
-        # 5. Startup Tasks
+        # 5. Startaufgaben (Scheduler, Loops, Watchdog, Recap, Ping etc.)
         await execute_startup_tasks(application)
 
-        # 7. Polling starten
-        logger.info("✅ [Main] A.R.K. Bot online. Awaiting user interaction...")
+        # 6. Polling starten
+        logger.info("✅ [Main] A.R.K. Bot vollständig aktiv. Bereit für Interaktionen.")
         await application.run_polling(poll_interval=1.0)
 
     except Exception as e:
-        logger.critical(f"🔥 [Main] Critical Failure: {e}")
+        logger.critical(f"🔥 [Main] Critical Boot Failure: {e}")
         raise
 
-# === Startpunkt ===
+# === Entry Point ===
 if __name__ == "__main__":
     asyncio.run(main())
