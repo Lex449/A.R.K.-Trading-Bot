@@ -11,11 +11,13 @@ from datetime import datetime
 import pytz
 from telegram import Bot
 from telegram.ext import Application, JobQueue
+
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
 from bot.utils.error_reporter import report_error
 from bot.utils.language import get_language
 from bot.utils.i18n import get_text
+
 from bot.scheduler.recap_scheduler import start_recap_scheduler
 from bot.scheduler.heartbeat_job import start_heartbeat_job
 from bot.scheduler.connection_watchdog_job import start_connection_watchdog
@@ -23,13 +25,13 @@ from bot.scheduler.news_scanner_job import news_scanner_job
 from bot.scheduler.auto_analysis_scheduler import start_auto_analysis_scheduler
 from bot.auto.auto_signal_loop import auto_signal_loop
 
-# === Setup ===
+# === Logger & Settings ===
 logger = setup_logger(__name__)
 settings = get_settings()
 
 def check_env_variables():
     required = ["BOT_TOKEN", "TELEGRAM_CHAT_ID", "FINNHUB_API_KEY"]
-    missing = [v for v in required if not os.getenv(v)]
+    missing = [var for var in required if not os.getenv(var)]
     if missing:
         logger.critical(f"❌ [Startup] Fehlende ENV-Variablen: {', '.join(missing)}")
         raise EnvironmentError(f"Fehlende ENV: {', '.join(missing)}")
@@ -72,41 +74,42 @@ async def launch_background_jobs(application: Application):
     job_queue: JobQueue = application.job_queue
     chat_id = int(settings["TELEGRAM_CHAT_ID"])
 
+    # === Scheduler & Jobs ===
     try:
         start_heartbeat_job(bot, chat_id)
         logger.info("✅ [Startup] Heartbeat-Job aktiviert.")
     except Exception as e:
-        logger.error(f"❌ Heartbeat-Job Fehler: {e}")
+        logger.error(f"❌ [Startup] Heartbeat-Job Fehler: {e}")
 
     try:
         start_connection_watchdog(bot, chat_id)
         logger.info("✅ [Startup] Connection Watchdog aktiviert.")
     except Exception as e:
-        logger.error(f"❌ Connection Watchdog Fehler: {e}")
+        logger.error(f"❌ [Startup] Watchdog Fehler: {e}")
 
     try:
         start_recap_scheduler(bot, chat_id)
         logger.info("✅ [Startup] Recap Scheduler aktiviert.")
     except Exception as e:
-        logger.error(f"❌ Recap Scheduler Fehler: {e}")
+        logger.error(f"❌ [Startup] Recap Scheduler Fehler: {e}")
 
     try:
         asyncio.create_task(news_scanner_job())
         logger.info("✅ [Startup] News Scanner aktiviert.")
     except Exception as e:
-        logger.error(f"❌ News Scanner Fehler: {e}")
+        logger.error(f"❌ [Startup] News Scanner Fehler: {e}")
 
     try:
         asyncio.create_task(auto_signal_loop(application))
         logger.info("✅ [Startup] Auto Signal Loop aktiviert.")
     except Exception as e:
-        logger.error(f"❌ Auto Signal Loop Fehler: {e}")
+        logger.error(f"❌ [Startup] Auto Signal Loop Fehler: {e}")
 
     try:
         start_auto_analysis_scheduler(job_queue)
         logger.info("✅ [Startup] Auto Analysis Scheduler aktiviert.")
     except Exception as e:
-        logger.error(f"❌ Auto Analysis Scheduler Fehler: {e}")
+        logger.error(f"❌ [Startup] Auto Analysis Scheduler Fehler: {e}")
 
 async def execute_startup_tasks(application: Application):
     logger.info("🚀 [Startup] Initialisiere A.R.K. Master-System...")
