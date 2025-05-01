@@ -1,5 +1,5 @@
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite v11.0  
+A.R.K. Analysis Engine – Ultra Full Signal Suite v11.1  
 Fusion aus Pattern, Trend, Volumen, Volatilität, RRR, Confidence Scaling & Category Scoring.  
 Jetzt mit adaptivem Trend-Fallback & gelockerter Confidence-Schwelle.  
 Made in Bali. Engineered with German Precision.
@@ -32,7 +32,7 @@ async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False)
         patterns = detect_patterns(df) or []
         volume_info = detect_volume_spike(df) or {}
         trend_info = detect_adaptive_trend(df) or {}
-        indicator_score, trend_direction = evaluate_indicators(df) or (0.0, "Neutral")
+        indicator_score, trend_direction = evaluate_indicators(df) or (0.0, "Neutral ⚪")
         combined_action = determine_action(patterns, trend_info, indicator_score)
 
         # === Lockerung: Trend-Only fallback, falls keine Patterns vorhanden ===
@@ -47,7 +47,20 @@ async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False)
         )
 
         base_confidence = calculate_confidence(patterns)
-        adjusted_confidence = optimize_confidence(base_confidence, trend_info)
+
+        # === FINAL: Optimierte Confidence mit allen Kontextdaten ===
+        adjusted_confidence = optimize_confidence(
+            {
+                "confidence": base_confidence,
+                "trend_info": trend_info,
+                "volume_info": volume_info,
+                "patterns": patterns
+            },
+            {
+                "signals_total": 100,
+                "strong_signals": 40
+            }
+        )
 
         # === Bonuspunkte für starke Trends, RSI, Pattern-Menge ===
         if combined_action in ["Long 📈", "Short 📉"]:
