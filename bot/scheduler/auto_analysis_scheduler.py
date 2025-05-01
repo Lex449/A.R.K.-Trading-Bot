@@ -20,10 +20,10 @@ def start_auto_analysis_scheduler(application):
         scheduler.add_job(
             func=lambda: auto_analysis(application),
             trigger=IntervalTrigger(seconds=60),
-            next_run_time=datetime.utcnow(),  # Sofortiger Start bei Launch
+            next_run_time=datetime.utcnow(),  # Sofortiger Start
             name="ARK Silent Auto-Analysis"
         )
         scheduler.start()
-        logger.info("✅ [Scheduler] Auto-Analysis Scheduler aktiviert – alle 60s mit sofortigem Initiallauf.")
+        logger.info("✅ [Scheduler] Auto-Analysis Scheduler aktiviert – 60s Loop mit sofortigem Launch.")
     except Exception as e:
-        logger.exception("❌ [Scheduler] Fehler beim Starten des Auto-Analysis Schedulers:")
+        logger.exception("❌ [Scheduler] Fehler beim Start des Auto-Analysis Schedulers:")
