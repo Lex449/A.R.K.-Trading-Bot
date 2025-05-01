@@ -43,7 +43,7 @@ async def auto_analysis(application: Application):
             patterns = result.get("patterns", [])
             confidence = result.get("avg_confidence", 0.0)
 
-            if confidence < 60 or action not in ["Long 📈", "Short 📉"]:
+            if confidence < 40 or action not in ["Long 📈", "Short 📉"]:
                 logger.info(f"⏩ [AutoAnalysis] {symbol} – Confidence zu niedrig oder neutral.")
                 continue
 
