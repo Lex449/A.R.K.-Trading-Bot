@@ -31,8 +31,7 @@ def build_signal_bar(conf: float, bars: int = 20) -> str:
 async def auto_signal_loop(application):
     logger.info("🚀 [AutoSignalLoop] Ultra Loop gestartet.")
 
-    symbols_raw = config.get("AUTO_SIGNAL_SYMBOLS", "")
-    symbols = [s.strip().upper() for s in symbols_raw.split(",") if s.strip()]
+    symbols = config.get("AUTO_SIGNAL_SYMBOLS", [])
     chat_id = int(config.get("TELEGRAM_CHAT_ID", 0))
     interval = config.get("SIGNAL_CHECK_INTERVAL_SEC", 60)
 
@@ -41,8 +40,6 @@ async def auto_signal_loop(application):
         return
 
     logger.info(f"📊 [AutoSignalLoop] {len(symbols)} Symbole geladen: {symbols[:5]}...")
-
-    notified = False
 
     while RUNNING:
         try:
@@ -59,15 +56,6 @@ async def auto_signal_loop(application):
             await asyncio.gather(*tasks)
 
             logger.info("✅ [AutoSignalLoop] Zyklus abgeschlossen. Pause beginnt...")
-
-            # === Einmalige Aktivierungsbenachrichtigung ===
-            if not notified:
-                await application.bot.send_message(
-                    chat_id=chat_id,
-                    text="✅ *Auto Signal Loop aktiviert* – alle 60 Sekunden wird nun geprüft.\n\n_Silent Mode aktiv. Signale nur bei hoher Qualität._",
-                    parse_mode="Markdown"
-                )
-                notified = True
 
         except Exception as e:
             logger.exception(f"🔥 [AutoSignalLoop] Totalabbruch: {e}")
