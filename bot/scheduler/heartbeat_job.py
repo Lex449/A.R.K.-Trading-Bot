@@ -1,6 +1,6 @@
 """
-A.R.K. Scheduler – Heartbeat Monitor 2025
-Sends system health pings every 60 minutes to ensure uptime and transparency.
+A.R.K. Scheduler – Heartbeat Monitor 2025.5
+Sends multilingual system pings every 60 minutes to ensure uptime and diagnostics.
 Made in Bali. Engineered with German Precision.
 """
 
@@ -10,38 +10,40 @@ from datetime import datetime
 import platform
 import psutil
 from telegram import Bot
+
 from bot.config.settings import get_settings
 from bot.utils.logger import setup_logger
+from bot.utils.language import get_language
+from bot.utils.i18n import get_text
 
-# Setup structured logger and settings
+# Setup
 logger = setup_logger(__name__)
 config = get_settings()
-
-# Initialize global scheduler
 heartbeat_scheduler = AsyncIOScheduler()
 
 async def send_heartbeat(bot: Bot, chat_id: int):
     """
     Sends a structured heartbeat report via Telegram.
-
-    Args:
-        bot (Bot): Telegram bot instance.
-        chat_id (int): Target chat ID.
     """
     try:
+        lang = get_language(chat_id) or "en"
         cpu = psutil.cpu_percent()
         ram = psutil.virtual_memory().percent
         system = platform.system()
-        timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        status = get_text("status_stable", lang)
+        if cpu > 85 or ram > 85:
+            status = get_text("status_highload", lang)
 
         message = (
-            "✅ *A.R.K. Heartbeat Report*\n\n"
-            f"*Status:* Stable\n"
-            f"*Time:* `{timestamp}`\n"
-            f"*CPU Usage:* `{cpu:.1f}%`\n"
-            f"*RAM Usage:* `{ram:.1f}%`\n"
-            f"*System:* `{system}`\n"
-            "_A.R.K. is watching the markets._"
+            f"✅ *{get_text('heartbeat_title', lang)}*\n\n"
+            f"*{get_text('status', lang)}:* `{status}`\n"
+            f"*{get_text('timestamp', lang)}:* `{now}`\n"
+            f"*{get_text('cpu', lang)}:* `{cpu:.1f}%`\n"
+            f"*{get_text('ram', lang)}:* `{ram:.1f}%`\n"
+            f"*{get_text('system', lang)}:* `{system}`\n\n"
+            f"_{get_text('heartbeat_footer', lang)}_"
         )
 
         await bot.send_message(
@@ -50,8 +52,7 @@ async def send_heartbeat(bot: Bot, chat_id: int):
             parse_mode="Markdown",
             disable_web_page_preview=True
         )
-
-        logger.info(f"✅ [HeartbeatJob] Heartbeat sent to chat_id {chat_id}.")
+        logger.info(f"✅ [HeartbeatJob] Heartbeat sent to chat_id {chat_id}")
 
     except Exception as e:
         logger.error(f"❌ [HeartbeatJob] Failed to send heartbeat: {e}")
@@ -59,28 +60,29 @@ async def send_heartbeat(bot: Bot, chat_id: int):
 def start_heartbeat_job(bot: Bot, chat_id: int):
     """
     Starts the heartbeat job with 60-minute interval.
-
-    Args:
-        bot (Bot): Telegram bot instance.
-        chat_id (int): Target chat ID.
     """
     try:
-        heartbeat_scheduler.remove_all_jobs()
+        job_id = f"heartbeat_job_{chat_id}"
+
+        # Prüfen ob Job bereits existiert
+        if heartbeat_scheduler.get_job(job_id):
+            logger.info(f"♻️ [HeartbeatJob] Scheduler already running for chat_id {chat_id}")
+            return
 
         heartbeat_scheduler.add_job(
             send_heartbeat,
             trigger=IntervalTrigger(minutes=60),
             args=[bot, chat_id],
-            id=f"heartbeat_job_{chat_id}",
+            id=job_id,
+            name=f"A.R.K. Heartbeat for Chat {chat_id}",
             replace_existing=True,
-            name=f"A.R.K. Heartbeat Monitor for Chat {chat_id}",
             misfire_grace_time=300
         )
 
         if not heartbeat_scheduler.running:
             heartbeat_scheduler.start()
 
-        logger.info(f"✅ [HeartbeatJob] Scheduler started for chat_id {chat_id}.")
+        logger.info(f"✅ [HeartbeatJob] Scheduler started for chat_id {chat_id}")
 
     except Exception as e:
         logger.critical(f"🔥 [HeartbeatJob] Failed to start scheduler: {e}")
