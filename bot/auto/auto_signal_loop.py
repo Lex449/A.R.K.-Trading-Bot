@@ -31,7 +31,6 @@ def build_signal_bar(conf: float, bars: int = 20) -> str:
 async def auto_signal_loop(application):
     logger.info("🚀 [AutoSignalLoop] Ultra Loop gestartet.")
 
-    # === Symbole aus .env lesen und in Liste umwandeln ===
     symbols_raw = config.get("AUTO_SIGNAL_SYMBOLS", "")
     symbols = [s.strip().upper() for s in symbols_raw.split(",") if s.strip()]
     chat_id = int(config.get("TELEGRAM_CHAT_ID", 0))
@@ -43,6 +42,8 @@ async def auto_signal_loop(application):
 
     logger.info(f"📊 [AutoSignalLoop] {len(symbols)} Symbole geladen: {symbols[:5]}...")
 
+    notified = False
+
     while RUNNING:
         try:
             await send_heartbeat(application)
@@ -52,13 +53,21 @@ async def auto_signal_loop(application):
                 await asyncio.sleep(30)
                 continue
 
-            # Marktzeitprüfung wurde bewusst deaktiviert – 24/7 Analyse erzwingen
             logger.info(f"📡 [AutoSignalLoop] Analyse-Zyklus gestartet: {len(symbols)} Symbole...")
 
             tasks = [analyze_and_dispatch(application, symbol, chat_id) for symbol in symbols]
             await asyncio.gather(*tasks)
 
             logger.info("✅ [AutoSignalLoop] Zyklus abgeschlossen. Pause beginnt...")
+
+            # === Einmalige Aktivierungsbenachrichtigung ===
+            if not notified:
+                await application.bot.send_message(
+                    chat_id=chat_id,
+                    text="✅ *Auto Signal Loop aktiviert* – alle 60 Sekunden wird nun geprüft.\n\n_Silent Mode aktiv. Signale nur bei hoher Qualität._",
+                    parse_mode="Markdown"
+                )
+                notified = True
 
         except Exception as e:
             logger.exception(f"🔥 [AutoSignalLoop] Totalabbruch: {e}")
