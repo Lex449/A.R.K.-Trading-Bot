@@ -104,7 +104,7 @@ async def launch_background_jobs(application: Application):
         logger.error(f"❌ Auto Signal Loop Fehler: {e}")
 
     try:
-    start_auto_analysis_scheduler(application)
+        start_auto_analysis_scheduler(application)
     logger.info("✅ [Startup] Auto Analysis Scheduler gestartet.")
 except Exception as e:
     logger.error(f"❌ Auto Analysis Scheduler Fehler: {e}")
