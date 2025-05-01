@@ -105,13 +105,12 @@ async def launch_background_jobs(application: Application):
 
     try:
         start_auto_analysis_scheduler(application)
-    logger.info("✅ [Startup] Auto Analysis Scheduler gestartet.")
-except Exception as e:
-    logger.error(f"❌ Auto Analysis Scheduler Fehler: {e}")
+        logger.info("✅ [Startup] Auto Analysis Scheduler gestartet.")
+    except Exception as e:
+        logger.error(f"❌ Auto Analysis Scheduler Fehler: {e}")
 
 async def execute_startup_tasks(application: Application):
     logger.info("🚀 [Startup] Initialisiere A.R.K. Master-System...")
-
     try:
         check_env_variables()
         check_system_time()
