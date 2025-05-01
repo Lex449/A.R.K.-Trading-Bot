@@ -1,7 +1,6 @@
 """
-A.R.K. Analysis Engine – Ultra Full Signal Suite v10.6
-Fusion aus Pattern, Trend, Volumen, Volatilität, RRR, Confidence Scaling & Category Scoring.
-Mit smarter Telegram-Analyseausgabe und dynamischer Rejection-Diagnose.
+A.R.K. Analysis Engine – Ultra Full Signal Suite v10.6  
+Fusion aus Pattern, Trend, Volumen, Volatilität, RRR, Confidence Scaling & Category Scoring.  
 Made in Bali. Engineered with German Precision.
 """
 
@@ -26,16 +25,6 @@ async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False)
             logger.warning(f"🚫 [AnalysisEngine] Data validation failed for {symbol}")
             if df is not None:
                 logger.debug(f"⚠️ [Debug] {symbol} → Close Prices: {df['c'].tail(10).tolist()}")
-            if chat_id and not silent:
-                from bot import application
-                await application.bot.send_message(
-                    chat_id=chat_id,
-                    text=(
-                        f"⚠️ *{symbol} konnte nicht analysiert werden:*\n"
-                        f"_Grund:_ Kursdaten ungültig oder leer."
-                    ),
-                    parse_mode="Markdown"
-                )
             return None
 
         last_price = df["c"].iloc[-1]
@@ -44,6 +33,7 @@ async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False)
         trend_info = detect_adaptive_trend(df) or {}
         indicator_score, trend_direction = evaluate_indicators(df) or (0.0, "Neutral")
         combined_action = determine_action(patterns, trend_info, indicator_score)
+
         risk_reward_info = (
             analyze_risk_reward(df, combined_action)
             if combined_action in ("Long 📈", "Short 📉")
@@ -59,26 +49,7 @@ async def analyze_symbol(symbol: str, chat_id: int = None, silent: bool = False)
         signal_score = rate_signal(patterns, volatility_info=volume_info, trend_info=trend_info)
 
         if adjusted_confidence < 50:
-            flat_market = df["c"].tail(5).nunique() <= 1
-            logger.info(
-                f"⛔ [AnalysisEngine] {symbol} skipped – Confidence: {adjusted_confidence:.1f}%, "
-                f"Patterns: {len(patterns)}, Score: {signal_score}, Trend: {trend_direction}"
-            )
-            if chat_id and not silent:
-                from bot import application
-                await application.bot.send_message(
-                    chat_id=chat_id,
-                    text=(
-                        f"⚠️ *{symbol} wurde übersprungen.*\n"
-                        f"_Grund:_ Confidence zu niedrig (`{adjusted_confidence:.1f}%`)\n\n"
-                        f"*Details:*\n"
-                        f"• Patterns: `{len(patterns)}`\n"
-                        f"• Score: `{signal_score}/100`\n"
-                        f"• Trend: {trend_direction}\n"
-                        f"• Flat Market: {'Ja' if flat_market else 'Nein'}"
-                    ),
-                    parse_mode="Markdown"
-                )
+            logger.info(f"⛔ [AnalysisEngine] {symbol} skipped – Confidence: {adjusted_confidence:.1f}%")
             return None
 
         signal_category = categorize_signal(adjusted_confidence)
