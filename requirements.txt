@@ -1,23 +1,23 @@
-# ── Core Framework ─
-python-telegram-bot==20.9
+# ── Core Framework ───────────────────────────────────────
+python-telegram-bot==20.8        # letzte stabile 20.x – auf PyPI verfügbar
 
-# ── Env / Config ─
+# ── Env / Config ────────────────────────────────────────
 python-dotenv==1.0.1
 nest_asyncio==1.6.0
 
-# ── Data / Analysis ─
+# ── Async HTTP ───────────────────────────────────────────
+httpx==0.26.0
+
+# ── Scheduling ──────────────────────────────────────────
+APScheduler==3.10.4
+
+# ── Data & Analyse ──────────────────────────────────────
 pandas==2.2.2
 numpy==1.26.4
 ta==0.11.0
-
-# ── API Clients ─
-finnhub-python==2.4.16
 yfinance==0.2.40
-httpx==0.26.0
+finnhub-python==2.4.16
 
-# ── Scheduling ─
-APScheduler==3.10.4
-
-# ── Extras ─
+# ── Utilities ───────────────────────────────────────────
 pytz==2024.1
 rich==13.7.1
