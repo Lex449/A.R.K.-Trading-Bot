@@ -1,0 +1,16 @@
+name: Dependency Gate
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pipreqs
+      - run: pipreqs --force --savepath _auto_requirements.txt .
+      - run: diff -u requirements.txt _auto_requirements.txt && echo "✅ Dependencies match"
